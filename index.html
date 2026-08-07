@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0B6B3A">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Қаржы — кіріс пен шығын</title>
+<style>
+  :root{
+    --g-deep:#04331D;
+    --g-mid:#0B6B3A;
+    --g-bright:#17A44F;
+    --g-soft:#E8F5EC;
+    --ink:#0E1A13;
+    --ink-2:#5C7367;
+    --line:#DCE9E1;
+    --bg:#F2F7F3;
+    --red:#E2534B;
+    --card-r:22px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:var(--bg);color:var(--ink);
+    font-variant-numeric:tabular-nums;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:calc(84px + env(safe-area-inset-bottom));
+  }
+  button,input,select{font-family:inherit;font-size:16px}
+  .page{display:none}
+  .page.on{display:block}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    background:
+      radial-gradient(120% 90% at 15% 0%, #1E8A4B 0%, transparent 60%),
+      linear-gradient(160deg,var(--g-mid) 0%, var(--g-deep) 100%);
+    color:#fff;padding:calc(18px + env(safe-area-inset-top)) 18px 26px;
+    border-radius:0 0 28px 28px;
+  }
+  .hero h1{margin:0;font-size:30px;font-weight:800;letter-spacing:-.5px}
+  .hero-top{display:flex;align-items:center;justify-content:space-between}
+  .plus{
+    width:52px;height:52px;border:0;border-radius:17px;background:#fff;color:var(--g-mid);
+    font-size:28px;font-weight:700;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.18)
+  }
+  .cap-label{margin:20px 0 2px;font-size:14px;color:#BFE3CC}
+  .cap-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+  .cap{font-size:38px;font-weight:800;letter-spacing:-1px}
+  .pill{
+    border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 14px;
+    font-size:13px;font-weight:600;background:rgba(255,255,255,.12);white-space:nowrap
+  }
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+  .mini{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:14px}
+  .mini .t{display:flex;align-items:center;gap:9px;font-size:14px;color:#DCF0E3}
+  .dot{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-size:14px}
+  .dot.in{background:rgba(23,164,79,.45)}
+  .dot.out{background:rgba(226,83,75,.4)}
+  .mini .v{font-size:20px;font-weight:800;margin-top:8px}
+  .monthbar{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:18px;font-size:14px;color:#CDE8D7}
+  .monthbar button{background:rgba(255,255,255,.14);border:0;color:#fff;width:32px;height:32px;border-radius:10px;font-size:16px}
+
+  /* ---------- Cards ---------- */
+  .wrap{padding:16px 14px 0}
+  .card{background:#fff;border-radius:var(--card-r);padding:16px;box-shadow:0 2px 14px rgba(10,60,32,.06);margin-bottom:14px}
+  .card h2{margin:0 0 12px;font-size:16px;font-weight:700}
+  .muted{color:var(--ink-2);font-size:13px}
+  .empty{text-align:center;padding:26px 10px;color:var(--ink-2);font-size:14px;line-height:1.5}
+
+  .daygroup{margin-bottom:6px}
+  .dayhead{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);padding:10px 4px 6px;font-weight:600}
+  .tx{display:flex;align-items:center;gap:12px;padding:11px 4px;border-top:1px solid var(--line)}
+  .tx:first-of-type{border-top:0}
+  .ico{width:42px;height:42px;border-radius:14px;background:var(--g-soft);display:grid;place-items:center;font-size:19px;flex:none}
+  .tx .name{font-weight:600;font-size:15px}
+  .tx .sub{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+  .tx .amt{margin-left:auto;font-weight:700;font-size:15px;white-space:nowrap}
+  .amt.in{color:var(--g-bright)}
+  .amt.out{color:var(--red)}
+
+  .bar-row{margin-bottom:14px}
+  .bar-top{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px}
+  .bar-top b{font-weight:700}
+  .track{height:9px;background:var(--g-soft);border-radius:99px;overflow:hidden}
+  .fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--g-bright),var(--g-mid))}
+  .fill.red{background:linear-gradient(90deg,#F08078,var(--red))}
+
+  .goal{border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px}
+  .goal-top{display:flex;align-items:center;gap:11px;margin-bottom:10px}
+  .goal-top .name{font-weight:700;font-size:16px}
+  .goal-sum{font-size:13px;color:var(--ink-2);margin-top:8px;display:flex;justify-content:space-between}
+
+  .btn{
+    display:block;width:100%;border:0;border-radius:16px;padding:15px;font-size:16px;font-weight:700;
+    background:var(--g-bright);color:#fff;margin-bottom:10px
+  }
+  .btn.ghost{background:var(--g-soft);color:var(--g-mid)}
+  .btn.line{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .btn.danger{background:#FDECEB;color:var(--red)}
+  .btn:active{transform:scale(.985)}
+  .btn.sm{padding:11px;font-size:14px;margin:0}
+
+  /* ---------- Tabbar ---------- */
+  .tabbar{
+    position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));
+    background:rgba(255,255,255,.94);backdrop-filter:blur(14px);
+    border:1px solid var(--line);border-radius:22px;display:flex;padding:8px;
+    box-shadow:0 8px 26px rgba(10,60,32,.13);z-index:40
+  }
+  .tabbar button{flex:1;background:0;border:0;padding:7px 0;color:var(--ink-2);font-size:11.5px;font-weight:600;border-radius:15px}
+  .tabbar button .g{display:block;font-size:19px;margin-bottom:3px}
+  .tabbar button.on{background:var(--g-soft);color:var(--g-mid)}
+
+  /* ---------- Sheet ---------- */
+  .scrim{position:fixed;inset:0;background:rgba(4,30,18,.5);opacity:0;pointer-events:none;transition:.22s;z-index:50}
+  .scrim.on{opacity:1;pointer-events:auto}
+  .sheet{
+    position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:26px 26px 0 0;
+    padding:10px 16px calc(20px + env(safe-area-inset-bottom));transform:translateY(102%);
+    transition:transform .26s cubic-bezier(.3,.8,.4,1);z-index:60;max-height:92vh;overflow:auto
+  }
+  .sheet.on{transform:none}
+  .grab{width:42px;height:4px;background:var(--line);border-radius:9px;margin:6px auto 14px}
+  .sheet h3{margin:0 0 14px;font-size:19px}
+  .seg{display:flex;background:var(--g-soft);border-radius:15px;padding:4px;margin-bottom:16px}
+  .seg button{flex:1;border:0;background:0;padding:11px;border-radius:12px;font-weight:700;color:var(--ink-2);font-size:15px}
+  .seg button.on{background:#fff;color:var(--g-mid);box-shadow:0 2px 6px rgba(0,0,0,.07)}
+  .seg button.on.out{color:var(--red)}
+  label.f{display:block;font-size:13px;color:var(--ink-2);margin:0 0 6px 3px}
+  .inp{width:100%;border:1px solid var(--line);border-radius:14px;padding:14px;background:#fff;margin-bottom:14px}
+  .inp.big{font-size:30px;font-weight:800;text-align:center;letter-spacing:-.5px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:14px;padding:9px 13px;font-size:14px}
+  .chip.on{background:var(--g-mid);border-color:var(--g-mid);color:#fff}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .toast{
+    position:fixed;left:50%;transform:translate(-50%,20px);bottom:96px;background:var(--ink);color:#fff;
+    padding:11px 18px;border-radius:14px;font-size:14px;opacity:0;transition:.25s;z-index:80;pointer-events:none
+  }
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+
+<!-- ================= ҚАРЖЫ ================= -->
+<section class="page on" id="p-home">
+  <div class="hero">
+    <div class="hero-top">
+      <h1>Қаржы</h1>
+      <button class="plus" onclick="openTx()">+</button>
+    </div>
+    <div class="cap-label">Таза капитал</div>
+    <div class="cap-row">
+      <div class="cap" id="h-net">0 ₸</div>
+      <div class="pill" id="h-pill">Оң</div>
+    </div>
+    <div class="monthbar">
+      <button onclick="shiftMonth(-1)">‹</button>
+      <span id="h-month">—</span>
+      <button onclick="shiftMonth(1)">›</button>
+    </div>
+    <div class="two">
+      <div class="mini">
+        <div class="t"><span class="dot in">↓</span> Кіріс</div>
+        <div class="v" id="h-in">0 ₸</div>
+      </div>
+      <div class="mini">
+        <div class="t"><span class="dot out">↑</span> Шығын</div>
+        <div class="v" id="h-out">0 ₸</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="card">
+      <h2>Операциялар</h2>
+      <div id="tx-list"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= СТАТИСТИКА ================= -->
+<section class="page" id="p-stat">
+  <div class="hero">
+    <h1>Статистика</h1>
+    <div class="monthbar" style="justify-content:flex-start;margin-top:14px">
+      <button onclick="shiftMonth(-1)">‹</button>
+      <span id="s-month">—</span>
+      <button onclick="shiftMonth(1)">›</button>
+    </div>
+    <div class="two">
+      <div class="mini"><div class="t">Айлық қалдық</div><div class="v" id="s-net">0 ₸</div></div>
+      <div class="mini"><div class="t">Операция саны</div><div class="v" id="s-count">0</div></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="card">
+      <h2>Шығын санаттары</h2>
+      <div id="s-out"></div>
+    </div>
+    <div class="card">
+      <h2>Кіріс көздері</h2>
+      <div id="s-in"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= МАҚСАТТАР ================= -->
+<section class="page" id="p-goal">
+  <div class="hero">
+    <h1>Мақсаттар</h1>
+    <div class="cap-label" style="margin-top:12px">Мақсаттарға жиналған</div>
+    <div class="cap" id="g-total">0 ₸</div>
+  </div>
+  <div class="wrap">
+    <button class="btn" onclick="openGoal()">+ Мақсат қосу</button>
+    <div id="goal-list"></div>
+  </div>
+</section>
+
+<!-- ================= БАПТАУ ================= -->
+<section class="page" id="p-set">
+  <div class="hero">
+    <h1>Баптау</h1>
+    <div class="cap-label" style="margin-top:12px">Барлық операция</div>
+    <div class="cap" id="set-count">0</div>
+  </div>
+  <div class="wrap">
+    <div class="card">
+      <h2>Бастапқы қалдық</h2>
+      <p class="muted" style="margin:0 0 12px">Қолыңыздағы ақшаны жазыңыз — таза капитал содан бастап есептеледі.</p>
+      <input class="inp" id="set-start" type="number" inputmode="decimal" placeholder="0" style="margin-bottom:10px">
+      <button class="btn sm" onclick="saveStart()">Сақтау</button>
+    </div>
+    <div class="card">
+      <h2>Дерек көшірмесі</h2>
+      <p class="muted" style="margin:0 0 12px">Дерек тек осы телефонда сақталады. Ауыстырар алдында файлға түсіріп алыңыз.</p>
+      <button class="btn line" onclick="exportData()">Файлға шығару</button>
+      <input type="file" id="imp" accept="application/json" style="display:none" onchange="importData(this)">
+      <button class="btn line" onclick="document.getElementById('imp').click()">Файлдан қалпына келтіру</button>
+      <button class="btn danger" onclick="wipe()">Барлығын өшіру</button>
+    </div>
+    <div class="card">
+      <h2>Телефон экранына қосу</h2>
+      <p class="muted" style="margin:0">Chrome-да ⋮ → «Басты экранға қосу». Содан кейін қосымша кәдімгі бағдарлама сияқты ашылады, интернетсіз де жұмыс істейді.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TABBAR ================= -->
+<nav class="tabbar">
+  <button class="on" data-tab="home" onclick="go('home')"><span class="g">◉</span>Қаржы</button>
+  <button data-tab="stat" onclick="go('stat')"><span class="g">▤</span>Статистика</button>
+  <button data-tab="goal" onclick="go('goal')"><span class="g">⚑</span>Мақсаттар</button>
+  <button data-tab="set" onclick="go('set')"><span class="g">⚙</span>Баптау</button>
+</nav>
+
+<div class="scrim" id="scrim" onclick="closeSheets()"></div>
+
+<!-- Sheet: transaction -->
+<div class="sheet" id="sheet-tx">
+  <div class="grab"></div>
+  <h3 id="tx-title">Операция қосу</h3>
+  <div class="seg">
+    <button id="seg-out" class="on out" onclick="setType('out')">Шығын</button>
+    <button id="seg-in" onclick="setType('in')">Кіріс</button>
+  </div>
+  <label class="f">Сома, ₸</label>
+  <input class="inp big" id="f-amt" type="number" inputmode="decimal" placeholder="0">
+  <label class="f">Санат</label>
+  <div class="chips" id="f-cats"></div>
+  <label class="f">Күні</label>
+  <input class="inp" id="f-date" type="date">
+  <label class="f">Түсініктеме</label>
+  <input class="inp" id="f-note" type="text" placeholder="Міндетті емес">
+  <button class="btn" onclick="saveTx()">Сақтау</button>
+  <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
+</div>
+
+<!-- Sheet: goal -->
+<div class="sheet" id="sheet-goal">
+  <div class="grab"></div>
+  <h3>Мақсат қосу</h3>
+  <label class="f">Атауы</label>
+  <input class="inp" id="g-name" type="text" placeholder="Мысалы: Жаңа ноутбук">
+  <label class="f">Мақсат сомасы, ₸</label>
+  <input class="inp" id="g-target" type="number" inputmode="decimal" placeholder="0">
+  <label class="f">Қазір жиналған, ₸</label>
+  <input class="inp" id="g-saved" type="number" inputmode="decimal" placeholder="0">
+  <button class="btn" onclick="saveGoal()">Сақтау</button>
+  <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
+</div>
+
+<!-- Sheet: transaction detail -->
+<div class="sheet" id="sheet-view">
+  <div class="grab"></div>
+  <h3 id="v-title">Операция</h3>
+  <div class="card" style="box-shadow:none;background:var(--g-soft)">
+    <div id="v-body" class="muted" style="line-height:1.7"></div>
+  </div>
+  <button class="btn danger" onclick="delTx()">Операцияны өшіру</button>
+  <button class="btn ghost" onclick="closeSheets()">Жабу</button>
+</div>
+
+<!-- Sheet: goal detail -->
+<div class="sheet" id="sheet-gview">
+  <div class="grab"></div>
+  <h3 id="gv-title">Мақсат</h3>
+  <label class="f">Салым қосу, ₸</label>
+  <input class="inp" id="gv-add" type="number" inputmode="decimal" placeholder="0">
+  <button class="btn" onclick="addToGoal()">Қосу</button>
+  <button class="btn danger" onclick="delGoal()">Мақсатты өшіру</button>
+  <button class="btn ghost" onclick="closeSheets()">Жабу</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- storage (localStorage, жоқ болса жадта) ---------------- */
+var mem = {};
+var store = {
+  get: function(k){ try{ return localStorage.getItem(k); }catch(e){ return k in mem ? mem[k] : null; } },
+  set: function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; } }
+};
+
+var DB = { tx:[], goals:[], start:0 };
+function load(){
+  try{
+    var raw = store.get('qarzhy_v1');
+    if(raw){ var d = JSON.parse(raw); DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.start = d.start||0; }
+  }catch(e){}
+}
+function save(){ store.set('qarzhy_v1', JSON.stringify(DB)); }
+
+/* ---------------- helpers ---------------- */
+var CATS = {
+  out:[["Тамақ","🍜"],["Көлік","🚌"],["Тұрғын үй","🏠"],["Байланыс","📱"],["Киім","👕"],
+       ["Денсаулық","🩺"],["Ойын-сауық","🎬"],["Білім","📚"],["Сыйлық","🎁"],["Басқа","✦"]],
+  in:[["Жалақы","💼"],["Бизнес","📈"],["Фриланс","💻"],["Инвестиция","📊"],["Сыйлық","🎁"],["Басқа","✦"]]
+};
+var MONTHS = ["Қаңтар","Ақпан","Наурыз","Сәуір","Мамыр","Маусым","Шілде","Тамыз","Қыркүйек","Қазан","Қараша","Желтоқсан"];
+var DAYS = ["Жексенбі","Дүйсенбі","Сейсенбі","Сәрсенбі","Бейсенбі","Жұма","Сенбі"];
+
+function money(n){
+  var s = Math.round(Math.abs(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g," ");
+  return (n<0?"−":"") + s + " ₸";
+}
+function icon(type,cat){
+  var list = CATS[type];
+  for(var i=0;i<list.length;i++) if(list[i][0]===cat) return list[i][1];
+  return type==="in"?"💰":"✦";
+}
+function todayISO(){ var d=new Date(); return d.toISOString().slice(0,10); }
+function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); setTimeout(function(){t.classList.remove('on');},1800); }
+
+var cur = new Date(); cur.setDate(1);
+function shiftMonth(d){ cur.setMonth(cur.getMonth()+d); render(); }
+function inMonth(iso){ return iso.slice(0,7) === cur.toISOString().slice(0,7); }
+
+/* ---------------- navigation ---------------- */
+function go(tab){
+  var pages = document.querySelectorAll('.page');
+  for(var i=0;i<pages.length;i++) pages[i].classList.remove('on');
+  document.getElementById('p-'+tab).classList.add('on');
+  var btns = document.querySelectorAll('.tabbar button');
+  for(var j=0;j<btns.length;j++) btns[j].classList.toggle('on', btns[j].dataset.tab===tab);
+  window.scrollTo(0,0);
+  render();
+}
+
+/* ---------------- sheets ---------------- */
+function openSheet(id){ document.getElementById('scrim').classList.add('on'); document.getElementById(id).classList.add('on'); }
+function closeSheets(){
+  document.getElementById('scrim').classList.remove('on');
+  var s = document.querySelectorAll('.sheet');
+  for(var i=0;i<s.length;i++) s[i].classList.remove('on');
+}
+
+var fType = 'out', fCat = 'Тамақ', viewId = null, goalId = null;
+function setType(t){
+  fType = t;
+  document.getElementById('seg-out').classList.toggle('on', t==='out');
+  document.getElementById('seg-in').classList.toggle('on', t==='in');
+  fCat = CATS[t][0][0];
+  drawCats();
+}
+function drawCats(){
+  var box = document.getElementById('f-cats'); box.innerHTML='';
+  CATS[fType].forEach(function(c){
+    var b = document.createElement('button');
+    b.className = 'chip' + (c[0]===fCat?' on':'');
+    b.textContent = c[1]+' '+c[0];
+    b.onclick = function(){ fCat=c[0]; drawCats(); };
+    box.appendChild(b);
+  });
+}
+function openTx(){
+  document.getElementById('f-amt').value='';
+  document.getElementById('f-note').value='';
+  document.getElementById('f-date').value= todayISO();
+  setType('out');
+  openSheet('sheet-tx');
+  setTimeout(function(){ document.getElementById('f-amt').focus(); },300);
+}
+function saveTx(){
+  var amt = parseFloat(document.getElementById('f-amt').value);
+  if(!amt || amt<=0){ toast('Соманы жазыңыз'); return; }
+  DB.tx.push({
+    id: Date.now()+''+Math.floor(Math.random()*999),
+    type: fType, cat: fCat, amt: Math.abs(amt),
+    date: document.getElementById('f-date').value || todayISO(),
+    note: document.getElementById('f-note').value.trim()
+  });
+  save(); closeSheets(); render();
+  toast(fType==='in' ? 'Кіріс қосылды' : 'Шығын қосылды');
+}
+function openView(id){
+  viewId = id;
+  var t = DB.tx.filter(function(x){return x.id===id;})[0];
+  if(!t) return;
+  document.getElementById('v-title').textContent = (t.type==='in'?'Кіріс: ':'Шығын: ') + money(t.amt);
+  var d = new Date(t.date);
+  document.getElementById('v-body').innerHTML =
+    'Санат: <b>'+t.cat+'</b><br>Күні: <b>'+d.getDate()+' '+MONTHS[d.getMonth()].toLowerCase()+', '+d.getFullYear()+'</b>' +
+    (t.note ? '<br>Түсініктеме: <b>'+t.note.replace(/</g,'&lt;')+'</b>' : '');
+  openSheet('sheet-view');
+}
+function delTx(){
+  DB.tx = DB.tx.filter(function(x){return x.id!==viewId;});
+  save(); closeSheets(); render(); toast('Операция өшірілді');
+}
+function openGoal(){
+  document.getElementById('g-name').value='';
+  document.getElementById('g-target').value='';
+  document.getElementById('g-saved').value='';
+  openSheet('sheet-goal');
+}
+function saveGoal(){
+  var n = document.getElementById('g-name').value.trim();
+  var t = parseFloat(document.getElementById('g-target').value);
+  var s = parseFloat(document.getElementById('g-saved').value) || 0;
+  if(!n){ toast('Атауын жазыңыз'); return; }
+  if(!t || t<=0){ toast('Мақсат сомасын жазыңыз'); return; }
+  DB.goals.push({ id: Date.now()+'', name:n, target:t, saved:s });
+  save(); closeSheets(); render(); toast('Мақсат қосылды');
+}
+function openGview(id){
+  goalId = id;
+  var g = DB.goals.filter(function(x){return x.id===id;})[0];
+  if(!g) return;
+  document.getElementById('gv-title').textContent = g.name;
+  document.getElementById('gv-add').value='';
+  openSheet('sheet-gview');
+}
+function addToGoal(){
+  var v = parseFloat(document.getElementById('gv-add').value);
+  if(!v){ toast('Соманы жазыңыз'); return; }
+  DB.goals.forEach(function(g){ if(g.id===goalId) g.saved += v; });
+  save(); closeSheets(); render(); toast('Салым қосылды');
+}
+function delGoal(){
+  DB.goals = DB.goals.filter(function(g){return g.id!==goalId;});
+  save(); closeSheets(); render(); toast('Мақсат өшірілді');
+}
+
+/* ---------------- settings ---------------- */
+function saveStart(){
+  DB.start = parseFloat(document.getElementById('set-start').value) || 0;
+  save(); render(); toast('Сақталды');
+}
+function exportData(){
+  var blob = new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'qarzhy-'+todayISO()+'.json';
+  a.click();
+}
+function importData(el){
+  var f = el.files[0]; if(!f) return;
+  var r = new FileReader();
+  r.onload = function(){
+    try{
+      var d = JSON.parse(r.result);
+      DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.start = d.start||0;
+      save(); render(); toast('Қалпына келтірілді');
+    }catch(e){ toast('Файл оқылмады'); }
+  };
+  r.readAsText(f); el.value='';
+}
+function wipe(){
+  if(!confirm('Барлық операция мен мақсат өшіріледі. Жалғастырасыз ба?')) return;
+  DB = {tx:[],goals:[],start:0}; save(); render(); toast('Барлығы өшірілді');
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  var mTx = DB.tx.filter(function(t){ return inMonth(t.date); });
+  var mIn = 0, mOut = 0;
+  mTx.forEach(function(t){ t.type==='in' ? mIn+=t.amt : mOut+=t.amt; });
+
+  var allIn = 0, allOut = 0;
+  DB.tx.forEach(function(t){ t.type==='in' ? allIn+=t.amt : allOut+=t.amt; });
+  var net = DB.start + allIn - allOut;
+
+  document.getElementById('h-net').textContent = money(net);
+  var pill = document.getElementById('h-pill');
+  pill.textContent = net>=0 ? '↑ Оң' : '↓ Теріс';
+  pill.style.color = net>=0 ? '#8FE8AE' : '#FFB3AE';
+  document.getElementById('h-in').textContent = money(mIn);
+  document.getElementById('h-out').textContent = money(mOut);
+
+  var label = MONTHS[cur.getMonth()] + ' ' + cur.getFullYear();
+  document.getElementById('h-month').textContent = label;
+  document.getElementById('s-month').textContent = label;
+  document.getElementById('s-net').textContent = money(mIn-mOut);
+  document.getElementById('s-count').textContent = mTx.length;
+  document.getElementById('set-count').textContent = DB.tx.length;
+  if(document.activeElement !== document.getElementById('set-start'))
+    document.getElementById('set-start').value = DB.start || '';
+
+  /* --- tx list --- */
+  var list = document.getElementById('tx-list');
+  list.innerHTML = '';
+  if(!mTx.length){
+    list.innerHTML = '<div class="empty">Бұл айда операция жоқ.<br>Жоғарыдағы <b>+</b> түймесімен қосыңыз.</div>';
+  } else {
+    var byDay = {};
+    mTx.forEach(function(t){ (byDay[t.date] = byDay[t.date] || []).push(t); });
+    Object.keys(byDay).sort().reverse().forEach(function(day){
+      var items = byDay[day];
+      var sum = 0; items.forEach(function(t){ sum += (t.type==='in'? t.amt : -t.amt); });
+      var d = new Date(day);
+      var g = document.createElement('div'); g.className='daygroup';
+      g.innerHTML = '<div class="dayhead"><span>'+d.getDate()+' '+MONTHS[d.getMonth()].toLowerCase()+', '+DAYS[d.getDay()]+'</span><span>'+money(sum)+'</span></div>';
+      items.forEach(function(t){
+        var row = document.createElement('div');
+        row.className='tx';
+        row.onclick = (function(id){ return function(){ openView(id); }; })(t.id);
+        row.innerHTML =
+          '<div class="ico">'+icon(t.type,t.cat)+'</div>'+
+          '<div><div class="name">'+t.cat+'</div>'+
+          (t.note? '<div class="sub">'+t.note.replace(/</g,'&lt;')+'</div>':'')+'</div>'+
+          '<div class="amt '+t.type+'">'+(t.type==='in'?'+':'−')+money(t.amt).replace('−','')+'</div>';
+        g.appendChild(row);
+      });
+      list.appendChild(g);
+    });
+  }
+
+  /* --- stats --- */
+  drawBars('s-out','out',mTx,mOut);
+  drawBars('s-in','in',mTx,mIn);
+
+  /* --- goals --- */
+  var gl = document.getElementById('goal-list');
+  gl.innerHTML = '';
+  var gTotal = 0; DB.goals.forEach(function(g){ gTotal += g.saved; });
+  document.getElementById('g-total').textContent = money(gTotal);
+  if(!DB.goals.length){
+    gl.innerHTML = '<div class="empty">Мақсат әлі жоқ.<br>Жинайтын сомаңызды белгілеп қойыңыз.</div>';
+  } else {
+    DB.goals.forEach(function(g){
+      var pct = Math.min(100, Math.round(g.saved/g.target*100));
+      var el = document.createElement('div');
+      el.className='card'; el.style.marginBottom='12px';
+      el.onclick = (function(id){ return function(){ openGview(id); }; })(g.id);
+      el.innerHTML =
+        '<div class="goal-top"><div class="ico">⚑</div><div class="name">'+g.name.replace(/</g,'&lt;')+'</div></div>'+
+        '<div class="track"><div class="fill" style="width:'+pct+'%"></div></div>'+
+        '<div class="goal-sum"><span>'+money(g.saved)+' / '+money(g.target)+'</span><b>'+pct+'%</b></div>';
+      gl.appendChild(el);
+    });
+  }
+}
+
+function drawBars(elId, type, mTx, total){
+  var box = document.getElementById(elId);
+  box.innerHTML = '';
+  var sums = {};
+  mTx.filter(function(t){return t.type===type;}).forEach(function(t){ sums[t.cat] = (sums[t.cat]||0)+t.amt; });
+  var keys = Object.keys(sums).sort(function(a,b){ return sums[b]-sums[a]; });
+  if(!keys.length){ box.innerHTML = '<div class="empty">Бұл айда дерек жоқ.</div>'; return; }
+  keys.forEach(function(k){
+    var pct = total ? Math.round(sums[k]/total*100) : 0;
+    var r = document.createElement('div'); r.className='bar-row';
+    r.innerHTML =
+      '<div class="bar-top"><span>'+icon(type,k)+' '+k+'</span><b>'+money(sums[k])+' · '+pct+'%</b></div>'+
+      '<div class="track"><div class="fill'+(type==='out'?' red':'')+'" style="width:'+pct+'%"></div></div>';
+    box.appendChild(r);
+  });
+}
+
+
+/* ---------------- офлайн режим ---------------- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  });
+}
+
+load();
+drawCats();
+render();
+</script>
+</body>
+</html>

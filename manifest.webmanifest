@@ -1,0 +1,17 @@
+{
+  "name": "Қаржы — кіріс пен шығын",
+  "short_name": "Қаржы",
+  "description": "Кіріс-шығын есебі, статистика және қаржы мақсаттары.",
+  "lang": "kk",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F2F7F3",
+  "theme_color": "#0B6B3A",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
