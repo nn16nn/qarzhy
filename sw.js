@@ -1,5 +1,5 @@
-/* Қаржы — офлайн кэш */
-const CACHE = 'qarzhy-v1';
+/* Қаржы — офлайн кэш (v2) */
+const CACHE = 'qarzhy-v2';
 const FILES = [
   './',
   './index.html',
@@ -11,9 +11,8 @@ const FILES = [
 
 self.addEventListener('install', function (e) {
   e.waitUntil(
-    caches.open(CACHE).then(function (c) { return c.addAll(FILES); }).then(function () {
-      return self.skipWaiting();
-    })
+    caches.open(CACHE).then(function (c) { return c.addAll(FILES); })
+      .then(function () { return self.skipWaiting(); })
   );
 });
 
@@ -28,6 +27,24 @@ self.addEventListener('activate', function (e) {
 
 self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET') return;
+
+  const isPage = e.request.mode === 'navigate' ||
+    (e.request.headers.get('accept') || '').indexOf('text/html') !== -1;
+
+  if (isPage) {
+    // Бетті алдымен желіден аламыз — жаңартулар бірден көрінеді
+    e.respondWith(
+      fetch(e.request).then(function (res) {
+        const copy = res.clone();
+        caches.open(CACHE).then(function (c) { c.put('./index.html', copy); });
+        return res;
+      }).catch(function () {
+        return caches.match('./index.html');
+      })
+    );
+    return;
+  }
+
   e.respondWith(
     caches.match(e.request).then(function (hit) {
       if (hit) return hit;
@@ -35,8 +52,6 @@ self.addEventListener('fetch', function (e) {
         const copy = res.clone();
         caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
         return res;
-      }).catch(function () {
-        return caches.match('./index.html');
       });
     })
   );

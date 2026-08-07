@@ -10,214 +10,331 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Қаржы — кіріс пен шығын</title>
+<title>Қаржы</title>
 <style>
   :root{
-    --g-deep:#04331D;
-    --g-mid:#0B6B3A;
-    --g-bright:#17A44F;
-    --g-soft:#E8F5EC;
-    --ink:#0E1A13;
-    --ink-2:#5C7367;
-    --line:#DCE9E1;
-    --bg:#F2F7F3;
-    --red:#E2534B;
-    --card-r:22px;
+    --g-deep:#04331D; --g-mid:#0B6B3A; --g-bright:#17A44F; --g-soft:#E8F5EC;
+    --ink:#0E1A13; --ink-2:#5C7367; --line:#DCE9E1; --bg:#F2F7F3; --red:#E2534B;
+    --blue:#3B6FD4;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-    background:var(--bg);color:var(--ink);
-    font-variant-numeric:tabular-nums;
-    -webkit-font-smoothing:antialiased;
-    padding-bottom:calc(84px + env(safe-area-inset-bottom));
+    background:var(--bg);color:var(--ink);font-variant-numeric:tabular-nums;
+    -webkit-font-smoothing:antialiased;padding-bottom:calc(86px + env(safe-area-inset-bottom));
   }
   button,input,select{font-family:inherit;font-size:16px}
   .page{display:none}
   .page.on{display:block}
+  .hide{display:none !important}
 
   /* ---------- Hero ---------- */
   .hero{
-    background:
-      radial-gradient(120% 90% at 15% 0%, #1E8A4B 0%, transparent 60%),
+    background:radial-gradient(120% 90% at 15% 0%, #1E8A4B 0%, transparent 60%),
       linear-gradient(160deg,var(--g-mid) 0%, var(--g-deep) 100%);
-    color:#fff;padding:calc(18px + env(safe-area-inset-top)) 18px 26px;
+    color:#fff;padding:calc(16px + env(safe-area-inset-top)) 18px 24px;
     border-radius:0 0 28px 28px;
   }
-  .hero h1{margin:0;font-size:30px;font-weight:800;letter-spacing:-.5px}
-  .hero-top{display:flex;align-items:center;justify-content:space-between}
-  .plus{
-    width:52px;height:52px;border:0;border-radius:17px;background:#fff;color:var(--g-mid);
-    font-size:28px;font-weight:700;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.18)
-  }
-  .cap-label{margin:20px 0 2px;font-size:14px;color:#BFE3CC}
+  .hero.flat{background:linear-gradient(160deg,#149648,#0B6B3A);border-radius:0 0 22px 22px}
+  .hero h1{margin:0;font-size:28px;font-weight:800;letter-spacing:-.5px}
+  .hero-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .sub{font-size:13.5px;color:#BFE3CC;margin-top:2px}
+  .plus{width:50px;height:50px;border:0;border-radius:17px;background:#fff;color:var(--g-mid);
+    font-size:27px;font-weight:700;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.18);flex:none}
+  .back{width:44px;height:44px;border:0;border-radius:14px;background:rgba(255,255,255,.18);
+    color:#fff;font-size:20px;line-height:1;flex:none}
+  .back.dark{background:var(--g-soft);color:var(--g-mid)}
+  .cap-label{margin:18px 0 2px;font-size:14px;color:#BFE3CC}
+  .cap{font-size:36px;font-weight:800;letter-spacing:-1px}
   .cap-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
-  .cap{font-size:38px;font-weight:800;letter-spacing:-1px}
-  .pill{
-    border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 14px;
-    font-size:13px;font-weight:600;background:rgba(255,255,255,.12);white-space:nowrap
-  }
-  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
-  .mini{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:14px}
-  .mini .t{display:flex;align-items:center;gap:9px;font-size:14px;color:#DCF0E3}
-  .dot{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-size:14px}
-  .dot.in{background:rgba(23,164,79,.45)}
-  .dot.out{background:rgba(226,83,75,.4)}
-  .mini .v{font-size:20px;font-weight:800;margin-top:8px}
-  .monthbar{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:18px;font-size:14px;color:#CDE8D7}
-  .monthbar button{background:rgba(255,255,255,.14);border:0;color:#fff;width:32px;height:32px;border-radius:10px;font-size:16px}
+  .pill{border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:6px 13px;
+    font-size:13px;font-weight:700;background:rgba(255,255,255,.12);white-space:nowrap}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  .mini{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:13px}
+  .mini .t{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#DCF0E3}
+  .dot{width:26px;height:26px;border-radius:9px;display:grid;place-items:center;font-size:13px}
+  .dot.in{background:rgba(23,164,79,.5)} .dot.out{background:rgba(226,83,75,.45)}
+  .mini .v{font-size:19px;font-weight:800;margin-top:7px}
+  .wide{display:flex;align-items:center;gap:13px;background:rgba(255,255,255,.13);
+    border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:14px;margin-top:12px}
+  .wide .ic{width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:19px}
+  .monthbar{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px;font-size:14px;color:#CDE8D7}
+  .monthbar button{background:rgba(255,255,255,.16);border:0;color:#fff;width:32px;height:32px;border-radius:10px;font-size:16px}
 
   /* ---------- Cards ---------- */
-  .wrap{padding:16px 14px 0}
-  .card{background:#fff;border-radius:var(--card-r);padding:16px;box-shadow:0 2px 14px rgba(10,60,32,.06);margin-bottom:14px}
-  .card h2{margin:0 0 12px;font-size:16px;font-weight:700}
+  .wrap{padding:14px}
+  .card{background:#fff;border-radius:22px;padding:16px;box-shadow:0 2px 14px rgba(10,60,32,.06);margin-bottom:12px}
+  .card h2{margin:0 0 12px;font-size:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+  .card h2 small{font-weight:600;font-size:12.5px;color:var(--ink-2)}
   .muted{color:var(--ink-2);font-size:13px}
-  .empty{text-align:center;padding:26px 10px;color:var(--ink-2);font-size:14px;line-height:1.5}
+  .empty{text-align:center;padding:24px 10px;color:var(--ink-2);font-size:14px;line-height:1.55}
 
-  .daygroup{margin-bottom:6px}
-  .dayhead{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);padding:10px 4px 6px;font-weight:600}
-  .tx{display:flex;align-items:center;gap:12px;padding:11px 4px;border-top:1px solid var(--line)}
-  .tx:first-of-type{border-top:0}
+  .trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;background:var(--g-soft);border-radius:16px;padding:14px 8px;text-align:center}
+  .trio .l{font-size:12px;color:var(--ink-2)}
+  .trio .v{font-size:15px;font-weight:800;margin-top:4px}
+  .stat3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+  .stat3 .c{background:#fff;border-radius:18px;padding:14px 8px;text-align:center;box-shadow:0 2px 14px rgba(10,60,32,.06)}
+  .stat3 .l{font-size:12px;color:var(--ink-2);margin-top:6px}
+  .stat3 .v{font-size:15px;font-weight:800;margin-top:3px}
+
+  .row{display:flex;align-items:center;gap:12px;padding:11px 2px;cursor:pointer}
+  .row+.row{border-top:1px solid var(--line)}
   .ico{width:42px;height:42px;border-radius:14px;background:var(--g-soft);display:grid;place-items:center;font-size:19px;flex:none}
-  .tx .name{font-weight:600;font-size:15px}
-  .tx .sub{font-size:12.5px;color:var(--ink-2);margin-top:2px}
-  .tx .amt{margin-left:auto;font-weight:700;font-size:15px;white-space:nowrap}
-  .amt.in{color:var(--g-bright)}
-  .amt.out{color:var(--red)}
+  .ico.red{background:#FDECEB}
+  .ico.blue{background:#E9F0FD}
+  .row .name{font-weight:600;font-size:15px}
+  .row .sub2{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+  .row .amt{margin-left:auto;font-weight:700;font-size:15px;white-space:nowrap;text-align:right}
+  .amt.in{color:var(--g-bright)} .amt.out{color:var(--red)}
+  .dayhead{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);padding:12px 2px 4px;font-weight:600}
+
+  .quad{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .quad button{display:flex;align-items:center;gap:10px;background:#fff;border:0;border-radius:18px;
+    padding:14px;font-size:14.5px;font-weight:700;color:var(--ink);box-shadow:0 2px 14px rgba(10,60,32,.06);text-align:left}
+  .quad .qi{width:34px;height:34px;border-radius:11px;background:var(--g-soft);display:grid;place-items:center;font-size:16px;flex:none}
 
   .bar-row{margin-bottom:14px}
-  .bar-top{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px}
-  .bar-top b{font-weight:700}
+  .bar-top{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;gap:8px}
   .track{height:9px;background:var(--g-soft);border-radius:99px;overflow:hidden}
   .fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--g-bright),var(--g-mid))}
   .fill.red{background:linear-gradient(90deg,#F08078,var(--red))}
 
-  .goal{border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px}
-  .goal-top{display:flex;align-items:center;gap:11px;margin-bottom:10px}
-  .goal-top .name{font-weight:700;font-size:16px}
-  .goal-sum{font-size:13px;color:var(--ink-2);margin-top:8px;display:flex;justify-content:space-between}
+  /* ---------- Controls ---------- */
+  .seg{display:flex;background:var(--g-soft);border-radius:15px;padding:4px;margin-bottom:14px}
+  .seg button{flex:1;border:0;background:0;padding:11px 6px;border-radius:12px;font-weight:700;color:var(--ink-2);font-size:14.5px}
+  .seg button.on{background:#fff;color:var(--g-mid);box-shadow:0 2px 6px rgba(0,0,0,.07)}
+  .seg button.on.danger{color:var(--red)}
+  .seg.tight button{padding:9px 4px;font-size:13.5px}
+  .seg.glass{background:rgba(255,255,255,.16)}
+  .seg.glass button{color:#DCF0E3}
+  .seg.glass button.on{background:#fff;color:var(--g-mid)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:14px;padding:9px 13px;font-size:14px;color:var(--ink)}
+  .chip.on{background:var(--g-mid);border-color:var(--g-mid);color:#fff}
+  .chips.glass .chip{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.2);color:#fff}
+  .chips.glass .chip.on{background:#fff;color:var(--g-mid)}
+  label.f{display:block;font-size:13px;color:var(--ink-2);margin:0 0 6px 3px;font-weight:600}
+  .inp{width:100%;border:1px solid var(--line);border-radius:14px;padding:14px;background:#fff;margin-bottom:12px;color:var(--ink)}
+  .inp.big{font-size:29px;font-weight:800;text-align:center}
+  .inp.soft{background:var(--g-soft);border-color:transparent}
+  .row2{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start}
+  .unit{display:flex;background:var(--g-soft);border-radius:14px;padding:4px;height:52px}
+  .unit button{border:0;background:0;padding:0 14px;border-radius:11px;font-weight:700;color:var(--ink-2);font-size:14px}
+  .unit button.on{background:#fff;color:var(--g-mid)}
+  .toggle{display:flex;align-items:center;gap:12px;background:#fff;border-radius:16px;padding:13px;margin-bottom:12px}
+  .sw{width:52px;height:30px;border-radius:99px;background:#D5E4DB;position:relative;transition:.2s;flex:none}
+  .sw.on{background:var(--g-bright)}
+  .sw i{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.2s}
+  .sw.on i{left:25px}
 
-  .btn{
-    display:block;width:100%;border:0;border-radius:16px;padding:15px;font-size:16px;font-weight:700;
-    background:var(--g-bright);color:#fff;margin-bottom:10px
-  }
+  .btn{display:block;width:100%;border:0;border-radius:16px;padding:15px;font-size:16px;font-weight:700;
+    background:var(--g-bright);color:#fff;margin-bottom:10px}
   .btn.ghost{background:var(--g-soft);color:var(--g-mid)}
   .btn.line{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .btn.dashed{background:#fff;border:1.5px dashed #9CCBAE;color:var(--g-mid)}
   .btn.danger{background:#FDECEB;color:var(--red)}
   .btn:active{transform:scale(.985)}
   .btn.sm{padding:11px;font-size:14px;margin:0}
 
+  .res{background:var(--g-soft);border-radius:18px;padding:16px;margin-bottom:12px}
+  .res .big{font-size:28px;font-weight:800;color:var(--g-mid)}
+  .res .lab{font-size:13px;color:var(--ink-2)}
+  .kv{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;border-top:1px solid rgba(0,0,0,.06)}
+  .kv:first-of-type{border-top:0}
+  .kv b{font-weight:700}
+  table.sched{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.sched th{text-align:right;color:var(--ink-2);font-weight:600;padding:6px 4px;border-bottom:1px solid var(--line)}
+  table.sched th:first-child,table.sched td:first-child{text-align:left}
+  table.sched td{text-align:right;padding:7px 4px;border-bottom:1px solid var(--line)}
+
+  svg.chart{width:100%;height:150px;display:block}
+  .legend{display:flex;gap:16px;justify-content:center;font-size:12.5px;color:var(--ink-2);margin-top:8px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+
   /* ---------- Tabbar ---------- */
-  .tabbar{
-    position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));
-    background:rgba(255,255,255,.94);backdrop-filter:blur(14px);
-    border:1px solid var(--line);border-radius:22px;display:flex;padding:8px;
-    box-shadow:0 8px 26px rgba(10,60,32,.13);z-index:40
-  }
-  .tabbar button{flex:1;background:0;border:0;padding:7px 0;color:var(--ink-2);font-size:11.5px;font-weight:600;border-radius:15px}
-  .tabbar button .g{display:block;font-size:19px;margin-bottom:3px}
+  .tabbar{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));
+    background:rgba(255,255,255,.95);backdrop-filter:blur(14px);border:1px solid var(--line);
+    border-radius:22px;display:flex;padding:7px;box-shadow:0 8px 26px rgba(10,60,32,.13);z-index:40}
+  .tabbar button{flex:1;background:0;border:0;padding:6px 0;color:var(--ink-2);font-size:10.5px;font-weight:600;border-radius:15px}
+  .tabbar button .g{display:block;font-size:18px;margin-bottom:2px}
   .tabbar button.on{background:var(--g-soft);color:var(--g-mid)}
 
-  /* ---------- Sheet ---------- */
+  /* ---------- Sheets ---------- */
   .scrim{position:fixed;inset:0;background:rgba(4,30,18,.5);opacity:0;pointer-events:none;transition:.22s;z-index:50}
   .scrim.on{opacity:1;pointer-events:auto}
-  .sheet{
-    position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:26px 26px 0 0;
+  .sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:26px 26px 0 0;
     padding:10px 16px calc(20px + env(safe-area-inset-bottom));transform:translateY(102%);
-    transition:transform .26s cubic-bezier(.3,.8,.4,1);z-index:60;max-height:92vh;overflow:auto
-  }
+    transition:transform .26s cubic-bezier(.3,.8,.4,1);z-index:60;max-height:92vh;overflow:auto}
   .sheet.on{transform:none}
   .grab{width:42px;height:4px;background:var(--line);border-radius:9px;margin:6px auto 14px}
   .sheet h3{margin:0 0 14px;font-size:19px}
-  .seg{display:flex;background:var(--g-soft);border-radius:15px;padding:4px;margin-bottom:16px}
-  .seg button{flex:1;border:0;background:0;padding:11px;border-radius:12px;font-weight:700;color:var(--ink-2);font-size:15px}
-  .seg button.on{background:#fff;color:var(--g-mid);box-shadow:0 2px 6px rgba(0,0,0,.07)}
-  .seg button.on.out{color:var(--red)}
-  label.f{display:block;font-size:13px;color:var(--ink-2);margin:0 0 6px 3px}
-  .inp{width:100%;border:1px solid var(--line);border-radius:14px;padding:14px;background:#fff;margin-bottom:14px}
-  .inp.big{font-size:30px;font-weight:800;text-align:center;letter-spacing:-.5px}
-  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
-  .chip{border:1px solid var(--line);background:#fff;border-radius:14px;padding:9px 13px;font-size:14px}
-  .chip.on{background:var(--g-mid);border-color:var(--g-mid);color:#fff}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .toast{
-    position:fixed;left:50%;transform:translate(-50%,20px);bottom:96px;background:var(--ink);color:#fff;
-    padding:11px 18px;border-radius:14px;font-size:14px;opacity:0;transition:.25s;z-index:80;pointer-events:none
-  }
+  .toast{position:fixed;left:50%;transform:translate(-50%,20px);bottom:100px;background:var(--ink);color:#fff;
+    padding:11px 18px;border-radius:14px;font-size:14px;opacity:0;transition:.25s;z-index:80;pointer-events:none}
   .toast.on{opacity:1;transform:translate(-50%,0)}
 </style>
 </head>
 <body>
 
-<!-- ================= ҚАРЖЫ ================= -->
+<!-- ============ БАСТЫ ============ -->
 <section class="page on" id="p-home">
   <div class="hero">
     <div class="hero-top">
-      <h1>Қаржы</h1>
+      <div><h1>Қаржы</h1></div>
       <button class="plus" onclick="openTx()">+</button>
     </div>
     <div class="cap-label">Таза капитал</div>
     <div class="cap-row">
       <div class="cap" id="h-net">0 ₸</div>
-      <div class="pill" id="h-pill">Оң</div>
+      <div class="pill" id="h-pill">↑ Оң</div>
     </div>
     <div class="monthbar">
-      <button onclick="shiftMonth(-1)">‹</button>
-      <span id="h-month">—</span>
-      <button onclick="shiftMonth(1)">›</button>
+      <button onclick="shiftMonth(-1)">‹</button><span id="h-month">—</span><button onclick="shiftMonth(1)">›</button>
     </div>
     <div class="two">
-      <div class="mini">
-        <div class="t"><span class="dot in">↓</span> Кіріс</div>
-        <div class="v" id="h-in">0 ₸</div>
-      </div>
-      <div class="mini">
-        <div class="t"><span class="dot out">↑</span> Шығын</div>
-        <div class="v" id="h-out">0 ₸</div>
-      </div>
+      <div class="mini"><div class="t"><span class="dot in">↓</span> Кіріс</div><div class="v" id="h-in">0 ₸</div></div>
+      <div class="mini"><div class="t"><span class="dot out">↑</span> Шығын</div><div class="v" id="h-out">0 ₸</div></div>
+    </div>
+    <div class="wide" onclick="go('stat')">
+      <div class="ic">◍</div>
+      <div><div style="font-weight:700">Статистика</div><div class="sub">Кіріс · Шығын · Санаттар</div></div>
+      <div style="margin-left:auto">→</div>
     </div>
   </div>
 
   <div class="wrap">
+    <div class="card" onclick="go('accounts')">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div class="ico">💼</div>
+        <div><div style="font-weight:700;font-size:16px">Менің қаржым</div>
+          <div class="muted" id="acc-count">0 шот</div></div>
+        <div style="margin-left:auto;color:var(--ink-2)">→</div>
+      </div>
+      <div class="trio">
+        <div><div class="l">Активтер</div><div class="v" id="h-assets" style="color:var(--g-bright)">0 ₸</div></div>
+        <div><div class="l">Міндеттемелер</div><div class="v" id="h-debts" style="color:var(--red)">0 ₸</div></div>
+        <div><div class="l">Таза</div><div class="v" id="h-net2">0 ₸</div></div>
+      </div>
+    </div>
+
+    <div class="quad">
+      <button onclick="go('overview')"><span class="qi">📊</span> Шолу</button>
+      <button onclick="go('ops')"><span class="qi">🧾</span> Операциялар</button>
+      <button onclick="go('goals')"><span class="qi">⚑</span> Мақсаттар</button>
+      <button onclick="go('calc')"><span class="qi">🧮</span> Калькулятор</button>
+    </div>
+
     <div class="card">
-      <h2>Операциялар</h2>
-      <div id="tx-list"></div>
+      <h2>Соңғы операциялар <small onclick="go('ops')">Барлығы →</small></h2>
+      <div id="home-tx"></div>
     </div>
   </div>
 </section>
 
-<!-- ================= СТАТИСТИКА ================= -->
+<!-- ============ ШОТТАР ============ -->
+<section class="page" id="p-accounts">
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('home')">←</button>
+      <div style="flex:1"><h1 style="font-size:24px">Менің қаржым</h1><div class="sub" id="a-count">0 шот</div></div>
+    </div>
+    <div class="cap-label">Таза капитал</div>
+    <div class="cap" id="a-net">0 ₸</div>
+    <div class="two">
+      <div class="mini"><div class="t">Активтер</div><div class="v" id="a-assets">0 ₸</div></div>
+      <div class="mini"><div class="t">Міндеттемелер</div><div class="v" id="a-debts">0 ₸</div></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="card"><h2>Активтер</h2><div id="a-list-asset"></div></div>
+    <div class="card"><h2>Міндеттемелер · Несиелер</h2><div id="a-list-debt"></div></div>
+    <button class="btn dashed" onclick="openAcc('asset')">+ Шот қосу</button>
+    <button class="btn dashed" onclick="openAcc('debt')">+ Несие қосу</button>
+  </div>
+</section>
+
+<!-- ============ ОПЕРАЦИЯЛАР ============ -->
+<section class="page" id="p-ops">
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('home')">←</button>
+      <div style="flex:1"><h1 style="font-size:24px">Операциялар</h1><div class="sub" id="o-count">0 операция</div></div>
+      <button class="plus" onclick="openTx()">+</button>
+    </div>
+    <div class="seg glass" style="margin-top:16px;margin-bottom:0">
+      <button class="on" data-of="all" onclick="setOpsFilter('all')">Барлығы</button>
+      <button data-of="in" onclick="setOpsFilter('in')">Кіріс</button>
+      <button data-of="out" onclick="setOpsFilter('out')">Шығын</button>
+    </div>
+  </div>
+  <div class="wrap"><div class="card"><div id="ops-list"></div></div></div>
+</section>
+
+<!-- ============ ШОЛУ ============ -->
+<section class="page" id="p-overview">
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('home')">←</button>
+      <div style="flex:1"><h1 style="font-size:24px">Шолу</h1><div class="sub">Қаржылық жағдай</div></div>
+    </div>
+    <div class="cap-label">Таза капитал</div>
+    <div class="cap" id="ov-net">0 ₸</div>
+  </div>
+  <div class="wrap">
+    <div class="card"><h2>Осы ай</h2><div id="ov-month"></div></div>
+    <div class="card"><h2>Активтер құрылымы</h2><div id="ov-assets"></div></div>
+    <div class="card"><h2>Несие жүктемесі</h2><div id="ov-debts"></div></div>
+    <div class="card"><h2>Ең көп шығын (осы ай)</h2><div id="ov-top"></div></div>
+  </div>
+</section>
+
+<!-- ============ СТАТИСТИКА ============ -->
 <section class="page" id="p-stat">
-  <div class="hero">
-    <h1>Статистика</h1>
-    <div class="monthbar" style="justify-content:flex-start;margin-top:14px">
-      <button onclick="shiftMonth(-1)">‹</button>
-      <span id="s-month">—</span>
-      <button onclick="shiftMonth(1)">›</button>
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('home')">←</button>
+      <div style="flex:1"><h1 style="font-size:24px">Статистика</h1><div class="sub" id="s-count">0 операция</div></div>
     </div>
-    <div class="two">
-      <div class="mini"><div class="t">Айлық қалдық</div><div class="v" id="s-net">0 ₸</div></div>
-      <div class="mini"><div class="t">Операция саны</div><div class="v" id="s-count">0</div></div>
+    <div class="chips glass" style="margin-top:14px;margin-bottom:10px">
+      <button class="chip" data-per="day" onclick="setPeriod('day')">Бүгін</button>
+      <button class="chip" data-per="week" onclick="setPeriod('week')">Апта</button>
+      <button class="chip on" data-per="month" onclick="setPeriod('month')">Осы ай</button>
+      <button class="chip" data-per="prev" onclick="setPeriod('prev')">Өткен ай</button>
+    </div>
+    <div class="seg glass" style="margin-bottom:10px">
+      <button class="on" data-sf="all" onclick="setStatFilter('all')">Барлығы</button>
+      <button data-sf="in" onclick="setStatFilter('in')">Кіріс</button>
+      <button data-sf="out" onclick="setStatFilter('out')">Шығын</button>
+    </div>
+    <div class="two" style="margin-top:0">
+      <div class="mini"><div class="t">Бастапқы</div><input class="inp" type="date" id="s-from" onchange="customRange()" style="margin:6px 0 0;background:transparent;border-color:rgba(255,255,255,.3);color:#fff;padding:8px"></div>
+      <div class="mini"><div class="t">Соңы</div><input class="inp" type="date" id="s-to" onchange="customRange()" style="margin:6px 0 0;background:transparent;border-color:rgba(255,255,255,.3);color:#fff;padding:8px"></div>
     </div>
   </div>
   <div class="wrap">
-    <div class="card">
-      <h2>Шығын санаттары</h2>
-      <div id="s-out"></div>
+    <div class="stat3">
+      <div class="c"><div class="ico" style="margin:0 auto">📈</div><div class="l">Кіріс</div><div class="v" id="s-in" style="color:var(--g-bright)">0 ₸</div></div>
+      <div class="c"><div class="ico red" style="margin:0 auto">📉</div><div class="l">Шығын</div><div class="v" id="s-out" style="color:var(--red)">0 ₸</div></div>
+      <div class="c"><div class="ico" style="margin:0 auto">📊</div><div class="l">Нәтиже</div><div class="v" id="s-net">0 ₸</div></div>
     </div>
     <div class="card">
-      <h2>Кіріс көздері</h2>
-      <div id="s-in"></div>
+      <h2>Кіріс / Шығын</h2>
+      <div id="s-chart"></div>
+      <div class="legend"><span><i style="background:var(--g-bright)"></i>Кіріс</span><span><i style="background:var(--red)"></i>Шығын</span></div>
     </div>
+    <div class="card" id="s-card-out"><h2>Шығын санаттары</h2><div id="s-cat-out"></div></div>
+    <div class="card" id="s-card-in"><h2>Кіріс көздері</h2><div id="s-cat-in"></div></div>
   </div>
 </section>
 
-<!-- ================= МАҚСАТТАР ================= -->
-<section class="page" id="p-goal">
-  <div class="hero">
-    <h1>Мақсаттар</h1>
-    <div class="cap-label" style="margin-top:12px">Мақсаттарға жиналған</div>
+<!-- ============ МАҚСАТТАР ============ -->
+<section class="page" id="p-goals">
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('home')">←</button>
+      <div style="flex:1"><h1 style="font-size:24px">Мақсаттар</h1><div class="sub" id="g-count">0 мақсат</div></div>
+    </div>
+    <div class="cap-label">Жиналған</div>
     <div class="cap" id="g-total">0 ₸</div>
   </div>
   <div class="wrap">
@@ -226,40 +343,174 @@
   </div>
 </section>
 
-<!-- ================= БАПТАУ ================= -->
-<section class="page" id="p-set">
-  <div class="hero">
-    <h1>Баптау</h1>
-    <div class="cap-label" style="margin-top:12px">Барлық операция</div>
-    <div class="cap" id="set-count">0</div>
+<!-- ============ КАЛЬКУЛЯТОР ============ -->
+<section class="page" id="p-calc">
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('home')">←</button>
+      <div style="flex:1"><h1 style="font-size:24px">Калькулятор</h1><div class="sub">Қаржылық есептеулер</div></div>
+    </div>
   </div>
   <div class="wrap">
-    <div class="card">
-      <h2>Бастапқы қалдық</h2>
-      <p class="muted" style="margin:0 0 12px">Қолыңыздағы ақшаны жазыңыз — таза капитал содан бастап есептеледі.</p>
-      <input class="inp" id="set-start" type="number" inputmode="decimal" placeholder="0" style="margin-bottom:10px">
-      <button class="btn sm" onclick="saveStart()">Сақтау</button>
+    <div class="card" onclick="go('calc-inv')" style="display:flex;align-items:center;gap:13px">
+      <div class="ico">📈</div>
+      <div><div style="font-weight:700;font-size:16px">Инвестиция калькуляторы</div>
+        <div class="muted">Табыс · Мерзім · Күрделі пайыз</div></div>
+      <div style="margin-left:auto;color:var(--ink-2)">›</div>
     </div>
-    <div class="card">
-      <h2>Дерек көшірмесі</h2>
-      <p class="muted" style="margin:0 0 12px">Дерек тек осы телефонда сақталады. Ауыстырар алдында файлға түсіріп алыңыз.</p>
-      <button class="btn line" onclick="exportData()">Файлға шығару</button>
-      <input type="file" id="imp" accept="application/json" style="display:none" onchange="importData(this)">
-      <button class="btn line" onclick="document.getElementById('imp').click()">Файлдан қалпына келтіру</button>
-      <button class="btn danger" onclick="wipe()">Барлығын өшіру</button>
-    </div>
-    <div class="card">
-      <h2>Телефон экранына қосу</h2>
-      <p class="muted" style="margin:0">Chrome-да ⋮ → «Басты экранға қосу». Содан кейін қосымша кәдімгі бағдарлама сияқты ашылады, интернетсіз де жұмыс істейді.</p>
+    <div class="card" onclick="go('calc-loan')" style="display:flex;align-items:center;gap:13px">
+      <div class="ico red">💳</div>
+      <div><div style="font-weight:700;font-size:16px">Несие калькуляторы</div>
+        <div class="muted">Ай төлем · Ерте өтеу · Кесте</div></div>
+      <div style="margin-left:auto;color:var(--ink-2)">›</div>
     </div>
   </div>
 </section>
 
-<!-- ================= TABBAR ================= -->
+<!-- ============ ИНВЕСТИЦИЯ КАЛЬКУЛЯТОРЫ ============ -->
+<section class="page" id="p-calc-inv">
+  <div style="background:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;gap:13px">
+    <button class="back dark" onclick="go('calc')">←</button>
+    <div><div style="font-weight:800;font-size:20px">Инвестиция калькуляторы</div>
+      <div class="muted">Күрделі пайыз</div></div>
+  </div>
+  <div class="wrap">
+    <div class="row2" style="margin-bottom:14px">
+      <div class="seg" style="margin:0">
+        <button class="on" data-im="income" onclick="setInvMode('income')">Табыс</button>
+        <button data-im="term" onclick="setInvMode('term')">Мерзім</button>
+      </div>
+      <div class="unit">
+        <button class="on" data-icur="₸" onclick="setCur('inv','₸')">₸</button>
+        <button data-icur="$" onclick="setCur('inv','$')">$</button>
+      </div>
+    </div>
+
+    <label class="f">Бастапқы сома</label>
+    <input class="inp soft" id="i-start" type="number" inputmode="decimal" placeholder="0" oninput="calcInv()">
+
+    <label class="f">Ай сайынғы үлес</label>
+    <input class="inp soft" id="i-month" type="number" inputmode="decimal" placeholder="0" oninput="calcInv()">
+
+    <div id="i-target-box" class="hide">
+      <label class="f">Мақсатты сома</label>
+      <input class="inp soft" id="i-target" type="number" inputmode="decimal" placeholder="0" oninput="calcInv()">
+    </div>
+
+    <div class="toggle" onclick="toggleReinvest()">
+      <div class="sw on" id="i-sw"><i></i></div>
+      <div><div style="font-weight:700">Реинвестиция</div>
+        <div class="muted" id="i-sw-txt">Қосылған — күрделі пайыз</div></div>
+    </div>
+
+    <label class="f">Жылдық мөлшерлеме, %</label>
+    <input class="inp soft" id="i-rate" type="number" inputmode="decimal" placeholder="0" oninput="calcInv()">
+
+    <div id="i-term-box">
+      <label class="f">Мерзімі</label>
+      <div class="row2">
+        <input class="inp soft" id="i-years" type="number" inputmode="decimal" placeholder="0" oninput="calcInv()" style="margin:0">
+        <div class="unit">
+          <button class="on" data-iu="year" onclick="setInvUnit('year')">жыл</button>
+          <button data-iu="month" onclick="setInvUnit('month')">ай</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="i-res" style="margin-top:16px"></div>
+  </div>
+</section>
+
+<!-- ============ НЕСИЕ КАЛЬКУЛЯТОРЫ ============ -->
+<section class="page" id="p-calc-loan">
+  <div style="background:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;gap:13px">
+    <button class="back dark" onclick="go('calc')">←</button>
+    <div><div style="font-weight:800;font-size:20px">Несие калькуляторы</div>
+      <div class="muted">Аннуитетті · Дифференциалды</div></div>
+  </div>
+  <div class="wrap">
+    <div class="row2" style="margin-bottom:14px">
+      <div class="seg" style="margin:0">
+        <button class="on" data-lm="pay" onclick="setLoanMode('pay')">Несие</button>
+        <button data-lm="rate" onclick="setLoanMode('rate')">Пайызын есептеу</button>
+      </div>
+      <div class="unit">
+        <button class="on" data-lcur="₸" onclick="setCur('loan','₸')">₸</button>
+        <button data-lcur="$" onclick="setCur('loan','$')">$</button>
+      </div>
+    </div>
+
+    <label class="f">Несие сомасы</label>
+    <input class="inp soft" id="l-sum" type="number" inputmode="decimal" placeholder="0" oninput="calcLoan()">
+
+    <label class="f">Мерзімі</label>
+    <div class="row2" style="margin-bottom:12px">
+      <input class="inp soft" id="l-term" type="number" inputmode="decimal" placeholder="0" oninput="calcLoan()" style="margin:0">
+      <div class="unit">
+        <button class="on" data-lu="year" onclick="setLoanUnit('year')">жыл</button>
+        <button data-lu="month" onclick="setLoanUnit('month')">ай</button>
+      </div>
+    </div>
+
+    <div id="l-rate-box">
+      <label class="f">Жылдық мөлшерлеме, %</label>
+      <input class="inp soft" id="l-rate" type="number" inputmode="decimal" placeholder="0" oninput="calcLoan()">
+    </div>
+    <div id="l-pay-box" class="hide">
+      <label class="f">Ай сайынғы төлем</label>
+      <input class="inp soft" id="l-pay" type="number" inputmode="decimal" placeholder="0" oninput="calcLoan()">
+    </div>
+
+    <div id="l-type-box">
+      <div class="seg">
+        <button class="on" data-lt="ann" onclick="setLoanType('ann')">Аннуитетті</button>
+        <button data-lt="diff" onclick="setLoanType('diff')">Дифференциалды</button>
+      </div>
+      <label class="f">Ерте өтеу (міндетті емес)</label>
+      <div class="row2" style="margin-bottom:12px">
+        <input class="inp soft" id="l-early" type="number" inputmode="decimal" placeholder="сома" oninput="calcLoan()" style="margin:0">
+        <input class="inp soft" id="l-early-m" type="number" inputmode="decimal" placeholder="ай №" oninput="calcLoan()" style="margin:0;width:110px">
+      </div>
+    </div>
+
+    <div id="l-res"></div>
+  </div>
+</section>
+
+<!-- ============ БАПТАУ ============ -->
+<section class="page" id="p-set">
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('home')">←</button>
+      <div style="flex:1"><h1 style="font-size:24px">Баптау</h1><div class="sub">Дерек және көшірме</div></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="card">
+      <h2>Дерек көшірмесі</h2>
+      <p class="muted" style="margin:0 0 12px">Дерек тек осы телефонда сақталады. Телефон ауыстырар алдында файлға түсіріп алыңыз.</p>
+      <button class="btn line" onclick="exportData()">Файлға шығару</button>
+      <input type="file" id="imp" accept="application/json" class="hide" onchange="importData(this)">
+      <button class="btn line" onclick="document.getElementById('imp').click()">Файлдан қалпына келтіру</button>
+    </div>
+    <div class="card">
+      <h2>Барлығын өшіру</h2>
+      <p class="muted" style="margin:0 0 12px">Шоттар, операциялар және мақсаттар қайтарылмайды.</p>
+      <button class="btn danger" onclick="wipe()">Барлық деректі өшіру</button>
+    </div>
+    <div class="card">
+      <h2>Қосымша туралы</h2>
+      <p class="muted" style="margin:0">Қаржы · 2.0 · офлайн жұмыс істейді, ешқандай серверге дерек жіберілмейді.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TABBAR ============ -->
 <nav class="tabbar">
-  <button class="on" data-tab="home" onclick="go('home')"><span class="g">◉</span>Қаржы</button>
+  <button class="on" data-tab="home" onclick="go('home')"><span class="g">⌂</span>Басты</button>
+  <button data-tab="accounts" onclick="go('accounts')"><span class="g">💼</span>Қаржы</button>
+  <button data-tab="ops" onclick="go('ops')"><span class="g">🧾</span>Операция</button>
   <button data-tab="stat" onclick="go('stat')"><span class="g">▤</span>Статистика</button>
-  <button data-tab="goal" onclick="go('goal')"><span class="g">⚑</span>Мақсаттар</button>
   <button data-tab="set" onclick="go('set')"><span class="g">⚙</span>Баптау</button>
 </nav>
 
@@ -268,15 +519,21 @@
 <!-- Sheet: transaction -->
 <div class="sheet" id="sheet-tx">
   <div class="grab"></div>
-  <h3 id="tx-title">Операция қосу</h3>
+  <h3>Операция қосу</h3>
   <div class="seg">
-    <button id="seg-out" class="on out" onclick="setType('out')">Шығын</button>
+    <button id="seg-out" class="on danger" onclick="setType('out')">Шығын</button>
     <button id="seg-in" onclick="setType('in')">Кіріс</button>
   </div>
-  <label class="f">Сома, ₸</label>
+  <label class="f">Сома</label>
   <input class="inp big" id="f-amt" type="number" inputmode="decimal" placeholder="0">
   <label class="f">Санат</label>
   <div class="chips" id="f-cats"></div>
+  <label class="f">Қай шоттан</label>
+  <div class="chips" id="f-accs"></div>
+  <div id="f-loan-box" class="hide">
+    <label class="f">Қай несиені өтейді</label>
+    <div class="chips" id="f-loans"></div>
+  </div>
   <label class="f">Күні</label>
   <input class="inp" id="f-date" type="date">
   <label class="f">Түсініктеме</label>
@@ -285,12 +542,32 @@
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
 </div>
 
+<!-- Sheet: account -->
+<div class="sheet" id="sheet-acc">
+  <div class="grab"></div>
+  <h3 id="acc-title">Шот қосу</h3>
+  <label class="f">Атауы</label>
+  <input class="inp" id="ac-name" type="text" placeholder="Мысалы: Kaspi Gold">
+  <label class="f">Белгіше</label>
+  <div class="chips" id="ac-icons"></div>
+  <label class="f" id="ac-bal-lab">Қалдық, ₸</label>
+  <input class="inp" id="ac-bal" type="number" inputmode="decimal" placeholder="0">
+  <div id="ac-loan-box" class="hide">
+    <label class="f">Жылдық мөлшерлеме, %</label>
+    <input class="inp" id="ac-rate" type="number" inputmode="decimal" placeholder="0">
+    <label class="f">Ай сайынғы төлем, ₸</label>
+    <input class="inp" id="ac-pay" type="number" inputmode="decimal" placeholder="0">
+  </div>
+  <button class="btn" onclick="saveAcc()">Сақтау</button>
+  <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
+</div>
+
 <!-- Sheet: goal -->
 <div class="sheet" id="sheet-goal">
   <div class="grab"></div>
   <h3>Мақсат қосу</h3>
   <label class="f">Атауы</label>
-  <input class="inp" id="g-name" type="text" placeholder="Мысалы: Жаңа ноутбук">
+  <input class="inp" id="g-name" type="text" placeholder="Мысалы: 100 мың доллар жинау">
   <label class="f">Мақсат сомасы, ₸</label>
   <input class="inp" id="g-target" type="number" inputmode="decimal" placeholder="0">
   <label class="f">Қазір жиналған, ₸</label>
@@ -299,14 +576,12 @@
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
 </div>
 
-<!-- Sheet: transaction detail -->
+<!-- Sheet: detail -->
 <div class="sheet" id="sheet-view">
   <div class="grab"></div>
   <h3 id="v-title">Операция</h3>
-  <div class="card" style="box-shadow:none;background:var(--g-soft)">
-    <div id="v-body" class="muted" style="line-height:1.7"></div>
-  </div>
-  <button class="btn danger" onclick="delTx()">Операцияны өшіру</button>
+  <div class="res" id="v-body"></div>
+  <button class="btn danger" id="v-del">Өшіру</button>
   <button class="btn ghost" onclick="closeSheets()">Жабу</button>
 </div>
 
@@ -324,59 +599,82 @@
 <div class="toast" id="toast"></div>
 
 <script>
-/* ---------------- storage (localStorage, жоқ болса жадта) ---------------- */
+/* ================= STORAGE ================= */
 var mem = {};
 var store = {
   get: function(k){ try{ return localStorage.getItem(k); }catch(e){ return k in mem ? mem[k] : null; } },
   set: function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; } }
 };
+var DB = { tx:[], goals:[], accounts:[] };
 
-var DB = { tx:[], goals:[], start:0 };
 function load(){
   try{
     var raw = store.get('qarzhy_v1');
-    if(raw){ var d = JSON.parse(raw); DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.start = d.start||0; }
+    if(raw){
+      var d = JSON.parse(raw);
+      DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[];
+      if(!DB.accounts.length){
+        DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:d.start||0}];
+      }
+    }
   }catch(e){}
+  if(!DB.accounts.length) DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:0}];
 }
 function save(){ store.set('qarzhy_v1', JSON.stringify(DB)); }
 
-/* ---------------- helpers ---------------- */
+/* ================= HELPERS ================= */
 var CATS = {
   out:[["Тамақ","🍜"],["Көлік","🚌"],["Тұрғын үй","🏠"],["Байланыс","📱"],["Киім","👕"],
-       ["Денсаулық","🩺"],["Ойын-сауық","🎬"],["Білім","📚"],["Сыйлық","🎁"],["Басқа","✦"]],
-  in:[["Жалақы","💼"],["Бизнес","📈"],["Фриланс","💻"],["Инвестиция","📊"],["Сыйлық","🎁"],["Басқа","✦"]]
+       ["Денсаулық","🩺"],["Несие төлемі","💳"],["Ойын-сауық","🎬"],["Білім","📚"],["Сыйлық","🎁"],["Басқа","✦"]],
+  in:[["Жалақы","💼"],["Бизнес","📈"],["Фриланс","💻"],["Инвестиция","📊"],["Несие алу","💳"],["Сыйлық","🎁"],["Басқа","✦"]]
 };
+var ACC_ICONS = ["💵","💳","🏦","📱","🪙","📊","🏠","🚗"];
 var MONTHS = ["Қаңтар","Ақпан","Наурыз","Сәуір","Мамыр","Маусым","Шілде","Тамыз","Қыркүйек","Қазан","Қараша","Желтоқсан"];
 var DAYS = ["Жексенбі","Дүйсенбі","Сейсенбі","Сәрсенбі","Бейсенбі","Жұма","Сенбі"];
 
-function money(n){
-  var s = Math.round(Math.abs(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g," ");
-  return (n<0?"−":"") + s + " ₸";
-}
+function nf(n){ return Math.round(Math.abs(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g," "); }
+function money(n,c){ return (n<0?"−":"") + nf(n) + " " + (c||"₸"); }
 function icon(type,cat){
-  var list = CATS[type];
-  for(var i=0;i<list.length;i++) if(list[i][0]===cat) return list[i][1];
+  var l = CATS[type]; for(var i=0;i<l.length;i++) if(l[i][0]===cat) return l[i][1];
   return type==="in"?"💰":"✦";
 }
-function todayISO(){ var d=new Date(); return d.toISOString().slice(0,10); }
+function iso(d){
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function todayISO(){ return iso(new Date()); }
+function parseISO(s){ var p=s.split("-"); return new Date(+p[0],+p[1]-1,+p[2]); }
+function dayTitle(s){ var d=parseISO(s); return d.getDate()+" "+MONTHS[d.getMonth()].toLowerCase()+", "+DAYS[d.getDay()]; }
+function fullDate(s){ var d=parseISO(s); return d.getDate()+" "+MONTHS[d.getMonth()].toLowerCase()+" "+d.getFullYear(); }
+function esc(s){ return String(s).replace(/[<>&]/g,function(c){return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c];}); }
 function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); setTimeout(function(){t.classList.remove('on');},1800); }
+function acc(id){ for(var i=0;i<DB.accounts.length;i++) if(DB.accounts[i].id===id) return DB.accounts[i]; return null; }
+function newId(){ return Date.now().toString()+Math.floor(Math.random()*900+100); }
 
 var cur = new Date(); cur.setDate(1);
 function shiftMonth(d){ cur.setMonth(cur.getMonth()+d); render(); }
-function inMonth(iso){ return iso.slice(0,7) === cur.toISOString().slice(0,7); }
+function inMonth(s){ return s.slice(0,7) === iso(cur).slice(0,7); }
 
-/* ---------------- navigation ---------------- */
-function go(tab){
+function totals(){
+  var a=0,d=0;
+  DB.accounts.forEach(function(x){ if(x.kind==='asset') a+=x.bal; else d+=x.bal; });
+  return {assets:a, debts:d, net:a-d};
+}
+
+/* ================= NAV ================= */
+var view = 'home';
+function go(v){
+  view = v;
   var pages = document.querySelectorAll('.page');
   for(var i=0;i<pages.length;i++) pages[i].classList.remove('on');
-  document.getElementById('p-'+tab).classList.add('on');
+  var el = document.getElementById('p-'+v);
+  if(el) el.classList.add('on');
   var btns = document.querySelectorAll('.tabbar button');
-  for(var j=0;j<btns.length;j++) btns[j].classList.toggle('on', btns[j].dataset.tab===tab);
+  for(var j=0;j<btns.length;j++) btns[j].classList.toggle('on', btns[j].dataset.tab===v);
   window.scrollTo(0,0);
   render();
 }
 
-/* ---------------- sheets ---------------- */
+/* ================= SHEETS ================= */
 function openSheet(id){ document.getElementById('scrim').classList.add('on'); document.getElementById(id).classList.add('on'); }
 function closeSheets(){
   document.getElementById('scrim').classList.remove('on');
@@ -384,59 +682,171 @@ function closeSheets(){
   for(var i=0;i<s.length;i++) s[i].classList.remove('on');
 }
 
-var fType = 'out', fCat = 'Тамақ', viewId = null, goalId = null;
+/* ---- transaction ---- */
+var fType='out', fCat='Тамақ', fAcc=null, fLoan=null;
 function setType(t){
-  fType = t;
+  fType=t;
   document.getElementById('seg-out').classList.toggle('on', t==='out');
   document.getElementById('seg-in').classList.toggle('on', t==='in');
   fCat = CATS[t][0][0];
-  drawCats();
+  drawCats(); drawAccs();
 }
 function drawCats(){
-  var box = document.getElementById('f-cats'); box.innerHTML='';
+  var box=document.getElementById('f-cats'); box.innerHTML='';
   CATS[fType].forEach(function(c){
-    var b = document.createElement('button');
-    b.className = 'chip' + (c[0]===fCat?' on':'');
-    b.textContent = c[1]+' '+c[0];
-    b.onclick = function(){ fCat=c[0]; drawCats(); };
+    var b=document.createElement('button');
+    b.className='chip'+(c[0]===fCat?' on':'');
+    b.textContent=c[1]+' '+c[0];
+    b.onclick=function(){ fCat=c[0]; drawCats(); drawAccs(); };
     box.appendChild(b);
   });
+}
+function drawAccs(){
+  var box=document.getElementById('f-accs'); box.innerHTML='';
+  var assets = DB.accounts.filter(function(a){return a.kind==='asset';});
+  if(!assets.length){ box.innerHTML='<div class="muted">Алдымен шот қосыңыз</div>'; }
+  if(!fAcc || !acc(fAcc) || acc(fAcc).kind!=='asset') fAcc = assets.length? assets[0].id : null;
+  assets.forEach(function(a){
+    var b=document.createElement('button');
+    b.className='chip'+(a.id===fAcc?' on':'');
+    b.textContent=a.icon+' '+a.name;
+    b.onclick=function(){ fAcc=a.id; drawAccs(); };
+    box.appendChild(b);
+  });
+  // несие өтеу
+  var loans = DB.accounts.filter(function(a){return a.kind==='debt';});
+  var show = (fType==='out' && fCat==='Несие төлемі' && loans.length);
+  document.getElementById('f-loan-box').classList.toggle('hide', !show);
+  if(show){
+    var lb=document.getElementById('f-loans'); lb.innerHTML='';
+    if(!fLoan || !acc(fLoan)) fLoan = loans[0].id;
+    loans.forEach(function(a){
+      var b=document.createElement('button');
+      b.className='chip'+(a.id===fLoan?' on':'');
+      b.textContent='💳 '+a.name+' · '+money(a.bal);
+      b.onclick=function(){ fLoan=a.id; drawAccs(); };
+      lb.appendChild(b);
+    });
+  } else { fLoan=null; }
 }
 function openTx(){
   document.getElementById('f-amt').value='';
   document.getElementById('f-note').value='';
-  document.getElementById('f-date').value= todayISO();
-  setType('out');
-  openSheet('sheet-tx');
-  setTimeout(function(){ document.getElementById('f-amt').focus(); },300);
+  document.getElementById('f-date').value=todayISO();
+  setType('out'); openSheet('sheet-tx');
 }
 function saveTx(){
-  var amt = parseFloat(document.getElementById('f-amt').value);
+  var amt=parseFloat(document.getElementById('f-amt').value);
   if(!amt || amt<=0){ toast('Соманы жазыңыз'); return; }
-  DB.tx.push({
-    id: Date.now()+''+Math.floor(Math.random()*999),
-    type: fType, cat: fCat, amt: Math.abs(amt),
-    date: document.getElementById('f-date').value || todayISO(),
-    note: document.getElementById('f-note').value.trim()
-  });
+  if(!fAcc){ toast('Алдымен шот қосыңыз'); return; }
+  var t={ id:newId(), type:fType, cat:fCat, amt:Math.abs(amt),
+    date:document.getElementById('f-date').value||todayISO(),
+    note:document.getElementById('f-note').value.trim(), acc:fAcc, loan:fLoan };
+  DB.tx.push(t);
+  applyTx(t, 1);
   save(); closeSheets(); render();
-  toast(fType==='in' ? 'Кіріс қосылды' : 'Шығын қосылды');
+  toast(fType==='in'?'Кіріс қосылды':'Шығын қосылды');
 }
+function applyTx(t, sign){
+  var a=acc(t.acc);
+  if(a) a.bal += sign * (t.type==='in' ? t.amt : -t.amt);
+  if(t.loan){
+    var l=acc(t.loan);
+    if(l) l.bal -= sign * t.amt;   // өтеген сайын несие азаяды
+  }
+  if(t.type==='in' && t.cat==='Несие алу' && !t.loan){ /* жаңа несие қолмен қосылады */ }
+}
+var viewId=null;
 function openView(id){
-  viewId = id;
-  var t = DB.tx.filter(function(x){return x.id===id;})[0];
+  viewId=id;
+  var t=null; DB.tx.forEach(function(x){ if(x.id===id) t=x; });
   if(!t) return;
-  document.getElementById('v-title').textContent = (t.type==='in'?'Кіріс: ':'Шығын: ') + money(t.amt);
-  var d = new Date(t.date);
-  document.getElementById('v-body').innerHTML =
-    'Санат: <b>'+t.cat+'</b><br>Күні: <b>'+d.getDate()+' '+MONTHS[d.getMonth()].toLowerCase()+', '+d.getFullYear()+'</b>' +
-    (t.note ? '<br>Түсініктеме: <b>'+t.note.replace(/</g,'&lt;')+'</b>' : '');
+  document.getElementById('v-title').textContent=(t.type==='in'?'Кіріс: ':'Шығын: ')+money(t.amt);
+  var a=acc(t.acc);
+  var h='<div class="kv"><span>Санат</span><b>'+icon(t.type,t.cat)+' '+esc(t.cat)+'</b></div>'+
+        '<div class="kv"><span>Күні</span><b>'+fullDate(t.date)+'</b></div>'+
+        (a?'<div class="kv"><span>Шот</span><b>'+a.icon+' '+esc(a.name)+'</b></div>':'');
+  if(t.loan){ var l=acc(t.loan); if(l) h+='<div class="kv"><span>Несие</span><b>'+esc(l.name)+'</b></div>'; }
+  if(t.note) h+='<div class="kv"><span>Түсініктеме</span><b>'+esc(t.note)+'</b></div>';
+  document.getElementById('v-body').innerHTML=h;
+  document.getElementById('v-del').textContent='Операцияны өшіру';
+  document.getElementById('v-del').onclick=delTx;
   openSheet('sheet-view');
 }
 function delTx(){
-  DB.tx = DB.tx.filter(function(x){return x.id!==viewId;});
-  save(); closeSheets(); render(); toast('Операция өшірілді');
+  var t=null; DB.tx.forEach(function(x){ if(x.id===viewId) t=x; });
+  if(t) applyTx(t,-1);
+  DB.tx=DB.tx.filter(function(x){return x.id!==viewId;});
+  save(); closeSheets(); render(); toast('Өшірілді');
 }
+
+/* ---- accounts ---- */
+var accKind='asset', accIcon='💵';
+function openAcc(kind){
+  accKind=kind; accIcon = kind==='asset'?'💵':'💳';
+  document.getElementById('acc-title').textContent = kind==='asset'?'Шот қосу':'Несие қосу';
+  document.getElementById('ac-bal-lab').textContent = kind==='asset'?'Қалдық, ₸':'Несие қалдығы, ₸';
+  document.getElementById('ac-name').value='';
+  document.getElementById('ac-bal').value='';
+  document.getElementById('ac-rate').value='';
+  document.getElementById('ac-pay').value='';
+  document.getElementById('ac-loan-box').classList.toggle('hide', kind!=='debt');
+  drawAccIcons(); openSheet('sheet-acc');
+}
+function drawAccIcons(){
+  var box=document.getElementById('ac-icons'); box.innerHTML='';
+  ACC_ICONS.forEach(function(ic){
+    var b=document.createElement('button');
+    b.className='chip'+(ic===accIcon?' on':''); b.textContent=ic;
+    b.onclick=function(){ accIcon=ic; drawAccIcons(); };
+    box.appendChild(b);
+  });
+}
+function saveAcc(){
+  var n=document.getElementById('ac-name').value.trim();
+  if(!n){ toast('Атауын жазыңыз'); return; }
+  var a={ id:newId(), name:n, kind:accKind, icon:accIcon,
+    bal:parseFloat(document.getElementById('ac-bal').value)||0 };
+  if(accKind==='debt'){
+    a.rate=parseFloat(document.getElementById('ac-rate').value)||0;
+    a.pay=parseFloat(document.getElementById('ac-pay').value)||0;
+  }
+  DB.accounts.push(a); save(); closeSheets(); render();
+  toast(accKind==='asset'?'Шот қосылды':'Несие қосылды');
+}
+function openAccView(id){
+  var a=acc(id); if(!a) return;
+  viewId=id;
+  document.getElementById('v-title').textContent=a.icon+' '+a.name;
+  var h='<div class="kv"><span>'+(a.kind==='asset'?'Қалдық':'Несие қалдығы')+'</span><b>'+money(a.bal)+'</b></div>';
+  if(a.kind==='debt'){
+    h+='<div class="kv"><span>Мөлшерлеме</span><b>'+(a.rate||0)+'%</b></div>'+
+       '<div class="kv"><span>Ай сайынғы төлем</span><b>'+money(a.pay||0)+'</b></div>';
+    if(a.pay>0 && a.bal>0){
+      var m=monthsLeft(a.bal,a.rate||0,a.pay);
+      h+='<div class="kv"><span>Қалған мерзім</span><b>'+(m>0?m+' ай':'есептелмеді')+'</b></div>';
+    }
+  }
+  var cnt=DB.tx.filter(function(t){return t.acc===id||t.loan===id;}).length;
+  h+='<div class="kv"><span>Операция</span><b>'+cnt+'</b></div>';
+  document.getElementById('v-body').innerHTML=h;
+  document.getElementById('v-del').textContent = a.kind==='asset'?'Шотты өшіру':'Несиені өшіру';
+  document.getElementById('v-del').onclick=delAcc;
+  openSheet('sheet-view');
+}
+function delAcc(){
+  DB.accounts=DB.accounts.filter(function(a){return a.id!==viewId;});
+  DB.tx.forEach(function(t){ if(t.acc===viewId) t.acc=null; if(t.loan===viewId) t.loan=null; });
+  save(); closeSheets(); render(); toast('Өшірілді');
+}
+function monthsLeft(bal, rate, pay){
+  var i=rate/12/100, b=bal, n=0;
+  while(b>0 && n<600){ b = b*(1+i) - pay; n++; if(pay <= bal*i) return -1; }
+  return n;
+}
+
+/* ---- goals ---- */
+var goalId=null;
 function openGoal(){
   document.getElementById('g-name').value='';
   document.getElementById('g-target').value='';
@@ -444,170 +854,473 @@ function openGoal(){
   openSheet('sheet-goal');
 }
 function saveGoal(){
-  var n = document.getElementById('g-name').value.trim();
-  var t = parseFloat(document.getElementById('g-target').value);
-  var s = parseFloat(document.getElementById('g-saved').value) || 0;
+  var n=document.getElementById('g-name').value.trim();
+  var t=parseFloat(document.getElementById('g-target').value);
   if(!n){ toast('Атауын жазыңыз'); return; }
-  if(!t || t<=0){ toast('Мақсат сомасын жазыңыз'); return; }
-  DB.goals.push({ id: Date.now()+'', name:n, target:t, saved:s });
+  if(!t||t<=0){ toast('Мақсат сомасын жазыңыз'); return; }
+  DB.goals.push({id:newId(),name:n,target:t,saved:parseFloat(document.getElementById('g-saved').value)||0});
   save(); closeSheets(); render(); toast('Мақсат қосылды');
 }
 function openGview(id){
-  goalId = id;
-  var g = DB.goals.filter(function(x){return x.id===id;})[0];
+  goalId=id;
+  var g=null; DB.goals.forEach(function(x){ if(x.id===id) g=x; });
   if(!g) return;
-  document.getElementById('gv-title').textContent = g.name;
+  document.getElementById('gv-title').textContent=g.name;
   document.getElementById('gv-add').value='';
   openSheet('sheet-gview');
 }
 function addToGoal(){
-  var v = parseFloat(document.getElementById('gv-add').value);
+  var v=parseFloat(document.getElementById('gv-add').value);
   if(!v){ toast('Соманы жазыңыз'); return; }
-  DB.goals.forEach(function(g){ if(g.id===goalId) g.saved += v; });
+  DB.goals.forEach(function(g){ if(g.id===goalId) g.saved+=v; });
   save(); closeSheets(); render(); toast('Салым қосылды');
 }
 function delGoal(){
-  DB.goals = DB.goals.filter(function(g){return g.id!==goalId;});
-  save(); closeSheets(); render(); toast('Мақсат өшірілді');
+  DB.goals=DB.goals.filter(function(g){return g.id!==goalId;});
+  save(); closeSheets(); render(); toast('Өшірілді');
 }
 
-/* ---------------- settings ---------------- */
-function saveStart(){
-  DB.start = parseFloat(document.getElementById('set-start').value) || 0;
-  save(); render(); toast('Сақталды');
-}
+/* ---- settings ---- */
 function exportData(){
-  var blob = new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'qarzhy-'+todayISO()+'.json';
-  a.click();
+  var blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='qarzhy-'+todayISO()+'.json'; a.click();
 }
 function importData(el){
-  var f = el.files[0]; if(!f) return;
-  var r = new FileReader();
-  r.onload = function(){
+  var f=el.files[0]; if(!f) return;
+  var r=new FileReader();
+  r.onload=function(){
     try{
-      var d = JSON.parse(r.result);
-      DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.start = d.start||0;
+      var d=JSON.parse(r.result);
+      DB.tx=d.tx||[]; DB.goals=d.goals||[]; DB.accounts=d.accounts||[];
+      if(!DB.accounts.length) DB.accounts=[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:d.start||0}];
       save(); render(); toast('Қалпына келтірілді');
     }catch(e){ toast('Файл оқылмады'); }
   };
   r.readAsText(f); el.value='';
 }
 function wipe(){
-  if(!confirm('Барлық операция мен мақсат өшіріледі. Жалғастырасыз ба?')) return;
-  DB = {tx:[],goals:[],start:0}; save(); render(); toast('Барлығы өшірілді');
+  if(!confirm('Барлық дерек өшіріледі. Жалғастырасыз ба?')) return;
+  DB={tx:[],goals:[],accounts:[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:0}]};
+  save(); render(); toast('Өшірілді');
 }
 
-/* ---------------- render ---------------- */
+/* ================= FILTERS ================= */
+var opsFilter='all', statFilter='all', period='month';
+var range={from:null,to:null};
+function setOpsFilter(f){
+  opsFilter=f;
+  document.querySelectorAll('[data-of]').forEach(function(b){ b.classList.toggle('on', b.dataset.of===f); });
+  render();
+}
+function setStatFilter(f){
+  statFilter=f;
+  document.querySelectorAll('[data-sf]').forEach(function(b){ b.classList.toggle('on', b.dataset.sf===f); });
+  render();
+}
+function setPeriod(p){
+  period=p;
+  document.querySelectorAll('[data-per]').forEach(function(b){ b.classList.toggle('on', b.dataset.per===p); });
+  var now=new Date(), f, t=new Date();
+  if(p==='day'){ f=new Date(); }
+  else if(p==='week'){ f=new Date(); f.setDate(f.getDate()-6); }
+  else if(p==='month'){ f=new Date(now.getFullYear(),now.getMonth(),1); }
+  else { f=new Date(now.getFullYear(),now.getMonth()-1,1); t=new Date(now.getFullYear(),now.getMonth(),0); }
+  range.from=iso(f); range.to=iso(t);
+  document.getElementById('s-from').value=range.from;
+  document.getElementById('s-to').value=range.to;
+  render();
+}
+function customRange(){
+  range.from=document.getElementById('s-from').value;
+  range.to=document.getElementById('s-to').value;
+  document.querySelectorAll('[data-per]').forEach(function(b){ b.classList.remove('on'); });
+  render();
+}
+function inRange(d){ return (!range.from || d>=range.from) && (!range.to || d<=range.to); }
+
+/* ================= RENDER ================= */
 function render(){
-  var mTx = DB.tx.filter(function(t){ return inMonth(t.date); });
-  var mIn = 0, mOut = 0;
-  mTx.forEach(function(t){ t.type==='in' ? mIn+=t.amt : mOut+=t.amt; });
+  var T=totals();
+  var mTx=DB.tx.filter(function(t){return inMonth(t.date);});
+  var mIn=0,mOut=0; mTx.forEach(function(t){ t.type==='in'?mIn+=t.amt:mOut+=t.amt; });
 
-  var allIn = 0, allOut = 0;
-  DB.tx.forEach(function(t){ t.type==='in' ? allIn+=t.amt : allOut+=t.amt; });
-  var net = DB.start + allIn - allOut;
+  /* --- home --- */
+  document.getElementById('h-net').textContent=money(T.net);
+  var pill=document.getElementById('h-pill');
+  pill.textContent = T.net>=0?'↑ Оң':'↓ Теріс';
+  pill.style.color = T.net>=0?'#8FE8AE':'#FFB3AE';
+  document.getElementById('h-month').textContent=MONTHS[cur.getMonth()]+' '+cur.getFullYear();
+  document.getElementById('h-in').textContent=money(mIn);
+  document.getElementById('h-out').textContent=money(mOut);
+  document.getElementById('h-assets').textContent=money(T.assets);
+  document.getElementById('h-debts').textContent=money(T.debts);
+  document.getElementById('h-net2').textContent=money(T.net);
+  document.getElementById('acc-count').textContent=DB.accounts.length+' шот';
 
-  document.getElementById('h-net').textContent = money(net);
-  var pill = document.getElementById('h-pill');
-  pill.textContent = net>=0 ? '↑ Оң' : '↓ Теріс';
-  pill.style.color = net>=0 ? '#8FE8AE' : '#FFB3AE';
-  document.getElementById('h-in').textContent = money(mIn);
-  document.getElementById('h-out').textContent = money(mOut);
+  var recent=DB.tx.slice().sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,5);
+  var hb=document.getElementById('home-tx'); hb.innerHTML='';
+  if(!recent.length) hb.innerHTML='<div class="empty">Операция жоқ.<br>Жоғарыдағы <b>+</b> түймесімен қосыңыз.</div>';
+  else recent.forEach(function(t){ hb.appendChild(txRow(t)); });
 
-  var label = MONTHS[cur.getMonth()] + ' ' + cur.getFullYear();
-  document.getElementById('h-month').textContent = label;
-  document.getElementById('s-month').textContent = label;
-  document.getElementById('s-net').textContent = money(mIn-mOut);
-  document.getElementById('s-count').textContent = mTx.length;
-  document.getElementById('set-count').textContent = DB.tx.length;
-  if(document.activeElement !== document.getElementById('set-start'))
-    document.getElementById('set-start').value = DB.start || '';
+  /* --- accounts --- */
+  document.getElementById('a-count').textContent=DB.accounts.length+' шот';
+  document.getElementById('a-net').textContent=money(T.net);
+  document.getElementById('a-assets').textContent=money(T.assets);
+  document.getElementById('a-debts').textContent=money(T.debts);
+  renderAccList('asset','a-list-asset','Актив шот жоқ. Төмендегі түймемен қосыңыз.');
+  renderAccList('debt','a-list-debt','Несие жоқ. Бар болса қосып қойыңыз.');
 
-  /* --- tx list --- */
-  var list = document.getElementById('tx-list');
-  list.innerHTML = '';
-  if(!mTx.length){
-    list.innerHTML = '<div class="empty">Бұл айда операция жоқ.<br>Жоғарыдағы <b>+</b> түймесімен қосыңыз.</div>';
-  } else {
-    var byDay = {};
-    mTx.forEach(function(t){ (byDay[t.date] = byDay[t.date] || []).push(t); });
-    Object.keys(byDay).sort().reverse().forEach(function(day){
-      var items = byDay[day];
-      var sum = 0; items.forEach(function(t){ sum += (t.type==='in'? t.amt : -t.amt); });
-      var d = new Date(day);
-      var g = document.createElement('div'); g.className='daygroup';
-      g.innerHTML = '<div class="dayhead"><span>'+d.getDate()+' '+MONTHS[d.getMonth()].toLowerCase()+', '+DAYS[d.getDay()]+'</span><span>'+money(sum)+'</span></div>';
-      items.forEach(function(t){
-        var row = document.createElement('div');
-        row.className='tx';
-        row.onclick = (function(id){ return function(){ openView(id); }; })(t.id);
-        row.innerHTML =
-          '<div class="ico">'+icon(t.type,t.cat)+'</div>'+
-          '<div><div class="name">'+t.cat+'</div>'+
-          (t.note? '<div class="sub">'+t.note.replace(/</g,'&lt;')+'</div>':'')+'</div>'+
-          '<div class="amt '+t.type+'">'+(t.type==='in'?'+':'−')+money(t.amt).replace('−','')+'</div>';
-        g.appendChild(row);
-      });
-      list.appendChild(g);
+  /* --- ops --- */
+  var ops=DB.tx.filter(function(t){ return opsFilter==='all'||t.type===opsFilter; })
+    .sort(function(a,b){return a.date<b.date?1:-1;});
+  document.getElementById('o-count').textContent=DB.tx.length+' операция';
+  var ol=document.getElementById('ops-list'); ol.innerHTML='';
+  if(!ops.length) ol.innerHTML='<div class="empty">Операция табылмады.</div>';
+  else {
+    var byDay={};
+    ops.forEach(function(t){ (byDay[t.date]=byDay[t.date]||[]).push(t); });
+    Object.keys(byDay).sort().reverse().forEach(function(d){
+      var sum=0; byDay[d].forEach(function(t){ sum+=t.type==='in'?t.amt:-t.amt; });
+      var hd=document.createElement('div'); hd.className='dayhead';
+      hd.innerHTML='<span>'+dayTitle(d)+'</span><span>'+money(sum)+'</span>';
+      ol.appendChild(hd);
+      byDay[d].forEach(function(t){ ol.appendChild(txRow(t)); });
     });
   }
+
+  /* --- overview --- */
+  document.getElementById('ov-net').textContent=money(T.net);
+  var rate = mIn>0 ? Math.round((mIn-mOut)/mIn*100) : 0;
+  document.getElementById('ov-month').innerHTML=
+    '<div class="kv"><span>Кіріс</span><b style="color:var(--g-bright)">'+money(mIn)+'</b></div>'+
+    '<div class="kv"><span>Шығын</span><b style="color:var(--red)">'+money(mOut)+'</b></div>'+
+    '<div class="kv"><span>Қалдық</span><b>'+money(mIn-mOut)+'</b></div>'+
+    '<div class="kv"><span>Жинақ үлесі</span><b>'+(mIn>0?rate+'%':'—')+'</b></div>';
+
+  var assets=DB.accounts.filter(function(a){return a.kind==='asset';});
+  var ob=document.getElementById('ov-assets'); ob.innerHTML='';
+  if(!assets.length) ob.innerHTML='<div class="empty">Шот жоқ.</div>';
+  else assets.forEach(function(a){
+    var f=T.assets>0?a.bal/T.assets:0;
+    ob.appendChild(barRow(a.icon+' '+a.name, money(a.bal), f, false));
+  });
+
+  var debts=DB.accounts.filter(function(a){return a.kind==='debt';});
+  var db=document.getElementById('ov-debts'); db.innerHTML='';
+  if(!debts.length) db.innerHTML='<div class="empty">Несие жоқ — тамаша.</div>';
+  else {
+    var pay=0; debts.forEach(function(a){ pay+=a.pay||0; });
+    db.innerHTML='<div class="kv"><span>Жалпы қарыз</span><b style="color:var(--red)">'+money(T.debts)+'</b></div>'+
+      '<div class="kv"><span>Айлық төлем</span><b>'+money(pay)+'</b></div>'+
+      '<div class="kv"><span>Кіріске қатысты</span><b>'+(mIn>0?Math.round(pay/mIn*100)+'%':'—')+'</b></div>';
+    debts.forEach(function(a){
+      var f=T.debts>0?a.bal/T.debts:0;
+      db.appendChild(barRow('💳 '+a.name, money(a.bal), f, true));
+    });
+  }
+
+  var topBox=document.getElementById('ov-top'); topBox.innerHTML='';
+  var sums={};
+  mTx.filter(function(t){return t.type==='out';}).forEach(function(t){ sums[t.cat]=(sums[t.cat]||0)+t.amt; });
+  var keys=Object.keys(sums).sort(function(a,b){return sums[b]-sums[a];}).slice(0,5);
+  if(!keys.length) topBox.innerHTML='<div class="empty">Бұл айда шығын жоқ.</div>';
+  else keys.forEach(function(k){
+    topBox.appendChild(barRow(icon('out',k)+' '+k, money(sums[k])+' · '+Math.round(sums[k]/mOut*100)+'%', sums[k]/mOut, true));
+  });
 
   /* --- stats --- */
-  drawBars('s-out','out',mTx,mOut);
-  drawBars('s-in','in',mTx,mIn);
+  renderStats();
 
   /* --- goals --- */
-  var gl = document.getElementById('goal-list');
-  gl.innerHTML = '';
-  var gTotal = 0; DB.goals.forEach(function(g){ gTotal += g.saved; });
-  document.getElementById('g-total').textContent = money(gTotal);
-  if(!DB.goals.length){
-    gl.innerHTML = '<div class="empty">Мақсат әлі жоқ.<br>Жинайтын сомаңызды белгілеп қойыңыз.</div>';
+  var gt=0; DB.goals.forEach(function(g){ gt+=g.saved; });
+  document.getElementById('g-total').textContent=money(gt);
+  document.getElementById('g-count').textContent=DB.goals.length+' мақсат';
+  var gl=document.getElementById('goal-list'); gl.innerHTML='';
+  if(!DB.goals.length) gl.innerHTML='<div class="card"><div class="empty">Мақсат әлі жоқ.<br>Жинайтын сомаңызды белгілеп қойыңыз.</div></div>';
+  else DB.goals.forEach(function(g){
+    var pct=Math.min(100,Math.round(g.saved/g.target*100));
+    var el=document.createElement('div'); el.className='card';
+    el.onclick=function(){ openGview(g.id); };
+    el.innerHTML='<div style="display:flex;align-items:center;gap:11px;margin-bottom:12px">'+
+      '<div class="ico blue">⚑</div><div style="font-weight:700;font-size:16px">'+esc(g.name)+'</div></div>'+
+      '<div class="track"><div class="fill" style="width:'+pct+'%"></div></div>'+
+      '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;color:var(--ink-2)">'+
+      '<span>'+money(g.saved)+' / '+money(g.target)+'</span><b style="color:var(--ink)">'+pct+'%</b></div>';
+    gl.appendChild(el);
+  });
+}
+
+function txRow(t){
+  var row=document.createElement('div'); row.className='row';
+  row.onclick=function(){ openView(t.id); };
+  var a=acc(t.acc);
+  row.innerHTML='<div class="ico'+(t.type==='out'?' red':'')+'">'+icon(t.type,t.cat)+'</div>'+
+    '<div><div class="name">'+esc(t.cat)+'</div><div class="sub2">'+
+    (a?esc(a.name):'—')+(t.note?' · '+esc(t.note):'')+'</div></div>'+
+    '<div class="amt '+t.type+'">'+(t.type==='in'?'+':'−')+nf(t.amt)+' ₸</div>';
+  return row;
+}
+function renderAccList(kind, elId, emptyTxt){
+  var box=document.getElementById(elId); box.innerHTML='';
+  var list=DB.accounts.filter(function(a){return a.kind===kind;});
+  if(!list.length){ box.innerHTML='<div class="empty">'+emptyTxt+'</div>'; return; }
+  list.forEach(function(a){
+    var row=document.createElement('div'); row.className='row';
+    row.onclick=function(){ openAccView(a.id); };
+    var sub = kind==='debt' ? ((a.rate||0)+'% · айына '+nf(a.pay||0)+' ₸') : 'Шот';
+    row.innerHTML='<div class="ico'+(kind==='debt'?' red':'')+'">'+a.icon+'</div>'+
+      '<div><div class="name">'+esc(a.name)+'</div><div class="sub2">'+sub+'</div></div>'+
+      '<div class="amt" style="color:'+(kind==='debt'?'var(--red)':'var(--ink)')+'">'+money(a.bal)+'</div>';
+    box.appendChild(row);
+  });
+}
+function barRow(label, right, frac, red){
+  var el=document.createElement('div'); el.className='bar-row';
+  var pct=Math.max(0,Math.min(100,Math.round(frac*100)));
+  el.innerHTML='<div class="bar-top"><span>'+label+'</span><b>'+right+'</b></div>'+
+    '<div class="track"><div class="fill'+(red?' red':'')+'" style="width:'+pct+'%"></div></div>';
+  return el;
+}
+
+function renderStats(){
+  var list=DB.tx.filter(function(t){ return inRange(t.date); });
+  var sIn=0,sOut=0;
+  list.forEach(function(t){ t.type==='in'?sIn+=t.amt:sOut+=t.amt; });
+  document.getElementById('s-count').textContent=list.length+' операция';
+  document.getElementById('s-in').textContent=money(sIn);
+  document.getElementById('s-out').textContent=money(sOut);
+  var net=sIn-sOut;
+  var ne=document.getElementById('s-net');
+  ne.textContent=(net>=0?'+':'')+money(net);
+  ne.style.color = net>=0?'var(--g-bright)':'var(--red)';
+
+  document.getElementById('s-card-in').classList.toggle('hide', statFilter==='out');
+  document.getElementById('s-card-out').classList.toggle('hide', statFilter==='in');
+
+  drawCatBars('s-cat-out','out',list,sOut);
+  drawCatBars('s-cat-in','in',list,sIn);
+  drawChart(list);
+}
+function drawCatBars(elId,type,list,total){
+  var box=document.getElementById(elId); box.innerHTML='';
+  var sums={};
+  list.filter(function(t){return t.type===type;}).forEach(function(t){ sums[t.cat]=(sums[t.cat]||0)+t.amt; });
+  var keys=Object.keys(sums).sort(function(a,b){return sums[b]-sums[a];});
+  if(!keys.length){ box.innerHTML='<div class="empty">Бұл кезеңде дерек жоқ.</div>'; return; }
+  keys.forEach(function(k){
+    var pct=total?sums[k]/total:0;
+    box.appendChild(barRow(icon(type,k)+' '+k, money(sums[k])+' · '+Math.round(pct*100)+'%', pct, type==='out'));
+  });
+}
+function drawChart(list){
+  var box=document.getElementById('s-chart');
+  if(!list.length){ box.innerHTML='<div class="empty">Диаграмма үшін дерек жоқ.</div>'; return; }
+  var days={};
+  list.forEach(function(t){
+    if(!days[t.date]) days[t.date]={in:0,out:0};
+    days[t.date][t.type]+=t.amt;
+  });
+  var keys=Object.keys(days).sort().slice(-31);
+  var max=0; keys.forEach(function(k){ max=Math.max(max,days[k]["in"],days[k].out); });
+  if(max<=0) max=1;
+  var W=100, H=100, n=keys.length, gw=W/n, bw=Math.min(gw*0.36, 3.2);
+  var s='<svg class="chart" viewBox="0 0 100 100" preserveAspectRatio="none">';
+  keys.forEach(function(k,i){
+    var x=i*gw+gw/2;
+    var hi=days[k]["in"]/max*88, ho=days[k].out/max*88;
+    s+='<rect x="'+(x-bw-0.3)+'" y="'+(94-hi)+'" width="'+bw+'" height="'+hi+'" fill="#17A44F" rx="0.6"/>';
+    s+='<rect x="'+(x+0.3)+'" y="'+(94-ho)+'" width="'+bw+'" height="'+ho+'" fill="#E2534B" rx="0.6"/>';
+  });
+  s+='<line x1="0" y1="94.5" x2="100" y2="94.5" stroke="#DCE9E1" stroke-width="0.4"/></svg>';
+  box.innerHTML=s;
+}
+
+/* ================= ИНВЕСТИЦИЯ КАЛЬКУЛЯТОРЫ ================= */
+var invMode='income', invUnit='year', invReinvest=true, invCur='₸', loanCur='₸';
+function setInvMode(m){
+  invMode=m;
+  document.querySelectorAll('[data-im]').forEach(function(b){ b.classList.toggle('on', b.dataset.im===m); });
+  document.getElementById('i-target-box').classList.toggle('hide', m!=='term');
+  document.getElementById('i-term-box').classList.toggle('hide', m==='term');
+  calcInv();
+}
+function setInvUnit(u){
+  invUnit=u;
+  document.querySelectorAll('[data-iu]').forEach(function(b){ b.classList.toggle('on', b.dataset.iu===u); });
+  calcInv();
+}
+function setCur(which,c){
+  if(which==='inv'){ invCur=c; document.querySelectorAll('[data-icur]').forEach(function(b){ b.classList.toggle('on', b.dataset.icur===c); }); calcInv(); }
+  else { loanCur=c; document.querySelectorAll('[data-lcur]').forEach(function(b){ b.classList.toggle('on', b.dataset.lcur===c); }); calcLoan(); }
+}
+function toggleReinvest(){
+  invReinvest=!invReinvest;
+  document.getElementById('i-sw').classList.toggle('on', invReinvest);
+  document.getElementById('i-sw-txt').textContent = invReinvest?'Қосылған — күрделі пайыз':'Қосылмаған — қарапайым пайыз';
+  calcInv();
+}
+function num(id){ var v=parseFloat(document.getElementById(id).value); return isNaN(v)?0:v; }
+
+function calcInv(){
+  var P=num('i-start'), M=num('i-month'), r=num('i-rate')/100/12;
+  var box=document.getElementById('i-res');
+  if(invMode==='income'){
+    var n = invUnit==='year' ? Math.round(num('i-years')*12) : Math.round(num('i-years'));
+    if(n<=0 || (P<=0&&M<=0)){ box.innerHTML='<div class="empty">Мәндерді толтырыңыз.</div>'; return; }
+    var res=growth(P,M,r,n,invReinvest);
+    var invested=P+M*n;
+    box.innerHTML='<div class="res"><div class="lab">Мерзім соңындағы сома</div>'+
+      '<div class="big">'+money(res,invCur)+'</div></div>'+
+      '<div class="card"><div class="kv"><span>Салынған қаражат</span><b>'+money(invested,invCur)+'</b></div>'+
+      '<div class="kv"><span>Пайыздық табыс</span><b style="color:var(--g-bright)">'+money(res-invested,invCur)+'</b></div>'+
+      '<div class="kv"><span>Мерзім</span><b>'+n+' ай ('+(n/12).toFixed(1)+' жыл)</b></div>'+
+      '<div class="kv"><span>Өсім</span><b>'+(invested>0?Math.round((res-invested)/invested*100):0)+'%</b></div></div>'+
+      yearTable(P,M,r,n,invReinvest);
   } else {
-    DB.goals.forEach(function(g){
-      var pct = Math.min(100, Math.round(g.saved/g.target*100));
-      var el = document.createElement('div');
-      el.className='card'; el.style.marginBottom='12px';
-      el.onclick = (function(id){ return function(){ openGview(id); }; })(g.id);
-      el.innerHTML =
-        '<div class="goal-top"><div class="ico">⚑</div><div class="name">'+g.name.replace(/</g,'&lt;')+'</div></div>'+
-        '<div class="track"><div class="fill" style="width:'+pct+'%"></div></div>'+
-        '<div class="goal-sum"><span>'+money(g.saved)+' / '+money(g.target)+'</span><b>'+pct+'%</b></div>';
-      gl.appendChild(el);
-    });
+    var target=num('i-target');
+    if(target<=0 || (P<=0&&M<=0)){ box.innerHTML='<div class="empty">Мақсатты соманы толтырыңыз.</div>'; return; }
+    if(P>=target){ box.innerHTML='<div class="res"><div class="lab">Мақсат</div><div class="big">Қазірдің өзінде жеткен</div></div>'; return; }
+    var n2=0, bal=P, base=P, acc2=0;
+    while(n2<1200){
+      n2++;
+      if(invReinvest){ bal=bal*(1+r)+M; }
+      else { acc2+=base*r; base+=M; bal=base+acc2; }
+      if(bal>=target) break;
+    }
+    if(bal<target){ box.innerHTML='<div class="empty">100 жыл ішінде мақсатқа жетпейді. Ай сайынғы үлесті немесе мөлшерлемені арттырыңыз.</div>'; return; }
+    var inv2=P+M*n2;
+    box.innerHTML='<div class="res"><div class="lab">Мақсатқа жету мерзімі</div>'+
+      '<div class="big">'+Math.floor(n2/12)+' жыл '+(n2%12)+' ай</div></div>'+
+      '<div class="card"><div class="kv"><span>Жинақталған сома</span><b>'+money(bal,invCur)+'</b></div>'+
+      '<div class="kv"><span>Салынған қаражат</span><b>'+money(inv2,invCur)+'</b></div>'+
+      '<div class="kv"><span>Пайыздық табыс</span><b style="color:var(--g-bright)">'+money(bal-inv2,invCur)+'</b></div>'+
+      '<div class="kv"><span>Барлығы</span><b>'+n2+' ай</b></div></div>';
   }
 }
-
-function drawBars(elId, type, mTx, total){
-  var box = document.getElementById(elId);
-  box.innerHTML = '';
-  var sums = {};
-  mTx.filter(function(t){return t.type===type;}).forEach(function(t){ sums[t.cat] = (sums[t.cat]||0)+t.amt; });
-  var keys = Object.keys(sums).sort(function(a,b){ return sums[b]-sums[a]; });
-  if(!keys.length){ box.innerHTML = '<div class="empty">Бұл айда дерек жоқ.</div>'; return; }
-  keys.forEach(function(k){
-    var pct = total ? Math.round(sums[k]/total*100) : 0;
-    var r = document.createElement('div'); r.className='bar-row';
-    r.innerHTML =
-      '<div class="bar-top"><span>'+icon(type,k)+' '+k+'</span><b>'+money(sums[k])+' · '+pct+'%</b></div>'+
-      '<div class="track"><div class="fill'+(type==='out'?' red':'')+'" style="width:'+pct+'%"></div></div>';
-    box.appendChild(r);
-  });
+function growth(P,M,r,n,compound){
+  if(compound){
+    var b=P;
+    for(var i=0;i<n;i++) b=b*(1+r)+M;
+    return b;
+  }
+  var base=P, acc=0;
+  for(var j=0;j<n;j++){ acc+=base*r; base+=M; }
+  return base+acc;
+}
+function yearTable(P,M,r,n,compound){
+  if(n<12) return '';
+  var rows='', b=P, base=P, acc=0;
+  var h='<div class="card"><h2>Жыл сайынғы өсім</h2><table class="sched"><tr><th>Жыл</th><th>Салынған</th><th>Сома</th></tr>';
+  for(var i=1;i<=n;i++){
+    if(compound) b=b*(1+r)+M;
+    else { acc+=base*r; base+=M; b=base+acc; }
+    if(i%12===0 || i===n){
+      rows+='<tr><td>'+Math.ceil(i/12)+'</td><td>'+nf(P+M*i)+'</td><td><b>'+nf(b)+'</b></td></tr>';
+    }
+  }
+  return h+rows+'</table></div>';
 }
 
+/* ================= НЕСИЕ КАЛЬКУЛЯТОРЫ ================= */
+var loanMode='pay', loanUnit='year', loanType='ann';
+function setLoanMode(m){
+  loanMode=m;
+  document.querySelectorAll('[data-lm]').forEach(function(b){ b.classList.toggle('on', b.dataset.lm===m); });
+  document.getElementById('l-rate-box').classList.toggle('hide', m==='rate');
+  document.getElementById('l-pay-box').classList.toggle('hide', m!=='rate');
+  document.getElementById('l-type-box').classList.toggle('hide', m==='rate');
+  calcLoan();
+}
+function setLoanUnit(u){
+  loanUnit=u;
+  document.querySelectorAll('[data-lu]').forEach(function(b){ b.classList.toggle('on', b.dataset.lu===u); });
+  calcLoan();
+}
+function setLoanType(t){
+  loanType=t;
+  document.querySelectorAll('[data-lt]').forEach(function(b){ b.classList.toggle('on', b.dataset.lt===t); });
+  calcLoan();
+}
+function annuity(S,i,n){ return i===0 ? S/n : S*i*Math.pow(1+i,n)/(Math.pow(1+i,n)-1); }
 
-/* ---------------- офлайн режим ---------------- */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function(){
-    navigator.serviceWorker.register('sw.js').catch(function(){});
-  });
+function calcLoan(){
+  var box=document.getElementById('l-res');
+  var S=num('l-sum');
+  var n = loanUnit==='year' ? Math.round(num('l-term')*12) : Math.round(num('l-term'));
+
+  if(loanMode==='rate'){
+    var pay=num('l-pay');
+    if(S<=0||n<=0||pay<=0){ box.innerHTML='<div class="empty">Мәндерді толтырыңыз.</div>'; return; }
+    if(pay*n<=S){ box.innerHTML='<div class="empty">Төлем тым аз — бұл несие өтелмейді.</div>'; return; }
+    var lo=0, hi=2, mid;
+    for(var k=0;k<80;k++){
+      mid=(lo+hi)/2;
+      if(annuity(S,mid,n)>pay) hi=mid; else lo=mid;
+    }
+    var yr=mid*12*100, total=pay*n;
+    box.innerHTML='<div class="res"><div class="lab">Жылдық мөлшерлеме</div>'+
+      '<div class="big">'+yr.toFixed(2)+' %</div></div>'+
+      '<div class="card"><div class="kv"><span>Барлық төлем</span><b>'+money(total,loanCur)+'</b></div>'+
+      '<div class="kv"><span>Артық төлем</span><b style="color:var(--red)">'+money(total-S,loanCur)+'</b></div>'+
+      '<div class="kv"><span>Артық төлем үлесі</span><b>'+Math.round((total-S)/S*100)+'%</b></div></div>';
+    return;
+  }
+
+  var rate=num('l-rate'), i=rate/12/100;
+  if(S<=0||n<=0){ box.innerHTML='<div class="empty">Мәндерді толтырыңыз.</div>'; return; }
+  var early=num('l-early'), earlyM=Math.round(num('l-early-m'));
+
+  var bal=S, total=0, interest=0, rows='', months=0;
+  var basePay = loanType==='ann' ? annuity(S,i,n) : 0;
+  var principalPart = S/n;
+  var firstPay=0, lastPay=0;
+
+  for(var m=1;m<=n*2 && bal>0.5;m++){
+    var int_ = bal*i, pr, p;
+    if(loanType==='ann'){
+      p = Math.min(basePay, bal+int_);
+      pr = p-int_;
+    } else {
+      pr = Math.min(principalPart, bal);
+      p = pr+int_;
+    }
+    bal -= pr;
+    if(early>0 && earlyM===m){ var e=Math.min(early,bal); bal-=e; p+=e; }
+    total+=p; interest+=int_; months=m;
+    if(m===1) firstPay=p;
+    lastPay=p;
+    if(m<=360) rows+='<tr><td>'+m+'</td><td>'+nf(p)+'</td><td>'+nf(int_)+'</td><td>'+nf(Math.max(0,bal))+'</td></tr>';
+  }
+
+  var payLabel = loanType==='ann' ? 'Ай сайынғы төлем' : 'Бірінші айдағы төлем';
+  var extra='';
+  if(loanType==='diff') extra='<div class="kv"><span>Соңғы төлем</span><b>'+money(lastPay,loanCur)+'</b></div>';
+  if(early>0 && earlyM>0){
+    var noEarly = loanType==='ann' ? annuity(S,i,n)*n : 0;
+    extra+='<div class="kv"><span>Ерте өтеуден кейін</span><b>'+months+' ай ('+(n-months)+' ай қысқарды)</b></div>';
+  }
+
+  box.innerHTML='<div class="res"><div class="lab">'+payLabel+'</div>'+
+    '<div class="big">'+money(firstPay,loanCur)+'</div></div>'+
+    '<div class="card"><div class="kv"><span>Несие сомасы</span><b>'+money(S,loanCur)+'</b></div>'+
+    '<div class="kv"><span>Барлық төлем</span><b>'+money(total,loanCur)+'</b></div>'+
+    '<div class="kv"><span>Артық төлем</span><b style="color:var(--red)">'+money(interest,loanCur)+'</b></div>'+
+    '<div class="kv"><span>Мерзім</span><b>'+months+' ай</b></div>'+extra+'</div>'+
+    '<div class="card"><h2>Төлем кестесі</h2><table class="sched">'+
+    '<tr><th>Ай</th><th>Төлем</th><th>Пайыз</th><th>Қалдық</th></tr>'+rows+'</table></div>';
 }
 
+/* ================= START ================= */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
 load();
 drawCats();
+drawAccs();
+setPeriod('month');
+setInvMode('income');
+setLoanMode('pay');
 render();
 </script>
 </body>
