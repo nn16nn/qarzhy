@@ -164,9 +164,11 @@
   .scrim{position:fixed;inset:0;background:rgba(4,30,18,.5);opacity:0;pointer-events:none;transition:.22s;z-index:50}
   .scrim.on{opacity:1;pointer-events:auto}
   .sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:26px 26px 0 0;
-    padding:10px 16px calc(20px + env(safe-area-inset-bottom));transform:translateY(102%);
+    padding:10px 16px calc(34px + env(safe-area-inset-bottom));transform:translateY(102%);
     transition:transform .26s cubic-bezier(.3,.8,.4,1);z-index:60;max-height:92vh;overflow:auto}
   .sheet.on{transform:none}
+  body.locked{overflow:hidden}
+  .sheet-back{background:none;border:0;color:var(--ink-2);font-size:14px;font-weight:600;padding:0 0 10px;display:block}
   .grab{width:42px;height:4px;background:var(--line);border-radius:9px;margin:6px auto 14px}
   .sheet h3{margin:0 0 14px;font-size:19px}
   .toast{position:fixed;left:50%;transform:translate(-50%,20px);bottom:100px;background:var(--ink);color:#fff;
@@ -618,6 +620,7 @@
 <!-- Sheet: account -->
 <div class="sheet" id="sheet-acc">
   <div class="grab"></div>
+  <button class="sheet-back" id="ac-back" onclick="backToAcc()">‹ Артқа</button>
   <h3 id="acc-title">Шот қосу</h3>
   <div id="ac-bank-box" class="hide">
     <label class="f">Банкті таңдаңыз</label>
@@ -872,11 +875,24 @@ function go(v){
 }
 
 /* ================= SHEETS ================= */
-function openSheet(id){ document.getElementById('scrim').classList.add('on'); document.getElementById(id).classList.add('on'); }
+function openSheet(id){
+  // алдымен барлық ашық терезелерді жабамыз — үстіне-үсті ашылмасын
+  var all = document.querySelectorAll('.sheet');
+  for(var i=0;i<all.length;i++){
+    if(all[i].id !== id) all[i].classList.remove('on');
+  }
+  document.getElementById('scrim').classList.add('on');
+  var el = document.getElementById(id);
+  el.scrollTop = 0;
+  el.classList.add('on');
+  document.body.classList.add('locked');
+}
 function closeSheets(){
+  accEdit = null;
   document.getElementById('scrim').classList.remove('on');
   var s = document.querySelectorAll('.sheet');
   for(var i=0;i<s.length;i++) s[i].classList.remove('on');
+  document.body.classList.remove('locked');
 }
 
 /* ---- transaction ---- */
@@ -1045,11 +1061,16 @@ function openAcc(kind, editId){
   document.getElementById('ac-loan-box').classList.toggle('hide', kind!=='debt');
   document.getElementById('ac-inv-box').classList.toggle('hide', kind!=='broker');
   document.getElementById('ac-bank-box').classList.toggle('hide', kind!=='asset');
+  document.getElementById('ac-back').textContent = accEdit ? '‹ Артқа' : '‹ Жабу';
   accCur = a && a.cur ? a.cur : 'KZT';
   document.getElementById('ac-cur-box').classList.toggle('hide', kind==='debt');
   drawCurChips(); drawBankChips(); drawAccIcons(); openSheet('sheet-acc');
 }
 var accCur='KZT';
+function backToAcc(){
+  if(accEdit){ var id=accEdit; accEdit=null; openAccView(id); }
+  else closeSheets();
+}
 function drawCurChips(){
   var box=document.getElementById('ac-curs'); box.innerHTML='';
   [['KZT','₸ теңге'],['USD','$ доллар']].forEach(function(c){
@@ -1167,8 +1188,7 @@ function openBVal(id){
   bvId=id;
   document.getElementById('bv-title').textContent=a.name+' — құнын жаңарту ('+accCurSym(a)+')';
   document.getElementById('bv-val').value=a.bal;
-  closeSheets();
-  setTimeout(function(){ openSheet('sheet-bval'); }, 120);
+  openSheet('sheet-bval');
 }
 function saveBVal(){
   var v=parseFloat(document.getElementById('bv-val').value);
@@ -1376,8 +1396,9 @@ function render(){
       '<div class="kv"><span>Барлық актив</span><b>'+money(T.assets)+'</b></div>';
     var wrapB=document.createElement('div'); wrapB.style.marginTop='12px';
     assets.forEach(function(a){
-      var f=T.assets>0?a.bal/T.assets:0;
-      wrapB.appendChild(barRow((a.kind==='broker'?'📊 ':a.icon+' ')+a.name, money(a.bal), f, false));
+      var kz=toKZT(a);
+      var f=T.assets>0?kz/T.assets:0;
+      wrapB.appendChild(barRow((a.kind==='broker'?'📊 ':a.icon+' ')+a.name, money(kz), f, false));
     });
     ob.appendChild(wrapB);
   }
@@ -1391,8 +1412,9 @@ function render(){
       '<div class="kv"><span>Айлық төлем</span><b>'+money(pay)+'</b></div>'+
       '<div class="kv"><span>Кіріске қатысты</span><b>'+(mIn>0?Math.round(pay/mIn*100)+'%':'—')+'</b></div>';
     debts.forEach(function(a){
-      var f=T.debts>0?a.bal/T.debts:0;
-      db.appendChild(barRow('💳 '+a.name, money(a.bal), f, true));
+      var kz=toKZT(a);
+      var f=T.debts>0?kz/T.debts:0;
+      db.appendChild(barRow('💳 '+a.name, money(kz), f, true));
     });
   }
 
@@ -1758,7 +1780,7 @@ function onImportFile(el){
   else                                task = readBuf(f).then(parseXLSX);
 
   task.then(function(lines){
-    IMP.bank = null;
+    IMP.bank = null; IMP.bankUsed = false;
     var head = lines.slice(0, 40).join(' ') + ' ' + f.name;
     for(var i = 0; i < BANKS.length; i++){
       if(BANKS[i][2] && BANKS[i][2].test(head)){ IMP.bank = BANKS[i]; break; }
