@@ -225,10 +225,11 @@
           <div class="muted" id="acc-count">0 шот</div></div>
         <div style="margin-left:auto;color:var(--ink-2)">→</div>
       </div>
-      <div class="trio">
-        <div><div class="l">Активтер</div><div class="v" id="h-assets" style="color:var(--g-bright)">0 ₸</div></div>
+      <div class="trio" style="grid-template-columns:1fr 1fr;row-gap:14px">
+        <div><div class="l">Банктердегі ақша</div><div class="v" id="h-banks" style="color:var(--g-bright)">0 ₸</div></div>
+        <div><div class="l">Инвестиция</div><div class="v" id="h-broker" style="color:var(--blue)">0 ₸</div></div>
         <div><div class="l">Міндеттемелер</div><div class="v" id="h-debts" style="color:var(--red)">0 ₸</div></div>
-        <div><div class="l">Таза</div><div class="v" id="h-net2">0 ₸</div></div>
+        <div><div class="l">Таза капитал</div><div class="v" id="h-net2">0 ₸</div></div>
       </div>
     </div>
 
@@ -257,16 +258,20 @@
     </div>
     <div class="cap-label">Таза капитал</div>
     <div class="cap" id="a-net">0 ₸</div>
-    <div class="two">
-      <div class="mini"><div class="t">Активтер</div><div class="v" id="a-assets">0 ₸</div></div>
-      <div class="mini"><div class="t">Міндеттемелер</div><div class="v" id="a-debts">0 ₸</div></div>
+    <div class="two" style="grid-template-columns:1fr 1fr 1fr;gap:8px">
+      <div class="mini" style="padding:11px"><div class="t" style="font-size:12px">Банктер</div><div class="v" id="a-banks" style="font-size:15px">0 ₸</div></div>
+      <div class="mini" style="padding:11px"><div class="t" style="font-size:12px">Брокер</div><div class="v" id="a-broker" style="font-size:15px">0 ₸</div></div>
+      <div class="mini" style="padding:11px"><div class="t" style="font-size:12px">Несие</div><div class="v" id="a-debts" style="font-size:15px">0 ₸</div></div>
     </div>
   </div>
   <div class="wrap">
-    <div class="card"><h2>Активтер</h2><div id="a-list-asset"></div></div>
-    <div class="card"><h2>Міндеттемелер · Несиелер</h2><div id="a-list-debt"></div></div>
-    <button class="btn dashed" onclick="openAcc('asset')">+ Шот қосу</button>
+    <div class="card"><h2>Банк шоттары <small id="a-sum-bank"></small></h2><div id="a-list-asset"></div></div>
+    <div class="card"><h2>Брокерлік шоттар <small id="a-sum-broker"></small></h2><div id="a-list-broker"></div></div>
+    <div class="card"><h2>Несиелер <small id="a-sum-debt"></small></h2><div id="a-list-debt"></div></div>
+    <button class="btn dashed" onclick="openAcc('asset')">+ Банк шотын қосу</button>
+    <button class="btn dashed" onclick="openAcc('broker')">+ Брокерлік шот қосу</button>
     <button class="btn dashed" onclick="openAcc('debt')">+ Несие қосу</button>
+    <button class="btn line" onclick="quickSetup()">⚡ Дайын үлгі: Kaspi + Freedom + брокерлік шоттар</button>
   </div>
 </section>
 
@@ -563,16 +568,23 @@
 <div class="sheet" id="sheet-tx">
   <div class="grab"></div>
   <h3>Операция қосу</h3>
-  <div class="seg">
+  <div class="seg tight">
     <button id="seg-out" class="on danger" onclick="setType('out')">Шығын</button>
     <button id="seg-in" onclick="setType('in')">Кіріс</button>
+    <button id="seg-tr" onclick="setType('tr')">Аударым</button>
   </div>
   <label class="f">Сома</label>
   <input class="inp big" id="f-amt" type="number" inputmode="decimal" placeholder="0">
-  <label class="f">Санат</label>
-  <div class="chips" id="f-cats"></div>
-  <label class="f">Қай шоттан</label>
+  <div id="f-cat-box">
+    <label class="f">Санат</label>
+    <div class="chips" id="f-cats"></div>
+  </div>
+  <label class="f" id="f-acc-lab">Қай шоттан</label>
   <div class="chips" id="f-accs"></div>
+  <div id="f-to-box" class="hide">
+    <label class="f">Қай шотқа</label>
+    <div class="chips" id="f-tos"></div>
+  </div>
   <div id="f-loan-box" class="hide">
     <label class="f">Қай несиені өтейді</label>
     <div class="chips" id="f-loans"></div>
@@ -595,6 +607,10 @@
   <div class="chips" id="ac-icons"></div>
   <label class="f" id="ac-bal-lab">Қалдық, ₸</label>
   <input class="inp" id="ac-bal" type="number" inputmode="decimal" placeholder="0">
+  <div id="ac-inv-box" class="hide">
+    <label class="f">Салынған қаражат (барлығы), ₸</label>
+    <input class="inp" id="ac-inv" type="number" inputmode="decimal" placeholder="0">
+  </div>
   <div id="ac-loan-box" class="hide">
     <label class="f">Жылдық мөлшерлеме, %</label>
     <input class="inp" id="ac-rate" type="number" inputmode="decimal" placeholder="0">
@@ -602,6 +618,17 @@
     <input class="inp" id="ac-pay" type="number" inputmode="decimal" placeholder="0">
   </div>
   <button class="btn" onclick="saveAcc()">Сақтау</button>
+  <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
+</div>
+
+<!-- Sheet: broker value -->
+<div class="sheet" id="sheet-bval">
+  <div class="grab"></div>
+  <h3 id="bv-title">Шот құнын жаңарту</h3>
+  <p class="muted" style="margin:0 0 14px">Брокерлік қосымшада қазір көрініп тұрған жалпы портфель құнын жазыңыз. Табыс автоматты есептеледі.</p>
+  <label class="f">Ағымдағы құны, ₸</label>
+  <input class="inp" id="bv-val" type="number" inputmode="decimal" placeholder="0">
+  <button class="btn" onclick="saveBVal()">Сақтау</button>
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
 </div>
 
@@ -624,6 +651,7 @@
   <div class="grab"></div>
   <h3 id="v-title">Операция</h3>
   <div class="res" id="v-body"></div>
+  <div id="v-extra"></div>
   <button class="btn danger" id="v-del">Өшіру</button>
   <button class="btn ghost" onclick="closeSheets()">Жабу</button>
 </div>
@@ -671,7 +699,7 @@ var CATS = {
        ["Денсаулық","🩺"],["Несие төлемі","💳"],["Ойын-сауық","🎬"],["Білім","📚"],["Сыйлық","🎁"],["Басқа","✦"]],
   in:[["Жалақы","💼"],["Бизнес","📈"],["Фриланс","💻"],["Инвестиция","📊"],["Несие алу","💳"],["Сыйлық","🎁"],["Басқа","✦"]]
 };
-var ACC_ICONS = ["💵","💳","🏦","📱","🪙","📊","🏠","🚗"];
+var ACC_ICONS = ["💳","🏦","💵","📱","📊","📈","🪙","🏠"];
 var MONTHS = ["Қаңтар","Ақпан","Наурыз","Сәуір","Мамыр","Маусым","Шілде","Тамыз","Қыркүйек","Қазан","Қараша","Желтоқсан"];
 var DAYS = ["Жексенбі","Дүйсенбі","Сейсенбі","Сәрсенбі","Бейсенбі","Жұма","Сенбі"];
 
@@ -698,10 +726,16 @@ function shiftMonth(d){ cur.setMonth(cur.getMonth()+d); render(); }
 function inMonth(s){ return s.slice(0,7) === iso(cur).slice(0,7); }
 
 function totals(){
-  var a=0,d=0;
-  DB.accounts.forEach(function(x){ if(x.kind==='asset') a+=x.bal; else d+=x.bal; });
-  return {assets:a, debts:d, net:a-d};
+  var b=0,br=0,inv=0,d=0;
+  DB.accounts.forEach(function(x){
+    if(x.kind==='broker'){ br+=x.bal; inv+=(x.invested||0); }
+    else if(x.kind==='debt'){ d+=x.bal; }
+    else { b+=x.bal; }
+  });
+  return {banks:b, broker:br, invested:inv, assets:b+br, debts:d, net:b+br-d};
 }
+function accsOf(kind){ return DB.accounts.filter(function(a){ return a.kind===kind; }); }
+function spendable(){ return DB.accounts.filter(function(a){ return a.kind==='asset'||a.kind==='broker'; }); }
 
 /* ================= NAV ================= */
 var view = 'home';
@@ -726,13 +760,17 @@ function closeSheets(){
 }
 
 /* ---- transaction ---- */
-var fType='out', fCat='Тамақ', fAcc=null, fLoan=null;
+var fType='out', fCat='Тамақ', fAcc=null, fLoan=null, fTo=null;
 function setType(t){
   fType=t;
   document.getElementById('seg-out').classList.toggle('on', t==='out');
   document.getElementById('seg-in').classList.toggle('on', t==='in');
-  fCat = CATS[t][0][0];
-  drawCats(); drawAccs();
+  document.getElementById('seg-tr').classList.toggle('on', t==='tr');
+  document.getElementById('f-cat-box').classList.toggle('hide', t==='tr');
+  document.getElementById('f-to-box').classList.toggle('hide', t!=='tr');
+  document.getElementById('f-acc-lab').textContent = t==='tr' ? 'Қай шоттан' : (t==='in'?'Қай шотқа түсті':'Қай шоттан');
+  if(t!=='tr'){ fCat = CATS[t][0][0]; drawCats(); }
+  drawAccs();
 }
 function drawCats(){
   var box=document.getElementById('f-cats'); box.innerHTML='';
@@ -746,16 +784,32 @@ function drawCats(){
 }
 function drawAccs(){
   var box=document.getElementById('f-accs'); box.innerHTML='';
-  var assets = DB.accounts.filter(function(a){return a.kind==='asset';});
-  if(!assets.length){ box.innerHTML='<div class="muted">Алдымен шот қосыңыз</div>'; }
-  if(!fAcc || !acc(fAcc) || acc(fAcc).kind!=='asset') fAcc = assets.length? assets[0].id : null;
-  assets.forEach(function(a){
+  var src = fType==='tr' ? spendable() : accsOf('asset');
+  if(!src.length){ box.innerHTML='<div class="muted">Алдымен шот қосыңыз</div>'; }
+  var ok=false; src.forEach(function(a){ if(a.id===fAcc) ok=true; });
+  if(!ok) fAcc = src.length? src[0].id : null;
+  src.forEach(function(a){
     var b=document.createElement('button');
     b.className='chip'+(a.id===fAcc?' on':'');
     b.textContent=a.icon+' '+a.name;
-    b.onclick=function(){ fAcc=a.id; drawAccs(); };
+    b.onclick=function(){ fAcc=a.id; if(fTo===a.id) fTo=null; drawAccs(); };
     box.appendChild(b);
   });
+
+  if(fType==='tr'){
+    var tb=document.getElementById('f-tos'); tb.innerHTML='';
+    var dst = spendable().filter(function(a){ return a.id!==fAcc; });
+    var ok2=false; dst.forEach(function(a){ if(a.id===fTo) ok2=true; });
+    if(!ok2) fTo = dst.length? dst[0].id : null;
+    if(!dst.length) tb.innerHTML='<div class="muted">Кемінде екі шот керек</div>';
+    dst.forEach(function(a){
+      var b=document.createElement('button');
+      b.className='chip'+(a.id===fTo?' on':'');
+      b.textContent=(a.kind==='broker'?'📊 ':a.icon+' ')+a.name;
+      b.onclick=function(){ fTo=a.id; drawAccs(); };
+      tb.appendChild(b);
+    });
+  }
   // несие өтеу
   var loans = DB.accounts.filter(function(a){return a.kind==='debt';});
   var show = (fType==='out' && fCat==='Несие төлемі' && loans.length);
@@ -782,36 +836,56 @@ function saveTx(){
   var amt=parseFloat(document.getElementById('f-amt').value);
   if(!amt || amt<=0){ toast('Соманы жазыңыз'); return; }
   if(!fAcc){ toast('Алдымен шот қосыңыз'); return; }
-  var t={ id:newId(), type:fType, cat:fCat, amt:Math.abs(amt),
+  if(fType==='tr' && !fTo){ toast('Қай шотқа екенін таңдаңыз'); return; }
+  var t={ id:newId(), type:fType, cat:(fType==='tr'?'Аударым':fCat), amt:Math.abs(amt),
     date:document.getElementById('f-date').value||todayISO(),
-    note:document.getElementById('f-note').value.trim(), acc:fAcc, loan:fLoan };
+    note:document.getElementById('f-note').value.trim(), acc:fAcc, loan:fLoan,
+    to:(fType==='tr'?fTo:null) };
   DB.tx.push(t);
   applyTx(t, 1);
   save(); closeSheets(); render();
-  toast(fType==='in'?'Кіріс қосылды':'Шығын қосылды');
+  toast(fType==='in'?'Кіріс қосылды':(fType==='tr'?'Аударым жасалды':'Шығын қосылды'));
 }
 function applyTx(t, sign){
   var a=acc(t.acc);
+  if(t.type==='tr'){
+    var to=acc(t.to);
+    if(a) a.bal -= sign * t.amt;
+    if(to){
+      to.bal += sign * t.amt;
+      if(to.kind==='broker') to.invested = (to.invested||0) + sign * t.amt;
+    }
+    return;
+  }
   if(a) a.bal += sign * (t.type==='in' ? t.amt : -t.amt);
   if(t.loan){
     var l=acc(t.loan);
     if(l) l.bal -= sign * t.amt;   // өтеген сайын несие азаяды
   }
-  if(t.type==='in' && t.cat==='Несие алу' && !t.loan){ /* жаңа несие қолмен қосылады */ }
 }
 var viewId=null;
 function openView(id){
   viewId=id;
   var t=null; DB.tx.forEach(function(x){ if(x.id===id) t=x; });
   if(!t) return;
-  document.getElementById('v-title').textContent=(t.type==='in'?'Кіріс: ':'Шығын: ')+money(t.amt);
+  document.getElementById('v-title').textContent=
+    (t.type==='in'?'Кіріс: ':(t.type==='tr'?'Аударым: ':'Шығын: '))+money(t.amt);
   var a=acc(t.acc);
-  var h='<div class="kv"><span>Санат</span><b>'+icon(t.type,t.cat)+' '+esc(t.cat)+'</b></div>'+
-        '<div class="kv"><span>Күні</span><b>'+fullDate(t.date)+'</b></div>'+
-        (a?'<div class="kv"><span>Шот</span><b>'+a.icon+' '+esc(a.name)+'</b></div>':'');
+  var h='';
+  if(t.type==='tr'){
+    var to2=acc(t.to);
+    h='<div class="kv"><span>Қайдан</span><b>'+(a?esc(a.name):'—')+'</b></div>'+
+      '<div class="kv"><span>Қайда</span><b>'+(to2?esc(to2.name):'—')+'</b></div>'+
+      '<div class="kv"><span>Күні</span><b>'+fullDate(t.date)+'</b></div>';
+  } else {
+    h='<div class="kv"><span>Санат</span><b>'+icon(t.type,t.cat)+' '+esc(t.cat)+'</b></div>'+
+      '<div class="kv"><span>Күні</span><b>'+fullDate(t.date)+'</b></div>'+
+      (a?'<div class="kv"><span>Шот</span><b>'+a.icon+' '+esc(a.name)+'</b></div>':'');
+  }
   if(t.loan){ var l=acc(t.loan); if(l) h+='<div class="kv"><span>Несие</span><b>'+esc(l.name)+'</b></div>'; }
   if(t.note) h+='<div class="kv"><span>Түсініктеме</span><b>'+esc(t.note)+'</b></div>';
   document.getElementById('v-body').innerHTML=h;
+  var slot0=document.getElementById('v-extra'); if(slot0) slot0.innerHTML='';
   document.getElementById('v-del').textContent='Операцияны өшіру';
   document.getElementById('v-del').onclick=delTx;
   openSheet('sheet-view');
@@ -824,16 +898,24 @@ function delTx(){
 }
 
 /* ---- accounts ---- */
-var accKind='asset', accIcon='💵';
-function openAcc(kind){
-  accKind=kind; accIcon = kind==='asset'?'💵':'💳';
-  document.getElementById('acc-title').textContent = kind==='asset'?'Шот қосу':'Несие қосу';
-  document.getElementById('ac-bal-lab').textContent = kind==='asset'?'Қалдық, ₸':'Несие қалдығы, ₸';
-  document.getElementById('ac-name').value='';
-  document.getElementById('ac-bal').value='';
-  document.getElementById('ac-rate').value='';
-  document.getElementById('ac-pay').value='';
+var accKind='asset', accIcon='💵', accEdit=null;
+var KIND_TITLE={asset:'Банк шоты',broker:'Брокерлік шот',debt:'Несие'};
+function openAcc(kind, editId){
+  accEdit = editId||null;
+  accKind = kind;
+  accIcon = kind==='asset'?'💳':(kind==='broker'?'📊':'🏦');
+  var a = accEdit ? acc(accEdit) : null;
+  if(a){ accIcon=a.icon; }
+  document.getElementById('acc-title').textContent = (a?'Түзету: ':'')+KIND_TITLE[kind]+(a?'':' қосу');
+  document.getElementById('ac-bal-lab').textContent =
+    kind==='asset'?'Қалдық, ₸':(kind==='broker'?'Портфель құны, ₸':'Несие қалдығы, ₸');
+  document.getElementById('ac-name').value = a?a.name:'';
+  document.getElementById('ac-bal').value = a?a.bal:'';
+  document.getElementById('ac-rate').value = a&&a.rate?a.rate:'';
+  document.getElementById('ac-pay').value = a&&a.pay?a.pay:'';
+  document.getElementById('ac-inv').value = a&&a.invested?a.invested:'';
   document.getElementById('ac-loan-box').classList.toggle('hide', kind!=='debt');
+  document.getElementById('ac-inv-box').classList.toggle('hide', kind!=='broker');
   drawAccIcons(); openSheet('sheet-acc');
 }
 function drawAccIcons(){
@@ -854,14 +936,33 @@ function saveAcc(){
     a.rate=parseFloat(document.getElementById('ac-rate').value)||0;
     a.pay=parseFloat(document.getElementById('ac-pay').value)||0;
   }
+  if(accKind==='broker'){
+    a.invested=parseFloat(document.getElementById('ac-inv').value)||0;
+  }
+  if(accEdit){
+    var old=acc(accEdit);
+    if(old){
+      old.name=a.name; old.icon=a.icon; old.bal=a.bal;
+      if(accKind==='debt'){ old.rate=a.rate; old.pay=a.pay; }
+      if(accKind==='broker'){ old.invested=a.invested; }
+    }
+    accEdit=null;
+    save(); closeSheets(); render(); toast('Сақталды'); return;
+  }
   DB.accounts.push(a); save(); closeSheets(); render();
-  toast(accKind==='asset'?'Шот қосылды':'Несие қосылды');
+  toast(KIND_TITLE[accKind]+' қосылды');
 }
 function openAccView(id){
   var a=acc(id); if(!a) return;
   viewId=id;
   document.getElementById('v-title').textContent=a.icon+' '+a.name;
-  var h='<div class="kv"><span>'+(a.kind==='asset'?'Қалдық':'Несие қалдығы')+'</span><b>'+money(a.bal)+'</b></div>';
+  var h='<div class="kv"><span>'+(a.kind==='asset'?'Қалдық':(a.kind==='broker'?'Портфель құны':'Несие қалдығы'))+'</span><b>'+money(a.bal)+'</b></div>';
+  if(a.kind==='broker'){
+    var inv=a.invested||0, pl=a.bal-inv;
+    h+='<div class="kv"><span>Салынған қаражат</span><b>'+money(inv)+'</b></div>'+
+       '<div class="kv"><span>Табыс / шығын</span><b style="color:'+(pl>=0?'var(--g-bright)':'var(--red)')+'">'+
+       (pl>=0?'+':'')+money(pl)+(inv>0?' ('+(pl>=0?'+':'−')+Math.abs(Math.round(pl/inv*100))+'%)':'')+'</b></div>';
+  }
   if(a.kind==='debt'){
     h+='<div class="kv"><span>Мөлшерлеме</span><b>'+(a.rate||0)+'%</b></div>'+
        '<div class="kv"><span>Ай сайынғы төлем</span><b>'+money(a.pay||0)+'</b></div>';
@@ -873,7 +974,12 @@ function openAccView(id){
   var cnt=DB.tx.filter(function(t){return t.acc===id||t.loan===id;}).length;
   h+='<div class="kv"><span>Операция</span><b>'+cnt+'</b></div>';
   document.getElementById('v-body').innerHTML=h;
-  document.getElementById('v-del').textContent = a.kind==='asset'?'Шотты өшіру':'Несиені өшіру';
+  var extraBtns='<button class="btn line" onclick="openAcc(\''+a.kind+'\',\''+a.id+'\')">Түзету</button>';
+  if(a.kind==='broker') extraBtns='<button class="btn" onclick="openBVal(\''+a.id+'\')">Құнын жаңарту</button>'+extraBtns;
+  document.getElementById('v-body').innerHTML=h;
+  var slot=document.getElementById('v-extra');
+  if(slot) slot.innerHTML=extraBtns;
+  document.getElementById('v-del').textContent = 'Өшіру';
   document.getElementById('v-del').onclick=delAcc;
   openSheet('sheet-view');
 }
@@ -886,6 +992,43 @@ function monthsLeft(bal, rate, pay){
   var i=rate/12/100, b=bal, n=0;
   while(b>0 && n<600){ b = b*(1+i) - pay; n++; if(pay <= bal*i) return -1; }
   return n;
+}
+
+/* ---- брокер құны ---- */
+var bvId=null;
+function openBVal(id){
+  var a=acc(id); if(!a) return;
+  bvId=id;
+  document.getElementById('bv-title').textContent=a.name+' — құнын жаңарту';
+  document.getElementById('bv-val').value=a.bal;
+  closeSheets();
+  setTimeout(function(){ openSheet('sheet-bval'); }, 120);
+}
+function saveBVal(){
+  var v=parseFloat(document.getElementById('bv-val').value);
+  if(isNaN(v)){ toast('Соманы жазыңыз'); return; }
+  var a=acc(bvId); if(a) a.bal=v;
+  save(); closeSheets(); render(); toast('Жаңартылды');
+}
+
+/* ---- жылдам баптау ---- */
+function quickSetup(){
+  var want=[
+    {name:'Kaspi Bank', kind:'asset', icon:'💳'},
+    {name:'Freedom SuperApp', kind:'asset', icon:'🏦'},
+    {name:'Брокерлік шот 1', kind:'broker', icon:'📊'},
+    {name:'Брокерлік шот 2', kind:'broker', icon:'📈'}
+  ];
+  var added=0;
+  want.forEach(function(w){
+    var exists=false;
+    DB.accounts.forEach(function(a){ if(a.name.toLowerCase()===w.name.toLowerCase()) exists=true; });
+    if(exists) return;
+    DB.accounts.push({id:newId(), name:w.name, kind:w.kind, icon:w.icon, bal:0, invested:w.kind==='broker'?0:undefined});
+    added++;
+  });
+  save(); render();
+  toast(added? added+' шот қосылды — қалдықтарын жазыңыз' : 'Бұл шоттар бар');
 }
 
 /* ---- goals ---- */
@@ -985,8 +1128,8 @@ function inRange(d){ return (!range.from || d>=range.from) && (!range.to || d<=r
 /* ================= RENDER ================= */
 function render(){
   var T=totals();
-  var mTx=DB.tx.filter(function(t){return inMonth(t.date);});
-  var mIn=0,mOut=0; mTx.forEach(function(t){ t.type==='in'?mIn+=t.amt:mOut+=t.amt; });
+  var mTx=DB.tx.filter(function(t){return inMonth(t.date) && t.type!=='tr';});
+  var mIn=0,mOut=0; mTx.forEach(function(t){ if(t.type==='in') mIn+=t.amt; else mOut+=t.amt; });
 
   /* --- home --- */
   document.getElementById('h-net').textContent=money(T.net);
@@ -996,10 +1139,12 @@ function render(){
   document.getElementById('h-month').textContent=MONTHS[cur.getMonth()]+' '+cur.getFullYear();
   document.getElementById('h-in').textContent=money(mIn);
   document.getElementById('h-out').textContent=money(mOut);
-  document.getElementById('h-assets').textContent=money(T.assets);
+  document.getElementById('h-banks').textContent=money(T.banks);
+  document.getElementById('h-broker').textContent=money(T.broker);
   document.getElementById('h-debts').textContent=money(T.debts);
   document.getElementById('h-net2').textContent=money(T.net);
-  document.getElementById('acc-count').textContent=DB.accounts.length+' шот';
+  document.getElementById('acc-count').textContent=
+    accsOf('asset').length+' банк · '+accsOf('broker').length+' брокер';
 
   var recent=DB.tx.slice().sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,5);
   var hb=document.getElementById('home-tx'); hb.innerHTML='';
@@ -1009,13 +1154,20 @@ function render(){
   /* --- accounts --- */
   document.getElementById('a-count').textContent=DB.accounts.length+' шот';
   document.getElementById('a-net').textContent=money(T.net);
-  document.getElementById('a-assets').textContent=money(T.assets);
+  document.getElementById('a-banks').textContent=money(T.banks);
+  document.getElementById('a-broker').textContent=money(T.broker);
   document.getElementById('a-debts').textContent=money(T.debts);
-  renderAccList('asset','a-list-asset','Актив шот жоқ. Төмендегі түймемен қосыңыз.');
-  renderAccList('debt','a-list-debt','Несие жоқ. Бар болса қосып қойыңыз.');
+  document.getElementById('a-sum-bank').textContent=money(T.banks);
+  var pl=T.broker-T.invested;
+  document.getElementById('a-sum-broker').textContent=
+    T.invested>0 ? money(T.broker)+'  ('+(pl>=0?'+':'−')+nf(Math.abs(pl))+' ₸)' : money(T.broker);
+  document.getElementById('a-sum-debt').textContent=money(T.debts);
+  renderAccList('asset','a-list-asset','Банк шоты жоқ. Төмендегі түймемен қосыңыз.');
+  renderAccList('broker','a-list-broker','Брокерлік шот жоқ. Инвестицияңызды осында қосыңыз.');
+  renderAccList('debt','a-list-debt','Несие жоқ — тамаша.');
 
   /* --- ops --- */
-  var ops=DB.tx.filter(function(t){ return opsFilter==='all'||t.type===opsFilter; })
+  var ops=DB.tx.filter(function(t){ return opsFilter==='all'?true:t.type===opsFilter; })
     .sort(function(a,b){return a.date<b.date?1:-1;});
   document.getElementById('o-count').textContent=DB.tx.length+' операция';
   var ol=document.getElementById('ops-list'); ol.innerHTML='';
@@ -1024,7 +1176,7 @@ function render(){
     var byDay={};
     ops.forEach(function(t){ (byDay[t.date]=byDay[t.date]||[]).push(t); });
     Object.keys(byDay).sort().reverse().forEach(function(d){
-      var sum=0; byDay[d].forEach(function(t){ sum+=t.type==='in'?t.amt:-t.amt; });
+      var sum=0; byDay[d].forEach(function(t){ if(t.type==='in') sum+=t.amt; else if(t.type==='out') sum-=t.amt; });
       var hd=document.createElement('div'); hd.className='dayhead';
       hd.innerHTML='<span>'+dayTitle(d)+'</span><span>'+money(sum)+'</span>';
       ol.appendChild(hd);
@@ -1041,13 +1193,22 @@ function render(){
     '<div class="kv"><span>Қалдық</span><b>'+money(mIn-mOut)+'</b></div>'+
     '<div class="kv"><span>Жинақ үлесі</span><b>'+(mIn>0?rate+'%':'—')+'</b></div>';
 
-  var assets=DB.accounts.filter(function(a){return a.kind==='asset';});
+  var assets=spendable();
   var ob=document.getElementById('ov-assets'); ob.innerHTML='';
   if(!assets.length) ob.innerHTML='<div class="empty">Шот жоқ.</div>';
-  else assets.forEach(function(a){
-    var f=T.assets>0?a.bal/T.assets:0;
-    ob.appendChild(barRow(a.icon+' '+a.name, money(a.bal), f, false));
-  });
+  else {
+    ob.innerHTML='<div class="kv"><span>Банктердегі ақша</span><b style="color:var(--g-bright)">'+money(T.banks)+'</b></div>'+
+      '<div class="kv"><span>Брокерлік шоттар</span><b style="color:var(--blue)">'+money(T.broker)+'</b></div>'+
+      (T.invested>0?'<div class="kv"><span>Инвестиция табысы</span><b style="color:'+((T.broker-T.invested)>=0?'var(--g-bright)':'var(--red)')+'">'+
+        ((T.broker-T.invested)>=0?'+':'')+money(T.broker-T.invested)+'</b></div>':'')+
+      '<div class="kv"><span>Барлық актив</span><b>'+money(T.assets)+'</b></div>';
+    var wrapB=document.createElement('div'); wrapB.style.marginTop='12px';
+    assets.forEach(function(a){
+      var f=T.assets>0?a.bal/T.assets:0;
+      wrapB.appendChild(barRow((a.kind==='broker'?'📊 ':a.icon+' ')+a.name, money(a.bal), f, false));
+    });
+    ob.appendChild(wrapB);
+  }
 
   var debts=DB.accounts.filter(function(a){return a.kind==='debt';});
   var db=document.getElementById('ov-debts'); db.innerHTML='';
@@ -1098,6 +1259,14 @@ function txRow(t){
   var row=document.createElement('div'); row.className='row';
   row.onclick=function(){ openView(t.id); };
   var a=acc(t.acc);
+  if(t.type==='tr'){
+    var to=acc(t.to);
+    row.innerHTML='<div class="ico blue">⇄</div>'+
+      '<div><div class="name">Аударым</div><div class="sub2">'+
+      (a?esc(a.name):'—')+' → '+(to?esc(to.name):'—')+'</div></div>'+
+      '<div class="amt" style="color:var(--blue)">'+nf(t.amt)+' ₸</div>';
+    return row;
+  }
   row.innerHTML='<div class="ico'+(t.type==='out'?' red':'')+'">'+icon(t.type,t.cat)+'</div>'+
     '<div><div class="name">'+esc(t.cat)+'</div><div class="sub2">'+
     (a?esc(a.name):'—')+(t.note?' · '+esc(t.note):'')+'</div></div>'+
@@ -1111,9 +1280,14 @@ function renderAccList(kind, elId, emptyTxt){
   list.forEach(function(a){
     var row=document.createElement('div'); row.className='row';
     row.onclick=function(){ openAccView(a.id); };
-    var sub = kind==='debt' ? ((a.rate||0)+'% · айына '+nf(a.pay||0)+' ₸') : 'Шот';
-    row.innerHTML='<div class="ico'+(kind==='debt'?' red':'')+'">'+a.icon+'</div>'+
-      '<div><div class="name">'+esc(a.name)+'</div><div class="sub2">'+sub+'</div></div>'+
+    var sub='Банк шоты';
+    if(kind==='debt') sub=(a.rate||0)+'% · айына '+nf(a.pay||0)+' ₸';
+    if(kind==='broker'){
+      var inv=a.invested||0, pl=a.bal-inv;
+      sub='Салынған '+nf(inv)+' ₸ · '+(pl>=0?'+':'−')+nf(Math.abs(pl))+' ₸'+(inv>0?' ('+(pl>=0?'+':'−')+Math.abs(Math.round(pl/inv*100))+'%)':'');
+    }
+    row.innerHTML='<div class="ico'+(kind==='debt'?' red':(kind==='broker'?' blue':''))+'">'+a.icon+'</div>'+
+      '<div style="min-width:0;flex:1"><div class="name">'+esc(a.name)+'</div><div class="sub2">'+sub+'</div></div>'+
       '<div class="amt" style="color:'+(kind==='debt'?'var(--red)':'var(--ink)')+'">'+money(a.bal)+'</div>';
     box.appendChild(row);
   });
@@ -1127,9 +1301,9 @@ function barRow(label, right, frac, red){
 }
 
 function renderStats(){
-  var list=DB.tx.filter(function(t){ return inRange(t.date); });
+  var list=DB.tx.filter(function(t){ return inRange(t.date) && t.type!=='tr'; });
   var sIn=0,sOut=0;
-  list.forEach(function(t){ t.type==='in'?sIn+=t.amt:sOut+=t.amt; });
+  list.forEach(function(t){ if(t.type==='in') sIn+=t.amt; else sOut+=t.amt; });
   document.getElementById('s-count').textContent=list.length+' операция';
   document.getElementById('s-in').textContent=money(sIn);
   document.getElementById('s-out').textContent=money(sOut);
