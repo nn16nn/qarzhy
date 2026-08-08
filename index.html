@@ -238,9 +238,9 @@
       </div>
       <div class="trio" style="grid-template-columns:1fr 1fr;row-gap:14px">
         <div><div class="l">Банктердегі ақша</div><div class="v" id="h-banks" style="color:var(--g-bright)">0 ₸</div></div>
-        <div><div class="l">Инвестиция</div><div class="v" id="h-broker" style="color:var(--blue)">0 ₸</div></div>
         <div><div class="l">Міндеттемелер</div><div class="v" id="h-debts" style="color:var(--red)">0 ₸</div></div>
         <div><div class="l">Таза капитал</div><div class="v" id="h-net2">0 ₸</div></div>
+        <div><div class="l">Инвестиция · бөлек</div><div class="v" id="h-broker" style="color:var(--blue)">0 ₸</div></div>
       </div>
     </div>
 
@@ -251,7 +251,7 @@
       <button onclick="go('calc')"><span class="qi">🧮</span> Калькулятор</button>
     </div>
 
-    <button class="btn dashed" onclick="go('import')" style="margin-bottom:12px">📥 Банк үзіндісін жүктеу (PDF · Excel)</button>
+    <button class="btn dashed" onclick="startBankImport()" style="margin-bottom:12px">📥 Банк үзіндісін жүктеу (PDF · Excel)</button>
 
     <div class="card">
       <h2>Соңғы операциялар <small onclick="go('ops')">Барлығы →</small></h2>
@@ -271,13 +271,15 @@
     <div class="cap" id="a-net">0 ₸</div>
     <div class="two" style="grid-template-columns:1fr 1fr 1fr;gap:8px">
       <div class="mini" style="padding:11px"><div class="t" style="font-size:12px">Банктер</div><div class="v" id="a-banks" style="font-size:15px">0 ₸</div></div>
-      <div class="mini" style="padding:11px"><div class="t" style="font-size:12px">Брокер</div><div class="v" id="a-broker" style="font-size:15px">0 ₸</div></div>
+      <div class="mini" style="padding:11px"><div class="t" style="font-size:12px">Брокер·бөлек</div><div class="v" id="a-broker" style="font-size:15px">0 ₸</div></div>
       <div class="mini" style="padding:11px"><div class="t" style="font-size:12px">Несие</div><div class="v" id="a-debts" style="font-size:15px">0 ₸</div></div>
     </div>
   </div>
   <div class="wrap">
     <div class="card"><h2>Банк шоттары <small id="a-sum-bank"></small></h2><div id="a-list-asset"></div></div>
-    <div class="card"><h2>Брокерлік шоттар <small id="a-sum-broker"></small></h2><div id="a-list-broker"></div></div>
+    <div class="card"><h2>Брокерлік шоттар <small id="a-sum-broker"></small></h2>
+      <p class="muted" style="margin:-6px 0 10px">Жеке есептеледі — таза капиталға қосылмайды.</p>
+      <div id="a-list-broker"></div></div>
     <div class="card"><h2>Несиелер <small id="a-sum-debt"></small></h2><div id="a-list-debt"></div></div>
     <button class="btn dashed" onclick="openAcc('asset')">+ Банк шотын қосу</button>
     <button class="btn dashed" onclick="openAcc('broker')">+ Брокерлік шот қосу</button>
@@ -537,7 +539,7 @@
     <div class="card">
       <h2>Банк үзіндісі</h2>
       <p class="muted" style="margin:0 0 12px">PDF немесе Excel файлдан операцияларды автоматты қосу.</p>
-      <button class="btn line" onclick="go('import')">Файл жүктеу</button>
+      <button class="btn line" onclick="startBankImport()">Файл жүктеу</button>
     </div>
     <div class="card">
       <h2>Барлығын өшіру</h2>
@@ -551,18 +553,45 @@
   </div>
 </section>
 
+<!-- ============ БРОКЕРЛІК ШОТ ============ -->
+<section class="page" id="p-broker">
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('accounts')">←</button>
+      <div style="flex:1"><h1 id="br-name" style="font-size:23px">Брокерлік шот</h1>
+        <div class="sub">Жеке есеп — жалпы ақшаға қосылмайды</div></div>
+    </div>
+    <div class="cap-label">Портфель құны</div>
+    <div class="cap" id="br-val">0 ₸</div>
+    <div class="two">
+      <div class="mini"><div class="t">Салынған</div><div class="v" id="br-inv">0</div></div>
+      <div class="mini"><div class="t">Табыс</div><div class="v" id="br-pl">0</div></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="quad">
+      <button onclick="openBVal(brId)"><span class="qi">🔄</span> Құнын жаңарту</button>
+      <button onclick="openBOp()"><span class="qi">➕</span> Операция қосу</button>
+      <button onclick="startBrokerImport()"><span class="qi">📥</span> Файл жүктеу</button>
+      <button onclick="openAcc('broker', brId)"><span class="qi">✎</span> Түзету</button>
+    </div>
+    <div class="card"><h2>Операциялар <small id="br-count"></small></h2><div id="br-list"></div></div>
+    <button class="btn danger" onclick="delBrokerAcc()">Шотты өшіру</button>
+  </div>
+</section>
+
 <!-- ============ ИМПОРТ ============ -->
 <section class="page" id="p-import">
   <div class="hero flat">
     <div class="hero-top">
       <button class="back" onclick="go('home')">←</button>
-      <div style="flex:1"><h1 style="font-size:24px">Файл жүктеу</h1><div class="sub">PDF · Excel · CSV үзінді</div></div>
+      <div style="flex:1"><h1 style="font-size:24px" id="imp-h1">Файл жүктеу</h1><div class="sub" id="imp-sub">PDF · Excel · CSV үзінді</div></div>
     </div>
   </div>
   <div class="wrap">
     <div class="card">
-      <h2>Банк үзіндісін таңдаңыз</h2>
-      <p class="muted" style="margin:0 0 14px">Kaspi, Halyk, Freedom, Forte — банк қосымшасынан айлық үзіндіні PDF немесе Excel түрінде жүктеп алыңыз. Операциялар автоматты түрде кіріс пен шығынға бөлініп, санаттары анықталады.</p>
+      <h2 id="imp-title">Банк үзіндісін таңдаңыз</h2>
+      <p class="muted" style="margin:0 0 14px" id="imp-desc">Kaspi, Halyk, Freedom, Forte — банк қосымшасынан айлық үзіндіні PDF немесе Excel түрінде жүктеп алыңыз. Операциялар автоматты түрде кіріс пен шығынға бөлініп, санаттары анықталады.</p>
       <input type="file" id="imp-file" class="hide" accept=".pdf,.xlsx,.xls,.csv" onchange="onImportFile(this)">
       <button class="btn" onclick="document.getElementById('imp-file').click()">Файл таңдау</button>
       <p class="muted" style="margin:0">Файл ешқайда жіберілмейді — телефонның өз ішінде оқылады.</p>
@@ -650,6 +679,22 @@
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
 </div>
 
+<!-- Sheet: broker operation -->
+<div class="sheet" id="sheet-bop">
+  <div class="grab"></div>
+  <h3>Брокерлік операция</h3>
+  <label class="f">Түрі</label>
+  <div class="chips" id="bo-types"></div>
+  <label class="f" id="bo-amt-lab">Сома</label>
+  <input class="inp big" id="bo-amt" type="number" inputmode="decimal" placeholder="0">
+  <label class="f">Күні</label>
+  <input class="inp" id="bo-date" type="date">
+  <label class="f">Түсініктеме</label>
+  <input class="inp" id="bo-note" type="text" placeholder="Міндетті емес">
+  <button class="btn" onclick="saveBOp()">Сақтау</button>
+  <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
+</div>
+
 <!-- Sheet: broker value -->
 <div class="sheet" id="sheet-bval">
   <div class="grab"></div>
@@ -705,14 +750,14 @@ var store = {
   get: function(k){ try{ return localStorage.getItem(k); }catch(e){ return k in mem ? mem[k] : null; } },
   set: function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; } }
 };
-var DB = { tx:[], goals:[], accounts:[], rate:null };
+var DB = { tx:[], goals:[], accounts:[], btx:[], rate:null };
 
 function load(){
   try{
     var raw = store.get('qarzhy_v1');
     if(raw){
       var d = JSON.parse(raw);
-      DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.rate = d.rate||null;
+      DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[]; DB.rate = d.rate||null;
       if(!DB.accounts.length){
         DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:d.start||0}];
       }
@@ -855,7 +900,7 @@ function totals(){
     else if(x.kind==='debt'){ d+=toKZT(x); }
     else { b+=toKZT(x); }
   });
-  return {banks:b, broker:br, invested:inv, assets:b+br, debts:d, net:b+br-d};
+  return {banks:b, broker:br, invested:inv, assets:b, debts:d, net:b-d, brokerPL:br-inv};
 }
 function accsOf(kind){ return DB.accounts.filter(function(a){ return a.kind===kind; }); }
 function spendable(){ return DB.accounts.filter(function(a){ return a.kind==='asset'||a.kind==='broker'; }); }
@@ -1181,6 +1226,122 @@ function monthsLeft(bal, rate, pay){
   return n;
 }
 
+/* ---- брокерлік операциялар ---- */
+var BOP = [['dep','Салым','⬇'],['wd','Шығару','⬆'],['div','Дивиденд','💰'],['fee','Комиссия · салық','🧾']];
+function bopName(t){ for(var i=0;i<BOP.length;i++) if(BOP[i][0]===t) return BOP[i][1]; return t; }
+function bopIcon(t){ for(var i=0;i<BOP.length;i++) if(BOP[i][0]===t) return BOP[i][2]; return '•'; }
+
+function applyBTx(b, sign){
+  var a=acc(b.acc); if(!a) return;
+  var v=sign*b.amt;
+  if(b.t==='dep'){ a.bal+=v; a.invested=(a.invested||0)+v; }
+  else if(b.t==='wd'){ a.bal-=v; a.invested=(a.invested||0)-v; }
+  else if(b.t==='div'){ a.bal+=v; }
+  else { a.bal-=v; }
+}
+
+var brId=null, boType='dep', boViewId=null;
+function openBroker(id){
+  brId=id; go('broker');
+}
+function openBOp(){
+  boType='dep';
+  document.getElementById('bo-amt').value='';
+  document.getElementById('bo-note').value='';
+  document.getElementById('bo-date').value=todayISO();
+  var a=acc(brId);
+  document.getElementById('bo-amt-lab').textContent='Сома, '+accCurSym(a);
+  drawBOpTypes(); openSheet('sheet-bop');
+}
+function drawBOpTypes(){
+  var box=document.getElementById('bo-types'); box.innerHTML='';
+  BOP.forEach(function(t){
+    var b=document.createElement('button');
+    b.className='chip'+(boType===t[0]?' on':'');
+    b.textContent=t[2]+' '+t[1];
+    b.onclick=function(){ boType=t[0]; drawBOpTypes(); };
+    box.appendChild(b);
+  });
+}
+function saveBOp(){
+  var v=parseFloat(document.getElementById('bo-amt').value);
+  if(!v||v<=0){ toast('Соманы жазыңыз'); return; }
+  var b={id:newId(), acc:brId, t:boType, amt:v,
+    date:document.getElementById('bo-date').value||todayISO(),
+    note:document.getElementById('bo-note').value.trim()};
+  DB.btx.push(b); applyBTx(b,1);
+  save(); closeSheets(); render(); toast(bopName(boType)+' қосылды');
+}
+function openBView(id){
+  var b=null; DB.btx.forEach(function(x){ if(x.id===id) b=x; });
+  if(!b) return;
+  boViewId=id;
+  var a=acc(b.acc), sym=accCurSym(a);
+  document.getElementById('v-title').textContent=bopName(b.t)+': '+money(b.amt,sym);
+  document.getElementById('v-body').innerHTML=
+    '<div class="kv"><span>Түрі</span><b>'+bopIcon(b.t)+' '+bopName(b.t)+'</b></div>'+
+    '<div class="kv"><span>Күні</span><b>'+fullDate(b.date)+'</b></div>'+
+    (b.note?'<div class="kv"><span>Түсініктеме</span><b>'+esc(b.note)+'</b></div>':'');
+  var slot=document.getElementById('v-extra'); if(slot) slot.innerHTML='';
+  document.getElementById('v-del').textContent='Операцияны өшіру';
+  document.getElementById('v-del').onclick=function(){
+    var x=null; DB.btx.forEach(function(y){ if(y.id===boViewId) x=y; });
+    if(x) applyBTx(x,-1);
+    DB.btx=DB.btx.filter(function(y){ return y.id!==boViewId; });
+    save(); closeSheets(); render(); toast('Өшірілді');
+  };
+  openSheet('sheet-view');
+}
+function delBrokerAcc(){
+  if(!confirm('Бұл брокерлік шот пен оның операциялары өшіріледі. Жалғастырасыз ба?')) return;
+  DB.btx=DB.btx.filter(function(b){ return b.acc!==brId; });
+  DB.accounts=DB.accounts.filter(function(a){ return a.id!==brId; });
+  DB.tx.forEach(function(t){ if(t.to===brId) t.to=null; });
+  save(); go('accounts'); toast('Өшірілді');
+}
+function renderBroker(){
+  var a=acc(brId);
+  if(!a){ return; }
+  var sym=accCurSym(a), inv=a.invested||0, pl=a.bal-inv;
+  document.getElementById('br-name').textContent=a.icon+' '+a.name;
+  document.getElementById('br-val').textContent=money(a.bal,sym)+
+    (a.cur==='USD'&&rateV()? '' : '');
+  document.getElementById('br-inv').textContent=money(inv,sym);
+  var ple=document.getElementById('br-pl');
+  ple.textContent=(pl>=0?'+':'')+money(pl,sym)+(inv>0?' ('+(pl>=0?'+':'−')+Math.abs(Math.round(pl/inv*100))+'%)':'');
+  ple.style.color = pl>=0?'#8FE8AE':'#FFB3AE';
+
+  var ops=DB.btx.filter(function(b){ return b.acc===brId; });
+  var trs=DB.tx.filter(function(t){ return t.type==='tr' && t.to===brId; });
+  var box=document.getElementById('br-list'); box.innerHTML='';
+  document.getElementById('br-count').textContent=(ops.length+trs.length)+' жазба';
+  var all=[];
+  ops.forEach(function(b){ all.push({date:b.date, kind:'b', o:b}); });
+  trs.forEach(function(t){ all.push({date:t.date, kind:'t', o:t}); });
+  all.sort(function(x,y){ return x.date<y.date?1:-1; });
+  if(!all.length){ box.innerHTML='<div class="empty">Жазба жоқ.<br>Файл жүктеңіз немесе қолмен қосыңыз.</div>'; return; }
+  all.forEach(function(it){
+    var row=document.createElement('div'); row.className='row';
+    if(it.kind==='b'){
+      var b=it.o, plus=(b.t==='dep'||b.t==='div');
+      row.onclick=function(){ openBView(b.id); };
+      row.innerHTML='<div class="ico'+(plus?'':' red')+'">'+bopIcon(b.t)+'</div>'+
+        '<div style="min-width:0;flex:1"><div class="name">'+bopName(b.t)+'</div>'+
+        '<div class="sub2">'+fullDate(b.date)+(b.note?' · '+esc(b.note):'')+'</div></div>'+
+        '<div class="amt" style="color:'+(plus?'var(--g-bright)':'var(--red)')+'">'+
+        (plus?'+':'−')+nf(b.amt)+' '+sym+'</div>';
+    } else {
+      var t=it.o, from=acc(t.acc);
+      row.onclick=function(){ openView(t.id); };
+      row.innerHTML='<div class="ico blue">⇄</div>'+
+        '<div style="min-width:0;flex:1"><div class="name">Банктен аударым</div>'+
+        '<div class="sub2">'+fullDate(t.date)+' · '+(from?esc(from.name):'—')+'</div></div>'+
+        '<div class="amt" style="color:var(--blue)">+'+nf(toAcc(a,t.amt))+' '+sym+'</div>';
+    }
+    box.appendChild(row);
+  });
+}
+
 /* ---- брокер құны ---- */
 var bvId=null;
 function openBVal(id){
@@ -1264,7 +1425,7 @@ function importData(el){
   r.onload=function(){
     try{
       var d=JSON.parse(r.result);
-      DB.tx=d.tx||[]; DB.goals=d.goals||[]; DB.accounts=d.accounts||[];
+      DB.tx=d.tx||[]; DB.goals=d.goals||[]; DB.accounts=d.accounts||[]; DB.btx=d.btx||[];
       if(!DB.accounts.length) DB.accounts=[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:d.start||0}];
       save(); render(); toast('Қалпына келтірілді');
     }catch(e){ toast('Файл оқылмады'); }
@@ -1273,7 +1434,7 @@ function importData(el){
 }
 function wipe(){
   if(!confirm('Барлық дерек өшіріледі. Жалғастырасыз ба?')) return;
-  DB={tx:[],goals:[],accounts:[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:0,cur:'KZT'}],rate:DB.rate};
+  DB={tx:[],goals:[],accounts:[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:0,cur:'KZT'}],btx:[],rate:DB.rate};
   save(); render(); toast('Өшірілді');
 }
 
@@ -1327,6 +1488,7 @@ function render(){
   document.getElementById('h-out').textContent=money(mOut);
   document.getElementById('h-banks').textContent=money(T.banks);
   document.getElementById('h-broker').textContent=money(T.broker);
+  if(view==='broker') renderBroker();
   document.getElementById('h-debts').textContent=money(T.debts);
   document.getElementById('h-net2').textContent=money(T.net);
   document.getElementById('acc-count').textContent=
@@ -1385,19 +1547,20 @@ function render(){
     '<div class="kv"><span>Қалдық</span><b>'+money(mIn-mOut)+'</b></div>'+
     '<div class="kv"><span>Жинақ үлесі</span><b>'+(mIn>0?rate+'%':'—')+'</b></div>';
 
-  var assets=spendable();
+  var assets=accsOf('asset');
   var ob=document.getElementById('ov-assets'); ob.innerHTML='';
   if(!assets.length) ob.innerHTML='<div class="empty">Шот жоқ.</div>';
   else {
     ob.innerHTML='<div class="kv"><span>Банктердегі ақша</span><b style="color:var(--g-bright)">'+money(T.banks)+'</b></div>'+
-      '<div class="kv"><span>Брокерлік шоттар</span><b style="color:var(--blue)">'+money(T.broker)+'</b></div>'+
-      (T.invested>0?'<div class="kv"><span>Инвестиция табысы</span><b style="color:'+((T.broker-T.invested)>=0?'var(--g-bright)':'var(--red)')+'">'+
-        ((T.broker-T.invested)>=0?'+':'')+money(T.broker-T.invested)+'</b></div>':'')+
-      '<div class="kv"><span>Барлық актив</span><b>'+money(T.assets)+'</b></div>';
+      '<div class="kv"><span>Міндеттемелер</span><b style="color:var(--red)">'+money(T.debts)+'</b></div>'+
+      '<div class="kv"><span>Таза капитал</span><b>'+money(T.net)+'</b></div>'+
+      '<div class="kv" style="margin-top:8px"><span>Инвестиция портфелі (бөлек)</span><b style="color:var(--blue)">'+money(T.broker)+'</b></div>'+
+      (T.invested>0?'<div class="kv"><span>Портфель табысы</span><b style="color:'+(T.brokerPL>=0?'var(--g-bright)':'var(--red)')+'">'+
+        (T.brokerPL>=0?'+':'')+money(T.brokerPL)+'</b></div>':'');
     var wrapB=document.createElement('div'); wrapB.style.marginTop='12px';
     assets.forEach(function(a){
       var kz=toKZT(a);
-      var f=T.assets>0?kz/T.assets:0;
+      var f=T.banks>0?kz/T.banks:0;
       wrapB.appendChild(barRow((a.kind==='broker'?'📊 ':a.icon+' ')+a.name, money(kz), f, false));
     });
     ob.appendChild(wrapB);
@@ -1473,7 +1636,7 @@ function renderAccList(kind, elId, emptyTxt){
   if(!list.length){ box.innerHTML='<div class="empty">'+emptyTxt+'</div>'; return; }
   list.forEach(function(a){
     var row=document.createElement('div'); row.className='row';
-    row.onclick=function(){ openAccView(a.id); };
+    row.onclick = (kind==='broker') ? function(){ openBroker(a.id); } : function(){ openAccView(a.id); };
     var sym=accCurSym(a);
     var sub='Банк шоты';
     if(kind==='debt') sub=(a.rate||0)+'% · айына '+nf(a.pay||0)+' ₸';
@@ -1731,7 +1894,39 @@ var CDN_XLSX = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min
 var CDN_PDF  = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
 var CDN_PDFW = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-var IMP = { rows: [], acc: null };
+var IMP = { rows: [], acc: null, mode: 'bank', brAcc: null };
+
+var BR_KEYS = [
+  [/(дивиденд|dividend|купон|coupon|выплата по|доход по бумаг)/i, 'div'],
+  [/(комисси|fee|налог|tax|удержан|штраф|обслужив)/i, 'fee'],
+  [/(вывод|withdraw|снятие|перевод на карт|списание на счет)/i, 'wd'],
+  [/(пополнен|депозит|deposit|зачислен|поступлен|ввод средств)/i, 'dep']
+];
+function guessBrokerType(text, sign){
+  for(var i=0;i<BR_KEYS.length;i++) if(BR_KEYS[i][0].test(text)) return BR_KEYS[i][1];
+  return sign==='in' ? 'dep' : 'wd';
+}
+function startBrokerImport(){
+  IMP.mode='broker'; IMP.brAcc=brId; IMP.rows=[];
+  document.getElementById('imp-result').innerHTML='';
+  document.getElementById('imp-status').innerHTML='';
+  go('import');
+  var a=acc(brId);
+  document.getElementById('imp-h1').textContent='Брокерлік есеп';
+  document.getElementById('imp-sub').textContent=(a?a.name:'')+' — жеке есеп';
+  document.getElementById('imp-title').textContent='Брокер есебін таңдаңыз';
+  document.getElementById('imp-desc').textContent='Freedom Finance, Interactive Brokers және т.б. — есеп файлын (PDF, Excel, CSV) жүктеңіз. Салым, шығару, дивиденд пен комиссия автоматты бөлінеді. Бұл жазбалар тек осы брокерлік шотқа жазылады, жалпы кіріс-шығынға қосылмайды.';
+}
+function startBankImport(){
+  IMP.mode='bank'; IMP.brAcc=null; IMP.rows=[];
+  document.getElementById('imp-result').innerHTML='';
+  document.getElementById('imp-status').innerHTML='';
+  go('import');
+  document.getElementById('imp-h1').textContent='Файл жүктеу';
+  document.getElementById('imp-sub').textContent='PDF · Excel · CSV үзінді';
+  document.getElementById('imp-title').textContent='Банк үзіндісін таңдаңыз';
+  document.getElementById('imp-desc').textContent='Kaspi, Halyk, Freedom, Forte — банк қосымшасынан айлық үзіндіні PDF немесе Excel түрінде жүктеп алыңыз. Операциялар автоматты түрде кіріс пен шығынға бөлініп, санаттары анықталады.';
+}
 
 /* --- санат кілт сөздері --- */
 var OUT_KEYS = [
@@ -1892,13 +2087,22 @@ function extractRows(lines){
     seen[k] = 1;
     out.push(r);
   });
-  // қолданыстағы операциялармен салыстыру
+  // қайталанғанды тексеру
   var have = {};
-  DB.tx.forEach(function(t){ have[t.date + '|' + Math.round(t.amt) + '|' + t.type] = 1; });
-  out.forEach(function(r){
-    r.dup = !!have[r.date + '|' + Math.round(r.amt) + '|' + r.type];
-    r.on = !r.dup;
-  });
+  if(IMP.mode === 'broker'){
+    DB.btx.forEach(function(b){ if(b.acc===IMP.brAcc) have[b.date + '|' + Math.round(b.amt)] = 1; });
+    out.forEach(function(r){
+      r.bt = guessBrokerType(r.note + ' ' + r.type, r.type);
+      r.dup = !!have[r.date + '|' + Math.round(r.amt)];
+      r.on = !r.dup;
+    });
+  } else {
+    DB.tx.forEach(function(t){ have[t.date + '|' + Math.round(t.amt) + '|' + t.type] = 1; });
+    out.forEach(function(r){
+      r.dup = !!have[r.date + '|' + Math.round(r.amt) + '|' + r.type];
+      r.on = !r.dup;
+    });
+  }
   out.sort(function(a,b){ return a.date < b.date ? 1 : -1; });
   return out;
 }
@@ -1978,6 +2182,26 @@ function renderImport(){
 
   var head = document.createElement('div');
   head.className = 'card';
+
+  if(IMP.mode === 'broker'){
+    var ba = acc(IMP.brAcc), bsym = accCurSym(ba);
+    var cnt = {dep:0, wd:0, div:0, fee:0}, sums = {dep:0, wd:0, div:0, fee:0};
+    IMP.rows.forEach(function(r){ cnt[r.bt]++; sums[r.bt] += r.amt; });
+    var rowsHtml = '';
+    BOP.forEach(function(t){
+      if(!cnt[t[0]]) return;
+      rowsHtml += '<div class="kv"><span>' + t[2] + ' ' + t[1] + ' · ' + cnt[t[0]] + '</span><b>' +
+        money(sums[t[0]], bsym) + '</b></div>';
+    });
+    head.innerHTML = '<h2>Табылды: ' + IMP.rows.length + ' жазба</h2>' + rowsHtml +
+      '<p class="muted" style="margin:12px 0 0">Шот: <b>' + (ba ? esc(ba.name) : '—') +
+      '</b> · сомалар ' + bsym + '-пен. Бұл жазбалар жалпы кіріс-шығынға қосылмайды.</p>';
+    box.innerHTML = '';
+    box.appendChild(head);
+    renderImportList(box);
+    return;
+  }
+
   var nIn = 0, nOut = 0, sIn = 0, sOut = 0;
   IMP.rows.forEach(function(r){
     if(r.type === 'in'){ nIn++; sIn += r.amt; } else { nOut++; sOut += r.amt; }
@@ -2033,6 +2257,14 @@ function renderImport(){
     addBox.appendChild(b);
   });
 
+  renderImportList(box);
+}
+
+function renderImportList(box){
+  var isBr = IMP.mode === 'broker';
+  var ba = isBr ? acc(IMP.brAcc) : null;
+  var bsym = isBr ? accCurSym(ba) : '₸';
+
   var tools = document.createElement('div');
   tools.className = 'card';
   tools.innerHTML = '<div class="seg tight" style="margin:0">' +
@@ -2060,28 +2292,39 @@ function renderImport(){
     var meta = document.createElement('div');
     meta.className = 'imp-meta';
 
-    var st = document.createElement('select');
-    [['out','Шығын'],['in','Кіріс']].forEach(function(o){
-      var op = document.createElement('option');
-      op.value = o[0]; op.textContent = o[1]; if(r.type === o[0]) op.selected = true;
-      st.appendChild(op);
-    });
-    st.onchange = function(){
-      r.type = st.value;
-      if(CATS[r.type].filter(function(c){ return c[0] === r.cat; }).length === 0) r.cat = 'Басқа';
-      renderImport();
-    };
+    if(isBr){
+      var sb = document.createElement('select');
+      BOP.forEach(function(t){
+        var op = document.createElement('option');
+        op.value = t[0]; op.textContent = t[2] + ' ' + t[1];
+        if(r.bt === t[0]) op.selected = true;
+        sb.appendChild(op);
+      });
+      sb.onchange = function(){ r.bt = sb.value; renderImport(); };
+      meta.appendChild(sb);
+    } else {
+      var st = document.createElement('select');
+      [['out','Шығын'],['in','Кіріс']].forEach(function(o){
+        var op = document.createElement('option');
+        op.value = o[0]; op.textContent = o[1]; if(r.type === o[0]) op.selected = true;
+        st.appendChild(op);
+      });
+      st.onchange = function(){
+        r.type = st.value;
+        if(CATS[r.type].filter(function(c){ return c[0] === r.cat; }).length === 0) r.cat = 'Басқа';
+        renderImport();
+      };
 
-    var sc = document.createElement('select');
-    CATS[r.type].forEach(function(c){
-      var op = document.createElement('option');
-      op.value = c[0]; op.textContent = c[1] + ' ' + c[0];
-      if(r.cat === c[0]) op.selected = true;
-      sc.appendChild(op);
-    });
-    sc.onchange = function(){ r.cat = sc.value; };
-
-    meta.appendChild(st); meta.appendChild(sc);
+      var sc = document.createElement('select');
+      CATS[r.type].forEach(function(c){
+        var op = document.createElement('option');
+        op.value = c[0]; op.textContent = c[1] + ' ' + c[0];
+        if(r.cat === c[0]) op.selected = true;
+        sc.appendChild(op);
+      });
+      sc.onchange = function(){ r.cat = sc.value; };
+      meta.appendChild(st); meta.appendChild(sc);
+    }
     if(r.dup){
       var bd = document.createElement('span');
       bd.className = 'badge'; bd.textContent = 'бұрын қосылған';
@@ -2090,9 +2333,13 @@ function renderImport(){
     txt.appendChild(meta);
 
     var am = document.createElement('div');
-    am.className = 'amt ' + r.type;
     am.style.fontSize = '14px';
-    am.textContent = (r.type === 'in' ? '+' : '−') + nf(r.amt) + ' ₸';
+    am.style.fontWeight = '700';
+    am.style.marginLeft = 'auto';
+    am.style.whiteSpace = 'nowrap';
+    var plus = isBr ? (r.bt === 'dep' || r.bt === 'div') : (r.type === 'in');
+    am.style.color = plus ? 'var(--g-bright)' : 'var(--red)';
+    am.textContent = (plus ? '+' : '−') + nf(r.amt) + ' ' + bsym;
 
     row.appendChild(cb); row.appendChild(txt); row.appendChild(am);
     list.appendChild(row);
@@ -2102,9 +2349,9 @@ function renderImport(){
   var n = IMP.rows.filter(function(r){ return r.on; }).length;
   var btn = document.createElement('button');
   btn.className = 'btn';
-  btn.textContent = n + ' операцияны қосу';
+  btn.textContent = n + (isBr ? ' жазбаны қосу' : ' операцияны қосу');
   btn.onclick = importConfirm;
-  if(!n || !IMP.acc){ btn.style.opacity = '.5'; }
+  if(!n || (!isBr && !IMP.acc)){ btn.style.opacity = '.5'; }
   box.appendChild(btn);
 
   var cancel = document.createElement('button');
@@ -2119,7 +2366,24 @@ function impOnlyNew(){ IMP.rows.forEach(function(r){ r.on = !r.dup; }); renderIm
 
 function importConfirm(){
   var sel = IMP.rows.filter(function(r){ return r.on; });
-  if(!sel.length){ toast('Бірде-бір операция белгіленбеген'); return; }
+  if(!sel.length){ toast('Бірде-бір жазба белгіленбеген'); return; }
+
+  if(IMP.mode === 'broker'){
+    sel.forEach(function(r){
+      var b = { id: newId(), acc: IMP.brAcc, t: r.bt, amt: r.amt, date: r.date,
+                note: r.note === '—' ? '' : r.note };
+      DB.btx.push(b);
+      applyBTx(b, 1);
+    });
+    save();
+    IMP.rows = [];
+    document.getElementById('imp-result').innerHTML = '';
+    toast(sel.length + ' жазба қосылды');
+    brId = IMP.brAcc;
+    go('broker');
+    return;
+  }
+
   if(!IMP.acc){ toast('Алдымен шот қосыңыз'); return; }
   sel.forEach(function(r){
     var t = { id: newId(), type: r.type, cat: r.cat, amt: r.amt, date: r.date,
