@@ -550,6 +550,43 @@
       <button class="btn line" onclick="document.getElementById('imp').click()">Файлдан қалпына келтіру</button>
     </div>
     <div class="card">
+      <h2>Бұлт · Supabase</h2>
+      <p class="muted" style="margin:0 0 12px" id="sb-info">—</p>
+
+      <div id="sb-setup">
+        <label class="f">Project URL</label>
+        <input class="inp" id="sb-url" type="url" placeholder="https://xxxx.supabase.co" autocapitalize="off" autocorrect="off">
+        <label class="f">anon public key</label>
+        <input class="inp" id="sb-key" type="text" placeholder="eyJhbGciOi..." autocapitalize="off" autocorrect="off">
+        <button class="btn" onclick="sbSaveKeys()">Қосу</button>
+        <p class="muted" style="margin:0">Supabase-те тегін жоба ашып, Settings → API бөлімінен осы екеуін көшіріп алыңыз.</p>
+      </div>
+
+      <div id="sb-auth" class="hide">
+        <label class="f">Пошта</label>
+        <input class="inp" id="sb-email" type="email" placeholder="you@mail.com" autocapitalize="off" autocorrect="off">
+        <label class="f">Пароль</label>
+        <input class="inp" id="sb-pass" type="password" placeholder="6+ таңба">
+        <button class="btn" onclick="sbAuth('in')">Кіру</button>
+        <button class="btn ghost" onclick="sbAuth('up')">Тіркелу</button>
+        <button class="btn line" onclick="sbForget()">Кілттерді өшіру</button>
+      </div>
+
+      <div id="sb-user" class="hide">
+        <div class="res" style="margin-bottom:12px">
+          <div class="lab">Кірген пайдаланушы</div>
+          <div style="font-weight:700" id="sb-email-txt">—</div>
+        </div>
+        <button class="btn" onclick="sbPush(true)">Бұлтқа жіберу</button>
+        <button class="btn line" onclick="sbPull(true)">Бұлттан алу</button>
+        <button class="btn ghost" onclick="sbOut()">Шығу</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Тіл</h2>
+      <div class="chips" id="lang-chips" style="margin-bottom:0"></div>
+    </div>
+    <div class="card">
       <h2>Қорғаныс</h2>
       <p class="muted" style="margin:0 0 12px" id="pin-info">PIN-код қойылмаған. Қосымшада бүкіл қаржы дерегі тұр.</p>
       <button class="btn line" id="pin-btn" onclick="pinSetup()">PIN-код қою</button>
@@ -807,7 +844,7 @@ var store = {
   get: function(k){ try{ return localStorage.getItem(k); }catch(e){ return k in mem ? mem[k] : null; } },
   set: function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; } }
 };
-var DB = { tx:[], goals:[], accounts:[], btx:[], budgets:{}, pin:null, lastBackup:null, rate:null };
+var DB = { tx:[], goals:[], accounts:[], btx:[], budgets:{}, pin:null, lastBackup:null, lang:'kk', rate:null };
 
 function load(){
   try{
@@ -815,7 +852,7 @@ function load(){
     if(raw){
       var d = JSON.parse(raw);
       DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[];
-      DB.budgets = d.budgets||{}; DB.pin = d.pin||null;
+      DB.budgets = d.budgets||{}; DB.pin = d.pin||null; DB.lang = d.lang||'kk';
       DB.lastBackup = d.lastBackup||null; DB.rate = d.rate||null;
       if(!DB.accounts.length){
         DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:d.start||0}];
@@ -824,7 +861,13 @@ function load(){
   }catch(e){}
   if(!DB.accounts.length) DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:0}];
 }
-function save(){ store.set('qarzhy_v1', JSON.stringify(DB)); }
+function save(noSync){
+  if(!noSync){
+    DB.updated = new Date().toISOString();
+  }
+  store.set('qarzhy_v1', JSON.stringify(DB));
+  if(!noSync && typeof sbAutoPush === 'function') sbAutoPush();
+}
 
 /* ================= ВАЛЮТА ЖӘНЕ КУРС ================= */
 var RATE_URLS = [
@@ -944,7 +987,7 @@ function parseISO(s){ var p=s.split("-"); return new Date(+p[0],+p[1]-1,+p[2]); 
 function dayTitle(s){ var d=parseISO(s); return d.getDate()+" "+MONTHS[d.getMonth()].toLowerCase()+", "+DAYS[d.getDay()]; }
 function fullDate(s){ var d=parseISO(s); return d.getDate()+" "+MONTHS[d.getMonth()].toLowerCase()+" "+d.getFullYear(); }
 function esc(s){ return String(s).replace(/[<>&]/g,function(c){return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c];}); }
-function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); setTimeout(function(){t.classList.remove('on');},1800); }
+function toast(m){ var t=document.getElementById('toast'); t.textContent=(typeof tr==='function'?tr(m):m); t.classList.add('on'); setTimeout(function(){t.classList.remove('on');},1800); }
 function acc(id){ for(var i=0;i<DB.accounts.length;i++) if(DB.accounts[i].id===id) return DB.accounts[i]; return null; }
 function newId(){ return Date.now().toString()+Math.floor(Math.random()*900+100); }
 
@@ -989,6 +1032,7 @@ function openSheet(id){
   var el = document.getElementById(id);
   el.scrollTop = 0;
   el.classList.add('on');
+  if(typeof translateDom==='function') translateDom(el);
   document.body.classList.add('locked');
 }
 function closeSheets(){
@@ -1520,7 +1564,7 @@ function importData(el){
 function wipe(){
   if(!confirm('Барлық дерек өшіріледі. Жалғастырасыз ба?')) return;
   DB={tx:[],goals:[],accounts:[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:0,cur:'KZT'}],
-      btx:[],budgets:{},pin:DB.pin,lastBackup:DB.lastBackup,rate:DB.rate};
+      btx:[],budgets:{},pin:DB.pin,lastBackup:DB.lastBackup,lang:DB.lang,rate:DB.rate};
   save(); render(); toast('Өшірілді');
 }
 
@@ -1729,6 +1773,9 @@ function render(){
 
   /* --- stats --- */
   renderStats();
+  drawLangChips();
+  drawCloud();
+  translateDom(document.body);
 
   /* --- goals --- */
   var gt=0; DB.goals.forEach(function(g){ gt+=g.saved; });
@@ -2491,6 +2538,7 @@ function renderImportList(box){
   if(!n || (!isBr && !IMP.acc)){ btn.style.opacity = '.5'; }
   box.appendChild(btn);
 
+  translateDom(box);
   var cancel = document.createElement('button');
   cancel.className = 'btn ghost';
   cancel.textContent = 'Болдырмау';
@@ -2533,6 +2581,527 @@ function importConfirm(){
   document.getElementById('imp-result').innerHTML = '';
   toast(sel.length + ' операция қосылды');
   go('ops');
+}
+
+/* ================= ТІЛ / ЯЗЫК / LANGUAGE ================= */
+/* [қазақша, орысша, ағылшынша] */
+var TR = [
+/* --- навигация --- */
+["Басты","Главная","Home"],["Қаржы","Финансы","Finance"],["Операция","Операции","Activity"],
+["Статистика","Статистика","Stats"],["Баптау","Настройки","Settings"],
+["Шолу","Обзор","Overview"],["Операциялар","Операции","Transactions"],
+["Мақсаттар","Цели","Goals"],["Калькулятор","Калькулятор","Calculator"],
+["Бюджет","Бюджет","Budget"],["Бюджет — санат лимиттері","Бюджет — лимиты по категориям","Budget — category limits"],
+
+/* --- басты бет --- */
+["Таза капитал","Чистый капитал","Net worth"],["Кіріс","Доход","Income"],["Шығын","Расход","Expense"],
+["Аударым","Перевод","Transfer"],["Кіріс · Шығын · Санаттар","Доход · Расход · Категории","Income · Expense · Categories"],
+["Менің қаржым","Мои финансы","My finances"],["Активтер","Активы","Assets"],
+["Міндеттемелер","Обязательства","Liabilities"],["Таза","Чисто","Net"],
+["Банктердегі ақша","Деньги в банках","Money in banks"],["Инвестиция · бөлек","Инвестиции · отдельно","Investments · separate"],
+["Соңғы операциялар","Последние операции","Recent transactions"],["Барлығы →","Все →","All →"],
+["↑ Оң","↑ Плюс","↑ Positive"],["↓ Теріс","↓ Минус","↓ Negative"],
+["📥 Банк үзіндісін жүктеу (PDF · Excel)","📥 Загрузить выписку банка (PDF · Excel)","📥 Import bank statement (PDF · Excel)"],
+["Операция жоқ.","Операций нет.","No transactions."],
+["Жоғарыдағы + түймесімен қосыңыз.","Добавьте кнопкой + сверху.","Add with the + button above."],
+
+/* --- шоттар --- */
+["Банк шоттары","Банковские счета","Bank accounts"],["Брокерлік шоттар","Брокерские счета","Brokerage accounts"],
+["Несиелер","Кредиты","Loans"],["Банктер","Банки","Banks"],["Брокер·бөлек","Брокер·отд.","Broker·sep."],
+["Несие","Кредит","Loan"],["Банк шоты","Банковский счёт","Bank account"],["Брокерлік шот","Брокерский счёт","Brokerage account"],
+["Жеке есептеледі — таза капиталға қосылмайды.","Считается отдельно — в чистый капитал не входит.","Counted separately — not part of net worth."],
+["+ Банк шотын қосу","+ Добавить банковский счёт","+ Add bank account"],
+["+ Брокерлік шот қосу","+ Добавить брокерский счёт","+ Add brokerage account"],
+["+ Несие қосу","+ Добавить кредит","+ Add loan"],
+["⚡ Дайын үлгі: Kaspi + Freedom + брокерлік шоттар","⚡ Готовый набор: Kaspi + Freedom + брокерские счета","⚡ Quick setup: Kaspi + Freedom + brokerage"],
+["Банк шоты жоқ. Төмендегі түймемен қосыңыз.","Банковских счетов нет. Добавьте кнопкой ниже.","No bank accounts. Add one below."],
+["Брокерлік шот жоқ. Инвестицияңызды осында қосыңыз.","Брокерских счетов нет. Добавьте инвестиции здесь.","No brokerage accounts. Add your investments here."],
+["Несие жоқ — тамаша.","Кредитов нет — отлично.","No loans — excellent."],
+["Қалдық","Остаток","Balance"],["Несие қалдығы","Остаток кредита","Loan balance"],
+["Портфель құны","Стоимость портфеля","Portfolio value"],["Салынған қаражат","Вложено","Invested"],
+["Табыс / шығын","Прибыль / убыток","Profit / loss"],["Мөлшерлеме","Ставка","Rate"],
+["Ай сайынғы төлем","Ежемесячный платёж","Monthly payment"],["Қалған мерзім","Осталось","Time left"],
+["Теңгемен","В тенге","In tenge"],["Қолданылған курс","Использован курс","Rate used"],
+["есептелмеді","не рассчитано","not calculated"],["Түзету","Изменить","Edit"],["Өшіру","Удалить","Delete"],
+["Жабу","Закрыть","Close"],["‹ Артқа","‹ Назад","‹ Back"],["‹ Жабу","‹ Закрыть","‹ Close"],
+
+/* --- операциялар --- */
+["Барлығы","Все","All"],["Іздеу: атау, санат, сома…","Поиск: название, категория, сумма…","Search: name, category, amount…"],
+["Операция табылмады.","Операции не найдены.","No transactions found."],["Барлық шот","Все счета","All accounts"],
+
+/* --- шолу --- */
+["Қаржылық жағдай","Финансовое положение","Financial position"],["Осы ай","Этот месяц","This month"],
+["Активтер құрылымы","Структура активов","Asset breakdown"],["Несие жүктемесі","Кредитная нагрузка","Debt load"],
+["Ең көп шығын (осы ай)","Крупнейшие расходы (этот месяц)","Top expenses (this month)"],
+["Жинақ үлесі","Норма сбережений","Savings rate"],["Жалпы қарыз","Общий долг","Total debt"],
+["Айлық төлем","Платёж в месяц","Monthly payment"],["Кіріске қатысты","От дохода","Of income"],
+["Инвестиция портфелі (бөлек)","Инвестиционный портфель (отдельно)","Investment portfolio (separate)"],
+["Портфель табысы","Доход портфеля","Portfolio return"],["Шот жоқ.","Счетов нет.","No accounts."],
+["Бұл айда шығын жоқ.","В этом месяце расходов нет.","No expenses this month."],
+
+/* --- статистика --- */
+["Бүгін","Сегодня","Today"],["Апта","Неделя","Week"],["Өткен ай","Прошлый месяц","Last month"],
+["Бастапқы","С","From"],["Соңы","По","To"],["Нәтиже","Итог","Result"],
+["Кіріс / Шығын","Доход / Расход","Income / Expense"],["Шығын санаттары","Категории расходов","Expense categories"],
+["Кіріс көздері","Источники дохода","Income sources"],
+["Бұл кезеңде дерек жоқ.","За этот период данных нет.","No data for this period."],
+["Диаграмма үшін дерек жоқ.","Нет данных для графика.","No data for the chart."],
+["Бұл айда кіріс жазылмаған.","В этом месяце доходов нет.","No income this month."],
+["Бұл айда шығын жазылмаған.","В этом месяце расходов нет.","No expenses this month."],
+
+/* --- мақсаттар --- */
+["Жиналған","Накоплено","Saved"],["+ Мақсат қосу","+ Добавить цель","+ Add goal"],
+["Мақсат қосу","Новая цель","New goal"],["Мақсат","Цель","Goal"],
+["Мақсат әлі жоқ.","Целей пока нет.","No goals yet."],
+["Жинайтын сомаңызды белгілеп қойыңыз.","Укажите сумму, которую копите.","Set the amount you are saving for."],
+["Мақсат сомасы, ₸","Сумма цели, ₸","Goal amount, ₸"],["Қазір жиналған, ₸","Уже накоплено, ₸","Already saved, ₸"],
+["Салым қосу, ₸","Пополнить, ₸","Add funds, ₸"],["Қосу","Добавить","Add"],
+["Мақсатты өшіру","Удалить цель","Delete goal"],
+
+/* --- калькулятор --- */
+["Қаржылық есептеулер","Финансовые расчёты","Financial calculations"],
+["Инвестиция калькуляторы","Инвестиционный калькулятор","Investment calculator"],
+["Табыс · Мерзім · Күрделі пайыз","Доход · Срок · Сложный процент","Return · Term · Compound interest"],
+["Несие калькуляторы","Кредитный калькулятор","Loan calculator"],
+["Ай төлем · Ерте өтеу · Кесте","Платёж · Досрочное · График","Payment · Early payoff · Schedule"],
+["Күрделі пайыз","Сложный процент","Compound interest"],
+["Аннуитетті · Дифференциалды","Аннуитетный · Дифференцированный","Annuity · Differentiated"],
+["Табыс","Доход","Return"],["Мерзім","Срок","Term"],["Бастапқы сома","Начальная сумма","Initial amount"],
+["Ай сайынғы үлес","Ежемесячный взнос","Monthly contribution"],["Мақсатты сома","Целевая сумма","Target amount"],
+["Реинвестиция","Реинвестирование","Reinvest"],
+["Қосылған — күрделі пайыз","Включено — сложный процент","On — compound interest"],
+["Қосылмаған — қарапайым пайыз","Выключено — простой процент","Off — simple interest"],
+["Жылдық мөлшерлеме, %","Годовая ставка, %","Annual rate, %"],["Мерзімі","Срок","Term"],
+["жыл","лет","years"],["ай","мес.","months"],
+["Мерзім соңындағы сома","Сумма в конце срока","Final amount"],
+["Пайыздық табыс","Процентный доход","Interest earned"],["Өсім","Рост","Growth"],
+["Жыл сайынғы өсім","Рост по годам","Year-by-year growth"],["Жыл","Год","Year"],["Салынған","Вложено","Invested"],
+["Сома","Сумма","Amount"],["Мақсатқа жету мерзімі","Срок достижения цели","Time to reach goal"],
+["Жинақталған сома","Накопленная сумма","Accumulated"],["Қазірдің өзінде жеткен","Уже достигнуто","Already reached"],
+["Несие сомасы","Сумма кредита","Loan amount"],["Пайызын есептеу","Расчёт ставки","Find the rate"],
+["Аннуитетті","Аннуитетный","Annuity"],["Дифференциалды","Дифференцированный","Differentiated"],
+["Ерте өтеу (міндетті емес)","Досрочное погашение (не обязательно)","Early payoff (optional)"],
+["ай №","№ месяца","month #"],["Барлық төлем","Всего выплат","Total paid"],
+["Артық төлем","Переплата","Overpayment"],["Артық төлем үлесі","Доля переплаты","Overpayment share"],
+["Төлем кестесі","График платежей","Payment schedule"],["Ай","Мес.","Mo."],["Төлем","Платёж","Payment"],
+["Пайыз","Проценты","Interest"],["Бірінші айдағы төлем","Платёж первого месяца","First month payment"],
+["Соңғы төлем","Последний платёж","Final payment"],
+["Мәндерді толтырыңыз.","Заполните поля.","Fill in the values."],
+["Мақсатты соманы толтырыңыз.","Укажите целевую сумму.","Enter the target amount."],
+["Төлем тым аз — бұл несие өтелмейді.","Платёж слишком мал — кредит не погасится.","Payment too small — the loan will never be repaid."],
+
+/* --- брокер --- */
+["Жеке есеп — жалпы ақшаға қосылмайды","Отдельный учёт — в общие деньги не входит","Separate — not counted in total money"],
+["Құнын жаңарту","Обновить стоимость","Update value"],["Операция қосу","Добавить операцию","Add transaction"],
+["Файл жүктеу","Загрузить файл","Import file"],["Шотты өшіру","Удалить счёт","Delete account"],
+["Салым","Пополнение","Deposit"],["Шығару","Вывод","Withdrawal"],["Дивиденд","Дивиденды","Dividend"],
+["Комиссия · салық","Комиссия · налог","Fee · tax"],["Банктен аударым","Перевод из банка","Transfer from bank"],
+["Брокерлік операция","Брокерская операция","Brokerage transaction"],["Түрі","Тип","Type"],
+["Жазба жоқ.","Записей нет.","No records."],
+["Файл жүктеңіз немесе қолмен қосыңыз.","Загрузите файл или добавьте вручную.","Import a file or add manually."],
+["Шот құнын жаңарту","Обновить стоимость счёта","Update account value"],
+["Ағымдағы құны, ₸","Текущая стоимость, ₸","Current value, ₸"],
+["Салынған қаражат (барлығы), ₸","Всего вложено, ₸","Total invested, ₸"],
+
+/* --- импорт --- */
+["PDF · Excel · CSV үзінді","PDF · Excel · CSV выписка","PDF · Excel · CSV statement"],
+["Банк үзіндісін таңдаңыз","Выберите выписку банка","Choose a bank statement"],
+["Файл таңдау","Выбрать файл","Choose file"],
+["Файл ешқайда жіберілмейді — телефонның өз ішінде оқылады.","Файл никуда не отправляется — читается прямо на телефоне.","The file is never uploaded — it is read on your phone."],
+["Қай банктің шотына жазылсын","На счёт какого банка записать","Which bank account to use"],
+["Тізімде жоқ па? Бір басып қосыңыз","Нет в списке? Добавьте одним нажатием","Not listed? Add it in one tap"],
+["Барлығын белгілеу","Выбрать все","Select all"],["Барлығын алып тастау","Снять все","Deselect all"],
+["Тек жаңалары","Только новые","New only"],["бұрын қосылған","уже добавлено","already added"],
+["Болдырмау","Отмена","Cancel"],["Брокерлік есеп","Брокерский отчёт","Brokerage report"],
+["Брокер есебін таңдаңыз","Выберите отчёт брокера","Choose a brokerage report"],
+["Файл оқылып жатыр…","Файл читается…","Reading the file…"],
+["Бұл файлдан операция табылмады.","В этом файле операции не найдены.","No transactions found in this file."],
+["Файлды оқу мүмкін болмады.","Не удалось прочитать файл.","Could not read the file."],
+["Банк шоты жоқ — төменнен таңдаңыз","Счетов нет — выберите ниже","No accounts — pick one below"],
+["Алдымен шот қосыңыз","Сначала добавьте счёт","Add an account first"],
+
+/* --- баптау --- */
+["Дерек және көшірме","Данные и резервная копия","Data and backup"],["Тіл","Язык","Language"],
+["Қорғаныс","Защита","Protection"],["PIN-код қою","Установить PIN-код","Set a PIN"],
+["PIN-кодты өшіру","Убрать PIN-код","Remove PIN"],
+["PIN-код қосулы. Қосымша ашылған сайын сұралады.","PIN-код включён. Запрашивается при каждом входе.","PIN is on. Asked on every launch."],
+["PIN-код қойылмаған. Қосымшада бүкіл қаржы дерегі тұр.","PIN-код не установлен. В приложении все ваши финансы.","No PIN set. The app holds all your finances."],
+["PIN-кодты енгізіңіз","Введите PIN-код","Enter your PIN"],["Жаңа PIN-код ойлаңыз","Придумайте PIN-код","Create a PIN"],
+["PIN-кодты қайталаңыз","Повторите PIN-код","Repeat the PIN"],["PIN дұрыс емес","Неверный PIN","Wrong PIN"],
+["Сәйкес келмеді — қайтадан","Не совпало — ещё раз","Did not match — try again"],["4 сан","4 цифры","4 digits"],
+["Қайталанған операциялар","Дубликаты операций","Duplicate transactions"],
+["Тексеру және тазалау","Проверить и очистить","Check and clean"],
+["Қайталанған операция жоқ.","Дубликатов нет.","No duplicates."],
+["Доллар курсы","Курс доллара","USD rate"],["Интернеттен жаңарту","Обновить из интернета","Update online"],
+["Немесе қолмен жазыңыз (1 $ = ? ₸)","Или введите вручную (1 $ = ? ₸)","Or enter manually (1 $ = ? ₸)"],
+["Сақтау","Сохранить","Save"],["Банк үзіндісі","Выписка банка","Bank statement"],
+["Дерек көшірмесі","Резервная копия","Backup"],["Файлға шығару","Сохранить в файл","Export to file"],
+["Файлдан қалпына келтіру","Восстановить из файла","Restore from file"],
+["Барлығын өшіру","Удалить всё","Delete everything"],["Барлық деректі өшіру","Удалить все данные","Delete all data"],
+["Шоттар, операциялар және мақсаттар қайтарылмайды.","Счета, операции и цели не восстановить.","Accounts, transactions and goals cannot be restored."],
+["Қосымша туралы","О приложении","About"],
+["PDF немесе Excel файлдан операцияларды автоматты қосу.","Автоматически добавить операции из PDF или Excel.","Add transactions automatically from PDF or Excel."],
+
+/* --- операция терезесі --- */
+["Операцияны түзету","Изменить операцию","Edit transaction"],["Санат","Категория","Category"],
+["Қай шоттан","С какого счёта","From account"],["Қай шотқа түсті","На какой счёт","To account"],
+["Қай шотқа","На какой счёт","To account"],["Қай несиені өтейді","Какой кредит погашает","Which loan it repays"],
+["Күні","Дата","Date"],["Түсініктеме","Комментарий","Note"],["Міндетті емес","Не обязательно","Optional"],
+["Кемінде екі шот керек","Нужно минимум два счёта","At least two accounts needed"],
+["Операцияны өшіру","Удалить операцию","Delete transaction"],["Қайдан","Откуда","From"],["Қайда","Куда","To"],
+["Шот","Счёт","Account"],
+
+/* --- шот терезесі --- */
+["Шот қосу","Новый счёт","New account"],["Несие қосу","Новый кредит","New loan"],
+["Банкті таңдаңыз","Выберите банк","Choose a bank"],["Валютасы","Валюта","Currency"],
+["₸ теңге","₸ тенге","₸ tenge"],["$ доллар","$ доллар","$ dollar"],["Белгіше","Значок","Icon"],
+["Атауы","Название","Name"],["Қалдық, ₸","Остаток, ₸","Balance, ₸"],
+["Несие қалдығы, ₸","Остаток кредита, ₸","Loan balance, ₸"],["Портфель құны, ₸","Стоимость портфеля, ₸","Portfolio value, ₸"],
+["Ай сайынғы төлем, ₸","Ежемесячный платёж, ₸","Monthly payment, ₸"],["Қолма-қол","Наличные","Cash"],
+
+/* --- бюджет --- */
+["Айлық шығын шектеуі","Месячный лимит расходов","Monthly spending limit"],
+["Шектелген","Лимит","Limit"],["Жұмсалды","Потрачено","Spent"],
+["Санатқа айлық шек қойыңыз. 80%-ға жеткенде ескертеміз. 0 деп қойсаңыз — шек жоқ.","Задайте месячный лимит по категории. Предупредим на 80%. 0 — без лимита.","Set a monthly limit per category. We warn at 80%. 0 means no limit."],
+["шек жоқ","без лимита","no limit"],
+
+/* --- санаттар --- */
+["Тамақ","Еда","Food"],["Көлік","Транспорт","Transport"],["Тұрғын үй","Жильё","Housing"],
+["Байланыс","Связь","Phone & internet"],["Киім","Одежда","Clothes"],["Денсаулық","Здоровье","Health"],
+["Несие төлемі","Платёж по кредиту","Loan payment"],["Ойын-сауық","Развлечения","Entertainment"],
+["Білім","Образование","Education"],["Сыйлық","Подарки","Gifts"],["Басқа","Другое","Other"],
+["Жалақы","Зарплата","Salary"],["Бизнес","Бизнес","Business"],["Фриланс","Фриланс","Freelance"],
+["Инвестиция","Инвестиции","Investments"],["Несие алу","Получение кредита","Loan received"],
+
+/* --- айлар мен күндер --- */
+["Қаңтар","Январь","January"],["Ақпан","Февраль","February"],["Наурыз","Март","March"],
+["Сәуір","Апрель","April"],["Мамыр","Май","May"],["Маусым","Июнь","June"],["Шілде","Июль","July"],
+["Тамыз","Август","August"],["Қыркүйек","Сентябрь","September"],["Қазан","Октябрь","October"],
+["Қараша","Ноябрь","November"],["Желтоқсан","Декабрь","December"],
+["қаңтар","января","January"],["ақпан","февраля","February"],["наурыз","марта","March"],
+["сәуір","апреля","April"],["мамыр","мая","May"],["маусым","июня","June"],["шілде","июля","July"],
+["тамыз","августа","August"],["қыркүйек","сентября","September"],["қазан","октября","October"],
+["қараша","ноября","November"],["желтоқсан","декабря","December"],
+["Дүйсенбі","Понедельник","Monday"],["Сейсенбі","Вторник","Tuesday"],["Сәрсенбі","Среда","Wednesday"],
+["Бейсенбі","Четверг","Thursday"],["Жұма","Пятница","Friday"],["Сенбі","Суббота","Saturday"],
+["Жексенбі","Воскресенье","Sunday"],
+
+/* --- хабарламалар --- */
+["Кіріс қосылды","Доход добавлен","Income added"],["Шығын қосылды","Расход добавлен","Expense added"],
+["Аударым жасалды","Перевод выполнен","Transfer done"],["Өзгертілді","Изменено","Updated"],
+["Өшірілді","Удалено","Deleted"],["Сақталды","Сохранено","Saved"],["Жаңартылды","Обновлено","Updated"],
+["Соманы жазыңыз","Укажите сумму","Enter an amount"],["Атауын жазыңыз","Укажите название","Enter a name"],
+["Мақсат сомасын жазыңыз","Укажите сумму цели","Enter the goal amount"],
+["Мақсат қосылды","Цель добавлена","Goal added"],["Салым қосылды","Пополнение добавлено","Funds added"],
+["Курсты жазыңыз","Укажите курс","Enter the rate"],["Курс сақталды","Курс сохранён","Rate saved"],
+["Курс жаңартылды","Курс обновлён","Rate updated"],["Курс жаңартылуда…","Курс обновляется…","Updating rate…"],
+["Курс алынбады — интернетті тексеріңіз","Курс не получен — проверьте интернет","Could not fetch the rate — check your connection"],
+["Курс белгісіз — басып жаңартыңыз","Курс неизвестен — нажмите, чтобы обновить","Rate unknown — tap to update"],
+["Қай шотқа екенін таңдаңыз","Выберите счёт получателя","Choose the destination account"],
+["Қалпына келтірілді","Восстановлено","Restored"],["Файл оқылмады","Файл не прочитан","File could not be read"],
+["Бұл шоттар бар","Такие счета уже есть","These accounts already exist"],
+["PIN-код қойылды","PIN-код установлен","PIN set"],["PIN өшірілді","PIN убран","PIN removed"],
+["Бірде-бір жазба белгіленбеген","Ничего не отмечено","Nothing selected"],
+["жаңа ғана","только что","just now"],["бүгін","сегодня","today"],["(қолмен)","(вручную)","(manual)"],
+
+/* --- бұлт --- */
+["Бұлт · Supabase","Облако · Supabase","Cloud · Supabase"],
+["Қосылмаған. Дерек тек осы телефонда.","Не подключено. Данные только на этом телефоне.","Not connected. Data stays on this phone."],
+["Кілттер сақталды. Енді кіріңіз немесе тіркеліңіз.","Ключи сохранены. Войдите или зарегистрируйтесь.","Keys saved. Sign in or sign up."],
+["Барлығы сақталды","Всё сохранено","All synced"],["Жіберілмеген өзгеріс бар","Есть несохранённые изменения","Unsent changes"],
+["Синхрондалуда…","Синхронизация…","Syncing…"],["Пошта","Почта","Email"],["Пароль","Пароль","Password"],
+["Кіру","Войти","Sign in"],["Тіркелу","Регистрация","Sign up"],["Шығу","Выйти","Sign out"],
+["Кірген пайдаланушы","Вы вошли как","Signed in as"],
+["Бұлтқа жіберу","Отправить в облако","Push to cloud"],["Бұлттан алу","Загрузить из облака","Pull from cloud"],
+["Кілттерді өшіру","Удалить ключи","Remove keys"],["Қосу","Подключить","Connect"],
+["6+ таңба","6+ символов","6+ characters"],
+["Supabase-те тегін жоба ашып, Settings → API бөлімінен осы екеуін көшіріп алыңыз.","Создайте бесплатный проект в Supabase и скопируйте оба значения из Settings → API.","Create a free Supabase project and copy both values from Settings → API."],
+["Бұлт қосылды","Облако подключено","Cloud connected"],
+["Бұлтқа қосылмады — кілттерді тексеріңіз","Не удалось подключиться — проверьте ключи","Could not connect — check the keys"],
+["Кірдіңіз","Вы вошли","Signed in"],["Шықтыңыз","Вы вышли","Signed out"],
+["Бұлтқа жіберілді","Отправлено в облако","Pushed to cloud"],["Бұлттан алынды","Загружено из облака","Pulled from cloud"],
+["Поштаңызды растаңыз, сосын кіріңіз","Подтвердите почту, затем войдите","Confirm your email, then sign in"],
+["Пошта мен парольді жазыңыз (6+ таңба)","Введите почту и пароль (6+ символов)","Enter email and password (6+ characters)"],
+["URL дұрыс емес","Неверный URL","Invalid URL"],["Кілт дұрыс емес","Неверный ключ","Invalid key"],
+["Алдымен кілттерді сақтаңыз","Сначала сохраните ключи","Save the keys first"],
+["Бұлттағы дерек","Данных в облаке","Records in cloud"],["Телефондағы дерек","Данных на телефоне","Records on phone"],
+["Бұлттағысымен ауыстырасыз ба?","Заменить данными из облака?","Replace with the cloud version?"],
+["Бұлт баптауы өшіріледі. Жалғастырасыз ба?","Настройки облака будут удалены. Продолжить?","Cloud settings will be removed. Continue?"],
+["Қате шықты","Произошла ошибка","Something went wrong"],
+
+/* --- ескертулер --- */
+["Дерек сақталмайды","Данные не сохраняются","Data is not being saved"],
+["Көшірме жасаңыз","Сделайте копию","Make a backup"],
+["Көшірме ескірді","Копия устарела","Backup is outdated"],
+["Дерек әлі жоқ","Данных пока нет","No data yet"],
+["Дерек тек осы телефонда сақталады.","Данные хранятся только на этом телефоне.","Data is stored only on this phone."]
+];
+
+var LANG = 'kk';
+var DICT_RU = {}, DICT_EN = {};
+TR.forEach(function(r){ DICT_RU[r[0]] = r[1]; DICT_EN[r[0]] = r[2]; });
+
+var TR_RULES = [
+  [/^(\d+) шот$/, "Счетов: $1", "$1 accounts"],
+  [/^(\d+) банк · (\d+) брокер$/, "Банков: $1 · брокеров: $2", "$1 banks · $2 brokerage"],
+  [/^(\d+) операция$/, "Операций: $1", "$1 transactions"],
+  [/^(\d+) жазба$/, "Записей: $1", "$1 records"],
+  [/^(\d+) мақсат$/, "Целей: $1", "$1 goals"],
+  [/^(\d+) сағат бұрын$/, "$1 ч. назад", "$1 h ago"],
+  [/^(\d+) күн бұрын$/, "$1 дн. назад", "$1 d ago"],
+  [/^(\d+) ай$/, "$1 мес.", "$1 months"],
+  [/^Табылды: (\d+) операция$/, "Найдено: $1 операций", "Found: $1 transactions"],
+  [/^Табылды: (\d+) жазба$/, "Найдено: $1 записей", "Found: $1 records"],
+  [/^(\d+) операцияны қосу$/, "Добавить $1 операций", "Add $1 transactions"],
+  [/^(\d+) жазбаны қосу$/, "Добавить $1 записей", "Add $1 records"],
+  [/^(\d+) операция қосылды$/, "Добавлено $1 операций", "$1 transactions added"],
+  [/^(\d+) жазба қосылды$/, "Добавлено $1 записей", "$1 records added"],
+  [/^(\d+) шот қосылды — қалдықтарын жазыңыз$/, "Добавлено счетов: $1 — укажите остатки", "$1 accounts added — set their balances"],
+  [/^(\d+) операция өшірілді$/, "Удалено операций: $1", "$1 transactions deleted"],
+  [/^(\d+) қайталанған операция табылды\.$/, "Найдено дубликатов: $1.", "$1 duplicates found."],
+  [/^(\d+) табылды · (.+)$/, "Найдено $1 · $2", "$1 found · $2"],
+  [/^Соңғы көшірме: (.+)\.$/, "Последняя копия: $1.", "Last backup: $1."],
+  [/^(.+) — құнын жаңарту \((.+)\)$/, "$1 — обновить стоимость ($2)", "$1 — update value ($2)"],
+  [/^Сома, (.+)$/, "Сумма, $1", "Amount, $1"],
+  [/^(\d+)% — абайлаңыз$/, "$1% — осторожно", "$1% — careful"],
+  [/^шектен (.+) асты$/, "превышен на $1", "over by $1"],
+  [/^Шек қойылмаған · осы айда (.+)$/, "Без лимита · в этом месяце $1", "No limit · $1 this month"],
+  [/^(.+) — шектен асты$/, "$1 — превышен лимит", "$1 — over budget"],
+  [/^(.+) — шекке жақындады$/, "$1 — близко к лимиту", "$1 — near the limit"],
+  [/^Кіріс · (\d+)$/, "Доход · $1", "Income · $1"],
+  [/^Шығын · (\d+)$/, "Расход · $1", "Expense · $1"],
+  [/^Салынған (.+) · (.+)$/, "Вложено $1 · $2", "Invested $1 · $2"],
+  [/^(\d+) жыл (\d+) ай$/, "$1 л. $2 мес.", "$1 y $2 mo"],
+  [/^(\d+) ай \((.+) жыл\)$/, "$1 мес. ($2 лет)", "$1 months ($2 years)"],
+  [/^(\d+) ай \((\d+) ай қысқарды\)$/, "$1 мес. (короче на $2 мес.)", "$1 months ($2 fewer)"]
+];
+
+function tr(str){
+  if(LANG === 'kk' || !str) return str;
+  var d = LANG === 'ru' ? DICT_RU : DICT_EN;
+  var idx = LANG === 'ru' ? 1 : 2;
+  var s = String(str).trim();
+  if(!s) return str;
+
+  if(d[s]) return d[s];
+
+  // белгішемен басталса (🍜 Тамақ)
+  var m = s.match(/^([^\wА-Яа-яЁёӘәҒғҚқҢңӨөҰұҮүҺһІі]{1,3})\s*(.+)$/);
+  if(m && d[m[2]]) return m[1].trim() + ' ' + d[m[2]];
+
+  for(var i = 0; i < TR_RULES.length; i++){
+    if(TR_RULES[i][0].test(s)){
+      var tpl = TR_RULES[i][idx];
+      return s.replace(TR_RULES[i][0], function(){
+        var args = arguments;
+        return tpl.replace(/\$(\d)/g, function(_, k){ return tr(args[+k]); });
+      });
+    }
+  }
+
+  // ай/күн атауларын жол ішінен ауыстыру
+  var out = s, hit = false;
+  MONTHS.concat(MONTHS.map(function(x){ return x.toLowerCase(); }))
+    .concat(DAYS).forEach(function(w){
+      if(out.indexOf(w) !== -1 && d[w]){ out = out.split(w).join(d[w]); hit = true; }
+    });
+  return hit ? out : str;
+}
+
+function translateDom(root){
+  if(LANG === 'kk') return;
+  var walker = document.createTreeWalker(root || document.body, NodeFilter.SHOW_TEXT, null);
+  var nodes = [], n;
+  while((n = walker.nextNode())) nodes.push(n);
+  nodes.forEach(function(node){
+    var p = node.parentNode;
+    if(!p || p.nodeName === 'SCRIPT' || p.nodeName === 'STYLE') return;
+    var raw = node.nodeValue;
+    if(!raw || !raw.trim()) return;
+    var t = tr(raw);
+    if(t !== raw && t !== raw.trim()) node.nodeValue = raw.replace(raw.trim(), t);
+    else if(t !== raw) node.nodeValue = t;
+  });
+  var ph = (root || document).querySelectorAll('[placeholder]');
+  for(var i = 0; i < ph.length; i++){
+    var v = ph[i].getAttribute('placeholder');
+    var t2 = tr(v);
+    if(t2 !== v) ph[i].setAttribute('placeholder', t2);
+  }
+}
+
+function setLang(l){
+  DB.lang = l;
+  save();
+  location.reload();
+}
+function drawLangChips(){
+  var box = document.getElementById('lang-chips');
+  if(!box) return;
+  box.innerHTML = '';
+  [['kk','Қазақша'],['ru','Русский'],['en','English']].forEach(function(l){
+    var b = document.createElement('button');
+    b.className = 'chip' + (LANG === l[0] ? ' on' : '');
+    b.textContent = l[1];
+    b.onclick = function(){ setLang(l[0]); };
+    box.appendChild(b);
+  });
+}
+
+/* ================= БҰЛТ (SUPABASE) ================= */
+var SB_CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
+var sb = null, sbUser = null, sbCfg = null, sbBusy = false, sbTimer = null;
+
+function sbLoadCfg(){
+  try{
+    var raw = store.get('qarzhy_sb');
+    sbCfg = raw ? JSON.parse(raw) : null;
+  }catch(e){ sbCfg = null; }
+}
+function sbSaveCfg(url, key){
+  sbCfg = { url: url, key: key };
+  store.set('qarzhy_sb', JSON.stringify(sbCfg));
+}
+function sbForget(){
+  if(!confirm(tr('Бұлт баптауы өшіріледі. Жалғастырасыз ба?'))) return;
+  store.set('qarzhy_sb', '');
+  try{ localStorage.removeItem('qarzhy_sb'); }catch(e){}
+  sbCfg = null; sb = null; sbUser = null;
+  render(); toast(tr('Өшірілді'));
+}
+
+function sbSaveKeys(){
+  var url = document.getElementById('sb-url').value.trim().replace(/\/+$/, '');
+  var key = document.getElementById('sb-key').value.trim();
+  if(!/^https:\/\/.+\.supabase\.co$/.test(url)){ toast(tr('URL дұрыс емес')); return; }
+  if(key.length < 30){ toast(tr('Кілт дұрыс емес')); return; }
+  sbSaveCfg(url, key);
+  sbInit(true);
+}
+
+function sbInit(announce){
+  sbLoadCfg();
+  if(!sbCfg){ render(); return; }
+  loadScript(SB_CDN).then(function(){
+    if(!window.supabase){ throw new Error('lib'); }
+    sb = window.supabase.createClient(sbCfg.url, sbCfg.key);
+    return sb.auth.getSession();
+  }).then(function(r){
+    sbUser = (r && r.data && r.data.session) ? r.data.session.user : null;
+    render();
+    if(announce) toast(tr('Бұлт қосылды'));
+    if(sbUser) sbPull(false);
+  }).catch(function(){
+    sb = null;
+    render();
+    toast(tr('Бұлтқа қосылмады — кілттерді тексеріңіз'));
+  });
+}
+
+function sbAuth(mode){
+  if(!sb){ toast(tr('Алдымен кілттерді сақтаңыз')); return; }
+  var email = document.getElementById('sb-email').value.trim();
+  var pass = document.getElementById('sb-pass').value;
+  if(!email || pass.length < 6){ toast(tr('Пошта мен парольді жазыңыз (6+ таңба)')); return; }
+  sbBusy = true; render();
+  var p = mode === 'up'
+    ? sb.auth.signUp({ email: email, password: pass })
+    : sb.auth.signInWithPassword({ email: email, password: pass });
+  p.then(function(r){
+    sbBusy = false;
+    if(r.error){ toast(r.error.message); render(); return; }
+    sbUser = r.data.user || null;
+    if(mode === 'up' && r.data && !r.data.session){
+      toast(tr('Поштаңызды растаңыз, сосын кіріңіз'));
+      render(); return;
+    }
+    render();
+    toast(tr('Кірдіңіз'));
+    sbPull(false);
+  }).catch(function(){ sbBusy = false; render(); toast(tr('Қате шықты')); });
+}
+
+function sbOut(){
+  if(!sb) return;
+  sb.auth.signOut().then(function(){ sbUser = null; render(); toast(tr('Шықтыңыз')); });
+}
+
+function sbPush(manual){
+  if(!sb || !sbUser) return;
+  sbBusy = true; if(manual) render();
+  var stamp = DB.updated || new Date().toISOString();
+  DB.updated = stamp;
+  sb.from('qarzhy').upsert({ user_id: sbUser.id, data: DB, updated: stamp })
+    .then(function(r){
+      sbBusy = false;
+      if(r.error){ if(manual) toast(r.error.message); render(); return; }
+      DB.synced = stamp; save(true); render();
+      if(manual) toast(tr('Бұлтқа жіберілді'));
+    })
+    .catch(function(){ sbBusy = false; render(); });
+}
+
+function sbPull(manual){
+  if(!sb || !sbUser) return;
+  sbBusy = true; render();
+  sb.from('qarzhy').select('data,updated').eq('user_id', sbUser.id).maybeSingle()
+    .then(function(r){
+      sbBusy = false;
+      if(r.error){ if(manual) toast(r.error.message); render(); return; }
+      if(!r.data){ sbPush(manual); return; }
+      var remote = r.data.data, rUp = r.data.updated || '';
+      var lUp = DB.updated || '';
+      var localCount = DB.tx.length + DB.accounts.length;
+      var remoteCount = (remote.tx ? remote.tx.length : 0) + (remote.accounts ? remote.accounts.length : 0);
+
+      if(!manual && rUp <= lUp){ sbPush(false); return; }
+      if(manual || rUp > lUp){
+        var ask = tr('Бұлттағы дерек') + ': ' + remoteCount + '. ' +
+                  tr('Телефондағы дерек') + ': ' + localCount + '. ' +
+                  tr('Бұлттағысымен ауыстырасыз ба?');
+        if(!confirm(ask)){ render(); return; }
+        var keepPin = DB.pin, keepLang = DB.lang;
+        DB.tx = remote.tx || []; DB.goals = remote.goals || [];
+        DB.accounts = remote.accounts || []; DB.btx = remote.btx || [];
+        DB.budgets = remote.budgets || {}; DB.rate = remote.rate || DB.rate;
+        DB.lastBackup = remote.lastBackup || DB.lastBackup;
+        DB.pin = keepPin; DB.lang = keepLang;
+        DB.updated = rUp; DB.synced = rUp;
+        save(true); render(); toast(tr('Бұлттан алынды'));
+      }
+    })
+    .catch(function(){ sbBusy = false; render(); });
+}
+
+/* дерек өзгерген сайын автоматты жіберу (3 сек кідіріспен) */
+function sbAutoPush(){
+  if(!sb || !sbUser) return;
+  if(sbTimer) clearTimeout(sbTimer);
+  sbTimer = setTimeout(function(){ sbPush(false); }, 3000);
+}
+
+function drawCloud(){
+  var setup = document.getElementById('sb-setup');
+  var auth = document.getElementById('sb-auth');
+  var user = document.getElementById('sb-user');
+  var info = document.getElementById('sb-info');
+  if(!setup) return;
+
+  setup.classList.toggle('hide', !!sbCfg);
+  auth.classList.toggle('hide', !(sbCfg && !sbUser));
+  user.classList.toggle('hide', !sbUser);
+
+  if(!sbCfg){
+    info.textContent = tr('Қосылмаған. Дерек тек осы телефонда.');
+  } else if(!sbUser){
+    info.textContent = tr('Кілттер сақталды. Енді кіріңіз немесе тіркеліңіз.');
+  } else {
+    var st = sbBusy ? tr('Синхрондалуда…')
+      : (DB.synced && DB.synced === DB.updated ? tr('Барлығы сақталды') : tr('Жіберілмеген өзгеріс бар'));
+    info.textContent = sbUser.email + ' · ' + st;
+  }
+  var ue = document.getElementById('sb-email-txt');
+  if(ue && sbUser) ue.textContent = sbUser.email;
 }
 
 /* ================= БЮДЖЕТ ================= */
@@ -2723,6 +3292,10 @@ if('serviceWorker' in navigator){
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 }
 load();
+LANG = DB.lang || 'kk';
+document.documentElement.lang = LANG;
+sbLoadCfg();
+if(sbCfg) setTimeout(function(){ sbInit(false); }, 400);
 pinGate();
 if(navigator.onLine !== false){
   var stale = !DB.rate || !DB.rate.at || (Date.now()-new Date(DB.rate.at).getTime()) > 12*3600000;
