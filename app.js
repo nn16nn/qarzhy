@@ -2516,9 +2516,9 @@ function drawDonut(elId, items, centerLabel){
   items.forEach(function(it, k){
     var len = it.value / total * C;
     if(len <= 0) return;
-    svg += '<circle cx="50" cy="50" r="' + R + '" fill="none" stroke="' + it.color +
-      '" stroke-width="15" stroke-dasharray="' + (len - 0.6) + ' ' + (C - len + 0.6) +
-      '" stroke-dashoffset="' + (-off) + '" transform="rotate(-90 50 50)"/>';
+    svg += '<circle class="seg" data-len="' + len + '" cx="50" cy="50" r="' + R +
+      '" fill="none" stroke="' + it.color + '" stroke-width="15" stroke-dasharray="0 ' + C +
+      '" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>';
     off += len;
   });
   svg += '<text x="50" y="46" text-anchor="middle" font-size="6.5" fill="var(--ink-2)">' +
@@ -2533,6 +2533,31 @@ function drawDonut(elId, items, centerLabel){
   });
   leg += '</div>';
   box.innerHTML = svg + leg;
+  animateDonut(box, C);
+}
+
+/* доғалар нөлден өз ұзындығына дейін сызылады */
+function animateDonut(box, C){
+  var segs = box.querySelectorAll('circle.seg');
+  if(!segs.length) return;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function paint(e){
+    var off = 0;
+    for(var i = 0; i < segs.length; i++){
+      var len = parseFloat(segs[i].getAttribute('data-len')) * e;
+      segs[i].setAttribute('stroke-dasharray', Math.max(0, len - 0.6) + ' ' + (C - len + 0.6));
+      segs[i].setAttribute('stroke-dashoffset', String(-off));
+      off += len;
+    }
+  }
+  if(reduce){ paint(1); return; }
+  var t0 = performance.now(), dur = 780;
+  function step(t){
+    var k = Math.min(1, (t - t0) / dur);
+    paint(1 - Math.pow(1 - k, 3));
+    if(k < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
 
 function catItems(list, type){
@@ -2592,12 +2617,13 @@ function drawTrend(){
          '" stroke="var(--line)" stroke-width="0.3"/>';
   });
   s += '<path d="' + area('in') + '" fill="#00BE86" opacity="0.13"/>';
-  s += '<path d="' + path('in') + '" fill="none" stroke="#00BE86" stroke-width="1.4" ' +
+  s += '<path class="line" d="' + path('in') + '" fill="none" stroke="#00BE86" stroke-width="1.4" ' +
        'stroke-linejoin="round" stroke-linecap="round"/>';
-  s += '<path d="' + path('out') + '" fill="none" stroke="#FF4D67" stroke-width="1.4" ' +
-       'stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="2.5 1.6"/>';
+  s += '<path class="line" d="' + path('out') + '" fill="none" stroke="#FF4D67" stroke-width="1.4" ' +
+       'stroke-linejoin="round" stroke-linecap="round" style="animation-delay:.15s"/>';
   months.forEach(function(x, i){
-    s += '<circle cx="' + px(i).toFixed(1) + '" cy="' + py(x.in).toFixed(1) + '" r="1.1" fill="#00BE86"/>';
+    s += '<circle cx="' + px(i).toFixed(1) + '" cy="' + py(x.in).toFixed(1) +
+         '" r="1.1" fill="#00BE86" style="animation-delay:' + (0.5 + i * 0.05).toFixed(2) + 's"/>';
   });
   months.forEach(function(x, i){
     if(i % 2) return;

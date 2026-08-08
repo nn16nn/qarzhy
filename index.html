@@ -223,10 +223,36 @@
   .wrap>*:nth-child(6){animation-delay:.22s}
   .wrap>*:nth-child(n+7){animation-delay:.26s}
   .fill{animation:grow .65s cubic-bezier(.2,.85,.3,1)}
-  svg.donut circle{animation:fadein .5s}
+  svg.donut{transform-origin:50% 50%}
   .row:active{opacity:.7}
   .quad button:active,.card:active{transform:scale(.995)}
   .chip{transition:background .15s,color .15s,border-color .15s}
+  /* --- қозғалатын белгішелер --- */
+  @keyframes bobDown{0%,100%{transform:translateY(-1.5px)}50%{transform:translateY(2px)}}
+  @keyframes bobUp{0%,100%{transform:translateY(1.5px)}50%{transform:translateY(-2px)}}
+  @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+  @keyframes ring{0%{box-shadow:0 0 0 0 rgba(255,255,255,.5)}70%{box-shadow:0 0 0 14px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+  @keyframes nudge{0%,100%{transform:translateX(-2px)}50%{transform:translateX(2px)}}
+  @keyframes spinSlow{0%,70%{transform:rotate(0)}85%{transform:rotate(180deg)}100%{transform:rotate(360deg)}}
+  @keyframes bounceIn{0%{transform:translateY(0) scale(1)}35%{transform:translateY(-5px) scale(1.16)}70%{transform:translateY(1px) scale(.96)}100%{transform:translateY(0) scale(1)}}
+  @keyframes shine{0%{background-position:-120% 0}60%,100%{background-position:220% 0}}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  @keyframes popIn{from{opacity:0;transform:scale(.7)}}
+
+  .dot.in{animation:bobDown 2.6s ease-in-out infinite}
+  .dot.out{animation:bobUp 2.6s ease-in-out infinite}
+  .plus{animation:breathe 3.4s ease-in-out infinite, ring 3.4s ease-out infinite}
+  .ratebar span:first-child{display:inline-block;animation:spinSlow 6s ease-in-out infinite}
+  .ico.blue{animation:nudge 3s ease-in-out infinite}
+  .tabbar button.on .g{animation:bounceIn .5s cubic-bezier(.3,1.4,.5,1)}
+  .brand{position:relative;overflow:hidden}
+  .brand::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.45) 50%,transparent 65%);
+    background-size:220% 100%;animation:shine 5.5s ease-in-out infinite}
+  svg.trend path.line{stroke-dasharray:420;stroke-dashoffset:420;animation:draw 1.2s cubic-bezier(.3,.9,.4,1) forwards}
+  svg.trend circle{animation:popIn .4s backwards}
+  .wide .ic{animation:breathe 4s ease-in-out infinite}
+
   @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 
   /* ---------- Свайп ---------- */
