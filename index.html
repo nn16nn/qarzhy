@@ -14,8 +14,10 @@
 <style>
   :root{
     --g-deep:#010B4D; --g-mid:#021CF5; --g-bright:#3F5CFF; --g-soft:#E9ECFF;
-    --ink:#0D1226; --ink-2:#5D6480; --line:#DCE1F5; --bg:#F4F6FF; --red:#E2534B;
+    --ink:#0D1226; --ink-2:#5D6480; --line:#DCE1F5; --bg:#F4F6FF; --red:#FF4D67;
     --blue:#6D3FE8;
+    --pos:#00BE86; --pos-soft:#DFF7EF; --pos-light:#5CE6BC;
+    --neg:#FF4D67; --neg-soft:#FFE7EA; --neg-light:#FF9AA8;
     --surface:#ffffff;
     --tabbar:rgba(255,255,255,.95);
     --warn-bg:#FFF3E0; --warn-fg:#B26A00;
@@ -26,8 +28,10 @@
   }
   html[data-theme="dark"]{
     --g-deep:#04061C; --g-mid:#1B34F0; --g-bright:#5A72FF; --g-soft:#1A1F3D;
-    --ink:#E9EBF7; --ink-2:#98A0C0; --line:#262C4F; --bg:#080B1C; --red:#FF6B62;
+    --ink:#E9EBF7; --ink-2:#98A0C0; --line:#262C4F; --bg:#080B1C; --red:#FF6B7E;
     --blue:#8B63FF;
+    --pos:#2FE0A8; --pos-soft:#0F3A2E; --pos-light:#7CF2CE;
+    --neg:#FF6B7E; --neg-soft:#3A1A20; --neg-light:#FFA8B3;
     --surface:#121732;
     --tabbar:rgba(18,23,50,.96);
     --warn-bg:#3A2E12; --warn-fg:#F0B75E;
@@ -73,7 +77,7 @@
   .mini{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:13px}
   .mini .t{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#DDE3FF}
   .dot{width:26px;height:26px;border-radius:9px;display:grid;place-items:center;font-size:13px}
-  .dot.in{background:rgba(63,92,255,.55)} .dot.out{background:rgba(226,83,75,.45)}
+  .dot.in{background:rgba(0,190,134,.5)} .dot.out{background:rgba(255,77,103,.45)}
   .mini .v{font-size:19px;font-weight:800;margin-top:7px}
   .wide{display:flex;align-items:center;gap:13px;background:rgba(255,255,255,.13);
     border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:14px;margin-top:12px}
@@ -100,12 +104,17 @@
   .row{display:flex;align-items:center;gap:12px;padding:11px 2px;cursor:pointer}
   .row+.row{border-top:1px solid var(--line)}
   .ico{width:42px;height:42px;border-radius:14px;background:var(--g-soft);display:grid;place-items:center;font-size:19px;flex:none}
-  .ico.red{background:var(--danger-bg)}
+  .brand{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;flex:none;
+    font-size:16px;font-weight:800;letter-spacing:-.5px;color:#fff;
+    box-shadow:inset 0 -2px 6px rgba(0,0,0,.16)}
+  .brand.sm{width:30px;height:30px;border-radius:10px;font-size:12px}
+  .ico.red{background:var(--neg-soft)}
+  .ico.pos{background:var(--pos-soft)}
   .ico.blue{background:var(--blue-bg)}
   .row .name{font-weight:600;font-size:15px}
   .row .sub2{font-size:12.5px;color:var(--ink-2);margin-top:2px}
   .row .amt{margin-left:auto;font-weight:700;font-size:15px;white-space:nowrap;text-align:right}
-  .amt.in{color:var(--g-bright)} .amt.out{color:var(--red)}
+  .amt.in{color:var(--pos)} .amt.out{color:var(--neg)}
   .dayhead{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);padding:12px 2px 4px;font-weight:600}
 
   .quad{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
@@ -117,7 +126,9 @@
   .bar-top{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;gap:8px}
   .track{height:9px;background:var(--g-soft);border-radius:99px;overflow:hidden}
   .fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--g-bright),var(--g-mid))}
-  .fill.red{background:linear-gradient(90deg,#F08078,var(--red))}
+  .fill.pos{background:linear-gradient(90deg,var(--pos-light),var(--pos))}
+  .fill.neg{background:linear-gradient(90deg,var(--neg-light),var(--neg))}
+  .fill.red{background:linear-gradient(90deg,var(--neg-light),var(--neg))}
 
   /* ---------- Controls ---------- */
   .seg{display:flex;background:var(--g-soft);border-radius:15px;padding:4px;margin-bottom:14px}
@@ -310,7 +321,7 @@
         <div style="margin-left:auto;color:var(--ink-2)">→</div>
       </div>
       <div class="trio" style="grid-template-columns:1fr 1fr;row-gap:14px">
-        <div><div class="l">Банктердегі ақша</div><div class="v" id="h-banks" style="color:var(--g-bright)">0 ₸</div></div>
+        <div><div class="l">Банктердегі ақша</div><div class="v" id="h-banks" style="color:var(--pos-light)">0 ₸</div></div>
         <div><div class="l">Міндеттемелер</div><div class="v" id="h-debts" style="color:var(--red)">0 ₸</div></div>
         <div><div class="l">Таза капитал</div><div class="v" id="h-net2">0 ₸</div></div>
         <div><div class="l">Инвестиция · бөлек</div><div class="v" id="h-broker" style="color:var(--blue)">0 ₸</div></div>
@@ -429,7 +440,7 @@
   </div>
   <div class="wrap">
     <div class="stat3">
-      <div class="c"><div class="ico" style="margin:0 auto">📈</div><div class="l">Кіріс</div><div class="v" id="s-in" style="color:var(--g-bright)">0 ₸</div></div>
+      <div class="c"><div class="ico" style="margin:0 auto">📈</div><div class="l">Кіріс</div><div class="v" id="s-in" style="color:var(--pos)">0 ₸</div></div>
       <div class="c"><div class="ico red" style="margin:0 auto">📉</div><div class="l">Шығын</div><div class="v" id="s-out" style="color:var(--red)">0 ₸</div></div>
       <div class="c"><div class="ico" style="margin:0 auto">📊</div><div class="l">Нәтиже</div><div class="v" id="s-net">0 ₸</div></div>
     </div>
@@ -444,7 +455,7 @@
     <div class="card">
       <h2>Кіріс / Шығын</h2>
       <div id="s-chart"></div>
-      <div class="legend"><span><i style="background:var(--g-bright)"></i>Кіріс</span><span><i style="background:var(--red)"></i>Шығын</span></div>
+      <div class="legend"><span><i style="background:var(--pos)"></i>Кіріс</span><span><i style="background:var(--neg)"></i>Шығын</span></div>
     </div>
     <button class="btn line" onclick="shareReport()">Есепті бөлісу</button>
     <div class="card" id="s-card-out"><h2>Шығын санаттары</h2><div id="s-cat-out"></div></div>
