@@ -131,15 +131,15 @@ function accBadge(a, small){
 }
 
 var BANKS = [
-  ['Kaspi Bank','💳',/kaspi|каспи|каспий/i],
-  ['Freedom SuperApp','🏦',/freedom|фридом|фрidom/i],
-  ['Halyk Bank','🏦',/halyk|халык|халық|народный банк/i],
-  ['Jusan Bank','💳',/jusan|жусан/i],
-  ['ForteBank','💳',/forte|форте/i],
-  ['Bereke Bank','🏦',/bereke|береке/i],
-  ['Otbasy Bank','🏠',/otbasy|отбасы|жилстрой/i],
-  ['Qazaq Bank','🏦',/qazaq|назарбанк/i],
-  ['Қолма-қол','💵',null]
+  ['Kaspi Bank','card',/kaspi|каспи|каспий/i],
+  ['Freedom SuperApp','bank',/freedom|фридом|фрidom/i],
+  ['Halyk Bank','bank',/halyk|халык|халық|народный банк/i],
+  ['Jusan Bank','card',/jusan|жусан/i],
+  ['ForteBank','card',/forte|форте/i],
+  ['Bereke Bank','bank',/bereke|береке/i],
+  ['Otbasy Bank','house',/otbasy|отбасы|жилстрой/i],
+  ['Qazaq Bank','bank',/qazaq|назарбанк/i],
+  ['Қолма-қол','wallet',null]
 ];
 function bankExists(name){
   var f=false;
@@ -454,9 +454,12 @@ function drawBankChips(){
   var box=document.getElementById('ac-banks'); box.innerHTML='';
   var cur=document.getElementById('ac-name').value.trim().toLowerCase();
   BANKS.forEach(function(b){
+    var br=brandOf(b[0]);
     var btn=document.createElement('button');
     btn.className='chip'+(cur===b[0].toLowerCase()?' on':'');
-    btn.textContent=b[1]+' '+b[0];
+    btn.innerHTML=(br
+      ? '<span class="brand sm" style="background:'+br[1]+(br[2]?';color:'+br[2]:'')+'">'+br[0]+'</span>'
+      : svgIcon(b[1],'chip-ic'))+'<span>'+b[0]+'</span>';
     btn.onclick=function(){
       document.getElementById('ac-name').value=b[0];
       accIcon=b[1]; drawAccIcons(); drawBankChips();
@@ -545,9 +548,10 @@ function monthsLeft(bal, rate, pay){
 }
 
 /* ---- брокерлік операциялар ---- */
-var BOP = [['dep','Салым','⬇'],['wd','Шығару','⬆'],['div','Дивиденд','💰'],['fee','Комиссия · салық','🧾']];
+var BOP = [['dep','Салым','arrDown'],['wd','Шығару','arrUp'],['div','Дивиденд','coin'],['fee','Комиссия · салық','receipt']];
 function bopName(t){ for(var i=0;i<BOP.length;i++) if(BOP[i][0]===t) return BOP[i][1]; return t; }
-function bopIcon(t){ for(var i=0;i<BOP.length;i++) if(BOP[i][0]===t) return BOP[i][2]; return '•'; }
+function bopIcon(t){ for(var i=0;i<BOP.length;i++) if(BOP[i][0]===t) return BOP[i][2]; return 'star'; }
+function bopSvg(t, cls){ return svgIcon(bopIcon(t), cls); }
 
 function applyBTx(b, sign){
   var a=acc(b.acc); if(!a) return;
@@ -576,7 +580,7 @@ function drawBOpTypes(){
   BOP.forEach(function(t){
     var b=document.createElement('button');
     b.className='chip'+(boType===t[0]?' on':'');
-    b.textContent=t[2]+' '+t[1];
+    b.innerHTML=svgIcon(t[2],'chip-ic')+'<span>'+t[1]+'</span>';
     b.onclick=function(){ boType=t[0]; drawBOpTypes(); };
     box.appendChild(b);
   });
@@ -597,7 +601,7 @@ function openBView(id){
   var a=acc(b.acc), sym=accCurSym(a);
   document.getElementById('v-title').textContent=bopName(b.t)+': '+money(b.amt,sym);
   document.getElementById('v-body').innerHTML=
-    '<div class="kv"><span>Түрі</span><b>'+bopIcon(b.t)+' '+bopName(b.t)+'</b></div>'+
+    '<div class="kv"><span>Түрі</span><b>'+bopName(b.t)+'</b></div>'+
     '<div class="kv"><span>Күні</span><b>'+fullDate(b.date)+'</b></div>'+
     (b.note?'<div class="kv"><span>Түсініктеме</span><b>'+esc(b.note)+'</b></div>':'');
   var slot=document.getElementById('v-extra'); if(slot) slot.innerHTML='';
@@ -642,7 +646,7 @@ function renderBroker(){
     if(it.kind==='b'){
       var b=it.o, plus=(b.t==='dep'||b.t==='div');
       row.onclick=function(){ openBView(b.id); };
-      row.innerHTML='<div class="ico'+(plus?'':' red')+'">'+bopIcon(b.t)+'</div>'+
+      row.innerHTML='<div class="ico'+(plus?' pos':' red')+'">'+bopSvg(b.t)+'</div>'+
         '<div style="min-width:0;flex:1"><div class="name">'+bopName(b.t)+'</div>'+
         '<div class="sub2">'+fullDate(b.date)+(b.note?' · '+esc(b.note):'')+'</div></div>'+
         '<div class="amt" style="color:'+(plus?'var(--pos)':'var(--neg)')+'">'+
@@ -1708,7 +1712,7 @@ function renderImport(){
     var rowsHtml = '';
     BOP.forEach(function(t){
       if(!cnt[t[0]]) return;
-      rowsHtml += '<div class="kv"><span>' + t[2] + ' ' + t[1] + ' · ' + cnt[t[0]] + '</span><b>' +
+      rowsHtml += '<div class="kv"><span>' + t[1] + ' · ' + cnt[t[0]] + '</span><b>' +
         money(sums[t[0]], bsym) + '</b></div>';
     });
     var per = {};
@@ -1836,7 +1840,7 @@ function renderImportList(box){
       var sb = document.createElement('select');
       BOP.forEach(function(t){
         var op = document.createElement('option');
-        op.value = t[0]; op.textContent = t[2] + ' ' + t[1];
+        op.value = t[0]; op.textContent = t[1];
         if(r.bt === t[0]) op.selected = true;
         sb.appendChild(op);
       });
@@ -1868,7 +1872,7 @@ function renderImportList(box){
       var sc = document.createElement('select');
       CATS[r.type].forEach(function(c){
         var op = document.createElement('option');
-        op.value = c[0]; op.textContent = c[1] + ' ' + c[0];
+        op.value = c[0]; op.textContent = c[0];
         if(r.cat === c[0]) op.selected = true;
         sc.appendChild(op);
       });
@@ -1968,7 +1972,7 @@ var TR = [
 ["Банктердегі ақша","Деньги в банках","Money in banks"],["Инвестиция · бөлек","Инвестиции · отдельно","Investments · separate"],
 ["Соңғы операциялар","Последние операции","Recent transactions"],["Барлығы →","Все →","All →"],
 ["↑ Оң","↑ Плюс","↑ Positive"],["↓ Теріс","↓ Минус","↓ Negative"],
-["Банк үзіндісін жүктеу (PDF · Excel)","📥 Загрузить выписку банка (PDF · Excel)","📥 Import bank statement (PDF · Excel)"],
+["Банк үзіндісін жүктеу (PDF · Excel)","Загрузить выписку банка (PDF · Excel)","Import bank statement (PDF · Excel)"],
 ["Операция жоқ.","Операций нет.","No transactions."],
 ["Жоғарыдағы + түймесімен қосыңыз.","Добавьте кнопкой + сверху.","Add with the + button above."],
 
@@ -2181,8 +2185,8 @@ var TR = [
 ["Алдымен брокерлік шот қосыңыз","Сначала добавьте брокерский счёт","Add a brokerage account first"],
 
 /* --- тақырып пен жестер --- */
-["Тақырып","Тема","Theme"],["☀ Ашық","☀ Светлая","☀ Light"],["🌙 Қараңғы","🌙 Тёмная","🌙 Dark"],
-["⚙ Жүйе бойынша","⚙ Как в системе","⚙ System"],
+["Тақырып","Тема","Theme"],["Ашық","Светлая","Light"],["Қараңғы","Тёмная","Dark"],
+["Жүйе бойынша","Как в системе","System"],
 ["Операцияны солға сырғытсаңыз — өшіріледі, оңға сырғытсаңыз — түзетіледі.","Свайп влево — удалить, вправо — изменить.","Swipe left to delete, right to edit."],
 
 /* --- диаграммалар мен бөлісу --- */
@@ -2470,7 +2474,7 @@ function drawSnaps(){
     row.className = 'row';
     var cnt = 0;
     try{ cnt = (JSON.parse(store.get('qarzhy_snap_' + day)).tx || []).length; }catch(e){}
-    row.innerHTML = '<div class="ico">🕘</div>' +
+    row.innerHTML = '<div class="ico">' + svgIcon('clock') + '</div>' +
       '<div style="flex:1"><div class="name">' + fullDate(day) + '</div>' +
       '<div class="sub2">' + cnt + ' операция</div></div>';
     var b = document.createElement('button');
@@ -2732,10 +2736,10 @@ function drawThemeChips(){
   var box = document.getElementById('theme-chips');
   if(!box) return;
   box.innerHTML = '';
-  [['light','☀ Ашық'],['dark','🌙 Қараңғы'],['auto','⚙ Жүйе бойынша']].forEach(function(t){
+  [['light','Ашық','sun'],['dark','Қараңғы','moon'],['auto','Жүйе бойынша','gear']].forEach(function(t){
     var b = document.createElement('button');
     b.className = 'chip' + (themeMode() === t[0] ? ' on' : '');
-    b.textContent = t[1];
+    b.innerHTML = svgIcon(t[2],'chip-ic') + '<span>' + t[1] + '</span>';
     b.onclick = function(){ setTheme(t[0]); };
     box.appendChild(b);
   });
@@ -2794,7 +2798,8 @@ function swipeWrap(row, onLeft, onRight){
   wrap.className = 'swipe';
   var bg = document.createElement('div');
   bg.className = 'swipe-bg';
-  bg.innerHTML = '<span>✎</span><span>🗑</span>';
+  bg.innerHTML = '<span class="sw-i" style="color:var(--blue)">' + svgIcon('edit') +
+    '</span><span class="sw-i" style="color:var(--neg)">' + svgIcon('trash') + '</span>';
   wrap.appendChild(bg);
   wrap.appendChild(row);
 
@@ -3015,6 +3020,13 @@ var SVGI = {
   salary: '<rect x="2.8" y="6.6" width="18.4" height="11.4" rx="2.4"/><circle cx="12" cy="12.3" r="2.6"/><path d="M6.2 12.3h.01M17.8 12.3h.01"/>',
   biz:    '<path d="M3.6 16.8 9 11.4l3.6 3.6 7-7"/><path d="M15.6 8h4v4"/>',
   laptop: '<rect x="4.4" y="5" width="15.2" height="10.4" rx="2"/><path d="M2.6 18.6h18.8"/>',
+  sun:    '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M5.4 18.6 7 17M17 7l1.6-1.6"/>',
+  moon:   '<path d="M20 14.4A8.6 8.6 0 0 1 9.6 4a8.6 8.6 0 1 0 10.4 10.4Z"/>',
+  edit:   '<path d="M4 20h4.2L19 9.2a2.1 2.1 0 0 0-3-3L5.2 17Z"/><path d="M14.6 6.6l2.8 2.8"/>',
+  trash:  '<path d="M4.6 6.6h14.8"/><path d="M9.4 6.6V4.8a1.4 1.4 0 0 1 1.4-1.4h2.4a1.4 1.4 0 0 1 1.4 1.4v1.8"/><path d="M6.6 6.6 7.6 20a1.6 1.6 0 0 0 1.6 1.4h5.6A1.6 1.6 0 0 0 16.4 20l1-13.4"/>',
+  arrDown:'<path d="M12 4.4v14"/><path d="M6.4 13 12 18.6 17.6 13"/>',
+  arrUp:  '<path d="M12 19.6V5.4"/><path d="M6.4 11 12 5.4 17.6 11"/>',
+  clock:  '<circle cx="12" cy="12" r="8.6"/><path d="M12 6.8V12l3.6 2.2"/>',
   down:   '<path d="M3.6 7.2 9 12.6l3.6-3.6 7 7"/><path d="M19.6 12.6v4h-4"/>',
   coin:   '<circle cx="12" cy="12" r="8.4"/><path d="M12 7.4v9.2"/><path d="M14.6 9.6c-.6-.8-1.6-1.2-2.6-1.2-1.5 0-2.7.8-2.7 2s1.2 1.7 2.7 2 2.7.8 2.7 2-1.2 2-2.7 2c-1 0-2-.4-2.6-1.2"/>',
   invest: '<path d="M4 19.4h16"/><path d="M7.4 16.4V12"/><path d="M11.8 16.4V7.4"/><path d="M16.2 16.4v-6.4"/><path d="M6.2 8.6 12 3.8l5.8 4.8"/>'
