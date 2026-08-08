@@ -1359,6 +1359,12 @@ function startBrokerImport(){
   document.getElementById('imp-title').textContent='Брокер есебін таңдаңыз';
   document.getElementById('imp-desc').textContent='Freedom Finance, Interactive Brokers және т.б. — есеп файлын (PDF, Excel, CSV) жүктеңіз. Салым, шығару, дивиденд пен комиссия автоматты бөлінеді. Бұл жазбалар тек осы брокерлік шотқа жазылады, жалпы кіріс-шығынға қосылмайды.';
 }
+function startBrokerImportAll(){
+  var list = accsOf('broker');
+  if(!list.length){ toast('Алдымен брокерлік шот қосыңыз'); return; }
+  brId = list[0].id;
+  startBrokerImport();
+}
 function startBankImport(){
   IMP.mode='bank'; IMP.brAcc=null; IMP.rows=[];
   document.getElementById('imp-result').innerHTML='';
@@ -1519,12 +1525,35 @@ function toNum(str){
 function pad2(n){ return String(n).padStart(2,'0'); }
 
 /* --- бір жолдан операция шығару --- */
+/* Брокерлік шоттың нөмірін атауынан алу: "#7D1541", "Брокер 7A99244" т.б. */
+function brokerCode(name){
+  var m = String(name || '').match(/#?\s*([A-Za-z0-9]{4,})/);
+  return m ? m[1].toUpperCase() : null;
+}
+function detectBrokerAcc(text){
+  var t = String(text || '').toUpperCase().replace(/[\s\u00A0]/g, '');
+  var found = null;
+  accsOf('broker').forEach(function(a){
+    var c = brokerCode(a.name);
+    if(c && c.length >= 4 && t.indexOf(c) !== -1) found = a.id;
+  });
+  return found;
+}
+
 function extractRows(lines){
-  var out = [], seen = {};
+  var out = [], seen = {}, curAcc = null;
   lines.forEach(function(line){
+    if(IMP.mode === 'broker'){
+      var hit = detectBrokerAcc(line);
+      if(hit) curAcc = hit;
+    }
     var r = extractOne(line);
     if(!r) return;
-    var k = r.date + '|' + r.amt + '|' + r.type + '|' + r.note.slice(0,24);
+    if(IMP.mode === 'broker'){
+      r.bacc = detectBrokerAcc(line) || curAcc || IMP.brAcc;
+    }
+    var k = r.date + '|' + r.amt + '|' + r.type + '|' + r.note.slice(0,24) +
+            (IMP.mode === 'broker' ? '|' + r.bacc : '');
     if(seen[k]) return;
     seen[k] = 1;
     out.push(r);
@@ -1532,10 +1561,10 @@ function extractRows(lines){
   // қайталанғанды тексеру
   var have = {};
   if(IMP.mode === 'broker'){
-    DB.btx.forEach(function(b){ if(b.acc===IMP.brAcc) have[b.date + '|' + Math.round(b.amt)] = 1; });
+    DB.btx.forEach(function(b){ have[b.acc + '|' + b.date + '|' + Math.round(b.amt)] = 1; });
     out.forEach(function(r){
       r.bt = guessBrokerType(r.note + ' ' + r.type, r.type);
-      r.dup = !!have[r.date + '|' + Math.round(r.amt)];
+      r.dup = !!have[r.bacc + '|' + r.date + '|' + Math.round(r.amt)];
       r.on = !r.dup;
     });
   } else {
@@ -1635,9 +1664,21 @@ function renderImport(){
       rowsHtml += '<div class="kv"><span>' + t[2] + ' ' + t[1] + ' · ' + cnt[t[0]] + '</span><b>' +
         money(sums[t[0]], bsym) + '</b></div>';
     });
-    head.innerHTML = '<h2>Табылды: ' + IMP.rows.length + ' жазба</h2>' + rowsHtml +
-      '<p class="muted" style="margin:12px 0 0">Шот: <b>' + (ba ? esc(ba.name) : '—') +
-      '</b> · сомалар ' + bsym + '-пен. Бұл жазбалар жалпы кіріс-шығынға қосылмайды.</p>';
+    var per = {};
+    IMP.rows.forEach(function(r){ per[r.bacc] = (per[r.bacc] || 0) + 1; });
+    var split = '<label class="f" style="margin-top:14px">Шоттар бойынша бөлінді</label>';
+    accsOf('broker').forEach(function(a){
+      if(!per[a.id]) return;
+      var c = brokerCode(a.name);
+      split += '<div class="kv"><span>' + esc(a.name) + (c ? ' <span class="badge">' + c + '</span>' : '') +
+               '</span><b>' + per[a.id] + '</b></div>';
+    });
+    var oneOnly = Object.keys(per).length === 1 && accsOf('broker').length > 1;
+
+    head.innerHTML = '<h2>Табылды: ' + IMP.rows.length + ' жазба</h2>' + rowsHtml + split +
+      (oneOnly
+        ? '<p class="muted" style="margin:12px 0 0">Файлдан екінші шоттың нөмірі табылмады — бәрі бір шотқа жазылды. Әр жолдың шотын төменнен өзгертуге болады.</p>'
+        : '<p class="muted" style="margin:12px 0 0">Шот нөмірі бойынша автоматты бөлінді. Бұл жазбалар жалпы кіріс-шығынға қосылмайды.</p>');
     box.innerHTML = '';
     box.appendChild(head);
     renderImportList(box);
@@ -1746,6 +1787,16 @@ function renderImportList(box){
       });
       sb.onchange = function(){ r.bt = sb.value; renderImport(); };
       meta.appendChild(sb);
+
+      var sa = document.createElement('select');
+      accsOf('broker').forEach(function(a){
+        var op = document.createElement('option');
+        op.value = a.id; op.textContent = a.name;
+        if(r.bacc === a.id) op.selected = true;
+        sa.appendChild(op);
+      });
+      sa.onchange = function(){ r.bacc = sa.value; renderImport(); };
+      meta.appendChild(sa);
     } else {
       var st = document.createElement('select');
       [['out','Шығын'],['in','Кіріс']].forEach(function(o){
@@ -1783,7 +1834,8 @@ function renderImportList(box){
     am.style.whiteSpace = 'nowrap';
     var plus = isBr ? (r.bt === 'dep' || r.bt === 'div') : (r.type === 'in');
     am.style.color = plus ? 'var(--pos)' : 'var(--neg)';
-    am.textContent = (plus ? '+' : '−') + nf(r.amt) + ' ' + bsym;
+    var rowSym = isBr ? accCurSym(acc(r.bacc)) : bsym;
+    am.textContent = (plus ? '+' : '−') + nf(r.amt) + ' ' + rowSym;
 
     row.appendChild(cb); row.appendChild(txt); row.appendChild(am);
     list.appendChild(row);
@@ -1815,7 +1867,7 @@ function importConfirm(){
 
   if(IMP.mode === 'broker'){
     sel.forEach(function(r){
-      var b = { id: newId(), acc: IMP.brAcc, t: r.bt, amt: r.amt, date: r.date,
+      var b = { id: newId(), acc: r.bacc || IMP.brAcc, t: r.bt, amt: r.amt, date: r.date,
                 note: r.note === '—' ? '' : r.note };
       DB.btx.push(b);
       applyBTx(b, 1);
@@ -2067,6 +2119,11 @@ var TR = [
 ["PIN-код қойылды","PIN-код установлен","PIN set"],["PIN өшірілді","PIN убран","PIN removed"],
 ["Бірде-бір жазба белгіленбеген","Ничего не отмечено","Nothing selected"],
 ["жаңа ғана","только что","just now"],["бүгін","сегодня","today"],["(қолмен)","(вручную)","(manual)"],
+
+/* --- брокер импорты --- */
+["Шоттар бойынша бөлінді","Разделено по счетам","Split by account"],
+["📥 Брокер есебін жүктеу (шоттарға бөледі)","📥 Загрузить отчёт брокера (разделит по счетам)","📥 Import broker report (splits by account)"],
+["Алдымен брокерлік шот қосыңыз","Сначала добавьте брокерский счёт","Add a brokerage account first"],
 
 /* --- тақырып пен жестер --- */
 ["Тақырып","Тема","Theme"],["☀ Ашық","☀ Светлая","☀ Light"],["🌙 Қараңғы","🌙 Тёмная","🌙 Dark"],
