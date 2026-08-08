@@ -175,6 +175,22 @@
     padding:11px 18px;border-radius:14px;font-size:14px;opacity:0;transition:.25s;z-index:80;pointer-events:none}
   .toast.on{opacity:1;transform:translate(-50%,0)}
 
+  .search{width:100%;border:0;border-radius:14px;padding:12px 14px;background:rgba(255,255,255,.16);
+    color:#fff;font-size:15px;margin-top:12px}
+  .search::placeholder{color:rgba(255,255,255,.6)}
+  .lock{position:fixed;inset:0;z-index:999;background:linear-gradient(160deg,#0B6B3A,#04331D);
+    display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px}
+  .lock.on{display:flex}
+  .dots{display:flex;gap:14px;margin:22px 0 30px}
+  .dots i{width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.6)}
+  .dots i.f{background:#fff;border-color:#fff}
+  .pad{display:grid;grid-template-columns:repeat(3,74px);gap:16px}
+  .pad button{height:74px;border-radius:50%;border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.1);color:#fff;font-size:26px;font-weight:600}
+  .pad button.blank{background:none;border:0}
+  .warnbar{background:#FFF3E0;color:#8A5300;border-radius:16px;padding:13px 15px;font-size:13.5px;
+    line-height:1.5;margin-bottom:12px}
+  .warnbar b{display:block;margin-bottom:3px}
   .ratebar{display:flex;align-items:center;gap:8px;margin-top:14px;background:rgba(255,255,255,.13);
     border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:10px 13px;font-size:13.5px;color:#DCF0E3}
   .ratebar b{color:#fff;font-weight:700}
@@ -249,7 +265,9 @@
       <button onclick="go('ops')"><span class="qi">🧾</span> Операциялар</button>
       <button onclick="go('goals')"><span class="qi">⚑</span> Мақсаттар</button>
       <button onclick="go('calc')"><span class="qi">🧮</span> Калькулятор</button>
+      <button onclick="go('budget')" style="grid-column:1/-1"><span class="qi">🎯</span> Бюджет — санат лимиттері</button>
     </div>
+    <div id="home-warn"></div>
 
     <button class="btn dashed" onclick="startBankImport()" style="margin-bottom:12px">📥 Банк үзіндісін жүктеу (PDF · Excel)</button>
 
@@ -296,11 +314,14 @@
       <div style="flex:1"><h1 style="font-size:24px">Операциялар</h1><div class="sub" id="o-count">0 операция</div></div>
       <button class="plus" onclick="openTx()">+</button>
     </div>
-    <div class="seg glass" style="margin-top:16px;margin-bottom:0">
+    <div class="seg glass" style="margin-top:14px;margin-bottom:0">
       <button class="on" data-of="all" onclick="setOpsFilter('all')">Барлығы</button>
       <button data-of="in" onclick="setOpsFilter('in')">Кіріс</button>
       <button data-of="out" onclick="setOpsFilter('out')">Шығын</button>
+      <button data-of="tr" onclick="setOpsFilter('tr')">Аударым</button>
     </div>
+    <input class="search" id="ops-q" placeholder="Іздеу: атау, санат, сома…" oninput="render()">
+    <div class="chips glass" id="ops-accs" style="margin-top:10px;margin-bottom:0"></div>
   </div>
   <div class="wrap"><div class="card"><div id="ops-list"></div></div></div>
 </section>
@@ -523,10 +544,20 @@
   <div class="wrap">
     <div class="card">
       <h2>Дерек көшірмесі</h2>
-      <p class="muted" style="margin:0 0 12px">Дерек тек осы телефонда сақталады. Телефон ауыстырар алдында файлға түсіріп алыңыз.</p>
+      <p class="muted" style="margin:0 0 12px" id="bk-info">Дерек тек осы телефонда сақталады.</p>
       <button class="btn line" onclick="exportData()">Файлға шығару</button>
       <input type="file" id="imp" accept="application/json" class="hide" onchange="importData(this)">
       <button class="btn line" onclick="document.getElementById('imp').click()">Файлдан қалпына келтіру</button>
+    </div>
+    <div class="card">
+      <h2>Қорғаныс</h2>
+      <p class="muted" style="margin:0 0 12px" id="pin-info">PIN-код қойылмаған. Қосымшада бүкіл қаржы дерегі тұр.</p>
+      <button class="btn line" id="pin-btn" onclick="pinSetup()">PIN-код қою</button>
+    </div>
+    <div class="card">
+      <h2>Қайталанған операциялар</h2>
+      <p class="muted" style="margin:0 0 12px" id="dup-info">—</p>
+      <button class="btn line" onclick="cleanDups()">Тексеру және тазалау</button>
     </div>
     <div class="card">
       <h2>Доллар курсы</h2>
@@ -550,6 +581,24 @@
       <h2>Қосымша туралы</h2>
       <p class="muted" style="margin:0">Қаржы · 2.0 · офлайн жұмыс істейді, ешқандай серверге дерек жіберілмейді.</p>
     </div>
+  </div>
+</section>
+
+<!-- ============ БЮДЖЕТ ============ -->
+<section class="page" id="p-budget">
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('home')">←</button>
+      <div style="flex:1"><h1 style="font-size:24px">Бюджет</h1><div class="sub" id="bd-sub">Айлық шығын шектеуі</div></div>
+    </div>
+    <div class="two">
+      <div class="mini"><div class="t">Шектелген</div><div class="v" id="bd-limit">0 ₸</div></div>
+      <div class="mini"><div class="t">Жұмсалды</div><div class="v" id="bd-spent">0 ₸</div></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="muted" style="padding:0 4px 8px">Санатқа айлық шек қойыңыз. 80%-ға жеткенде ескертеміз. 0 деп қойсаңыз — шек жоқ.</p>
+    <div class="card" id="bd-list"></div>
   </div>
 </section>
 
@@ -610,12 +659,20 @@
   <button data-tab="set" onclick="go('set')"><span class="g">⚙</span>Баптау</button>
 </nav>
 
+<div class="lock" id="lock">
+  <div style="font-size:34px">🔒</div>
+  <div style="font-size:19px;font-weight:700;margin-top:12px" id="lock-title">PIN-кодты енгізіңіз</div>
+  <div class="dots" id="lock-dots"><i></i><i></i><i></i><i></i></div>
+  <div class="pad" id="lock-pad"></div>
+  <div class="muted" style="color:rgba(255,255,255,.6);margin-top:22px;font-size:13px" id="lock-msg"></div>
+</div>
+
 <div class="scrim" id="scrim" onclick="closeSheets()"></div>
 
 <!-- Sheet: transaction -->
 <div class="sheet" id="sheet-tx">
   <div class="grab"></div>
-  <h3>Операция қосу</h3>
+  <h3 id="tx-title">Операция қосу</h3>
   <div class="seg tight">
     <button id="seg-out" class="on danger" onclick="setType('out')">Шығын</button>
     <button id="seg-in" onclick="setType('in')">Кіріс</button>
@@ -750,14 +807,16 @@ var store = {
   get: function(k){ try{ return localStorage.getItem(k); }catch(e){ return k in mem ? mem[k] : null; } },
   set: function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; } }
 };
-var DB = { tx:[], goals:[], accounts:[], btx:[], rate:null };
+var DB = { tx:[], goals:[], accounts:[], btx:[], budgets:{}, pin:null, lastBackup:null, rate:null };
 
 function load(){
   try{
     var raw = store.get('qarzhy_v1');
     if(raw){
       var d = JSON.parse(raw);
-      DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[]; DB.rate = d.rate||null;
+      DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[];
+      DB.budgets = d.budgets||{}; DB.pin = d.pin||null;
+      DB.lastBackup = d.lastBackup||null; DB.rate = d.rate||null;
       if(!DB.accounts.length){
         DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:d.start||0}];
       }
@@ -941,7 +1000,7 @@ function closeSheets(){
 }
 
 /* ---- transaction ---- */
-var fType='out', fCat='Тамақ', fAcc=null, fLoan=null, fTo=null;
+var fType='out', fCat='Тамақ', fAcc=null, fLoan=null, fTo=null, fEdit=null;
 function setType(t){
   fType=t;
   document.getElementById('seg-out').classList.toggle('on', t==='out');
@@ -1015,11 +1074,20 @@ function drawAccs(){
     });
   } else { fLoan=null; }
 }
-function openTx(){
-  document.getElementById('f-amt').value='';
-  document.getElementById('f-note').value='';
-  document.getElementById('f-date').value=todayISO();
-  setType('out'); openSheet('sheet-tx');
+function openTx(editId){
+  fEdit = editId || null;
+  var t = null;
+  if(fEdit) DB.tx.forEach(function(x){ if(x.id===fEdit) t=x; });
+  document.getElementById('tx-title').textContent = t ? 'Операцияны түзету' : 'Операция қосу';
+  document.getElementById('f-amt').value = t ? t.amt : '';
+  document.getElementById('f-note').value = t ? (t.note||'') : '';
+  document.getElementById('f-date').value = t ? t.date : todayISO();
+  fAcc = t ? t.acc : fAcc;
+  fTo  = t ? t.to : null;
+  fLoan= t ? t.loan : null;
+  setType(t ? t.type : 'out');
+  if(t && t.type!=='tr'){ fCat = t.cat; drawCats(); drawAccs(); }
+  openSheet('sheet-tx');
 }
 function saveTx(){
   var amt=parseFloat(document.getElementById('f-amt').value);
@@ -1030,6 +1098,20 @@ function saveTx(){
     date:document.getElementById('f-date').value||todayISO(),
     note:document.getElementById('f-note').value.trim(), acc:fAcc, loan:fLoan,
     to:(fType==='tr'?fTo:null) };
+
+  if(fEdit){
+    var old=null; DB.tx.forEach(function(x){ if(x.id===fEdit) old=x; });
+    if(old){
+      applyTx(old, -1);
+      t.id = old.id;
+      DB.tx = DB.tx.map(function(x){ return x.id===old.id ? t : x; });
+      applyTx(t, 1);
+      fEdit=null;
+      save(); closeSheets(); render(); toast('Өзгертілді');
+      return;
+    }
+    fEdit=null;
+  }
   DB.tx.push(t);
   applyTx(t, 1);
   save(); closeSheets(); render();
@@ -1074,7 +1156,8 @@ function openView(id){
   if(t.loan){ var l=acc(t.loan); if(l) h+='<div class="kv"><span>Несие</span><b>'+esc(l.name)+'</b></div>'; }
   if(t.note) h+='<div class="kv"><span>Түсініктеме</span><b>'+esc(t.note)+'</b></div>';
   document.getElementById('v-body').innerHTML=h;
-  var slot0=document.getElementById('v-extra'); if(slot0) slot0.innerHTML='';
+  var slot0=document.getElementById('v-extra');
+  if(slot0) slot0.innerHTML='<button class="btn line" onclick="openTx(\''+t.id+'\')">Түзету</button>';
   document.getElementById('v-del').textContent='Операцияны өшіру';
   document.getElementById('v-del').onclick=delTx;
   openSheet('sheet-view');
@@ -1418,6 +1501,7 @@ function exportData(){
   var blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob); a.download='qarzhy-'+todayISO()+'.json'; a.click();
+  DB.lastBackup=new Date().toISOString(); save(); render();
 }
 function importData(el){
   var f=el.files[0]; if(!f) return;
@@ -1426,6 +1510,7 @@ function importData(el){
     try{
       var d=JSON.parse(r.result);
       DB.tx=d.tx||[]; DB.goals=d.goals||[]; DB.accounts=d.accounts||[]; DB.btx=d.btx||[];
+      DB.budgets=d.budgets||{};
       if(!DB.accounts.length) DB.accounts=[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:d.start||0}];
       save(); render(); toast('Қалпына келтірілді');
     }catch(e){ toast('Файл оқылмады'); }
@@ -1434,12 +1519,13 @@ function importData(el){
 }
 function wipe(){
   if(!confirm('Барлық дерек өшіріледі. Жалғастырасыз ба?')) return;
-  DB={tx:[],goals:[],accounts:[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:0,cur:'KZT'}],btx:[],rate:DB.rate};
+  DB={tx:[],goals:[],accounts:[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:0,cur:'KZT'}],
+      btx:[],budgets:{},pin:DB.pin,lastBackup:DB.lastBackup,rate:DB.rate};
   save(); render(); toast('Өшірілді');
 }
 
 /* ================= FILTERS ================= */
-var opsFilter='all', statFilter='all', period='month';
+var opsFilter='all', opsAcc='all', statFilter='all', period='month';
 var range={from:null,to:null};
 function setOpsFilter(f){
   opsFilter=f;
@@ -1521,9 +1607,33 @@ function render(){
   renderAccList('debt','a-list-debt','Несие жоқ — тамаша.');
 
   /* --- ops --- */
-  var ops=DB.tx.filter(function(t){ return opsFilter==='all'?true:t.type===opsFilter; })
-    .sort(function(a,b){return a.date<b.date?1:-1;});
-  document.getElementById('o-count').textContent=DB.tx.length+' операция';
+  var q=(document.getElementById('ops-q').value||'').trim().toLowerCase();
+  var ops=DB.tx.filter(function(t){
+    if(opsFilter!=='all' && t.type!==opsFilter) return false;
+    if(opsAcc!=='all' && t.acc!==opsAcc && t.to!==opsAcc) return false;
+    if(q){
+      var hay=((t.cat||'')+' '+(t.note||'')+' '+Math.round(t.amt)).toLowerCase();
+      if(hay.indexOf(q)===-1) return false;
+    }
+    return true;
+  }).sort(function(a,b){return a.date<b.date?1:-1;});
+
+  var oIn=0,oOut=0;
+  ops.forEach(function(t){ if(t.type==='in') oIn+=t.amt; else if(t.type==='out') oOut+=t.amt; });
+  document.getElementById('o-count').textContent =
+    (q||opsAcc!=='all'||opsFilter!=='all')
+      ? ops.length+' табылды · +'+nf(oIn)+' / −'+nf(oOut)+' ₸'
+      : DB.tx.length+' операция';
+
+  var oab=document.getElementById('ops-accs'); oab.innerHTML='';
+  var oaList=[{id:'all',name:'Барлық шот',icon:'◎'}].concat(DB.accounts);
+  oaList.forEach(function(a){
+    var b=document.createElement('button');
+    b.className='chip'+(opsAcc===a.id?' on':'');
+    b.textContent=(a.icon||'•')+' '+a.name;
+    b.onclick=function(){ opsAcc=a.id; render(); };
+    oab.appendChild(b);
+  });
   var ol=document.getElementById('ops-list'); ol.innerHTML='';
   if(!ops.length) ol.innerHTML='<div class="empty">Операция табылмады.</div>';
   else {
@@ -1589,6 +1699,33 @@ function render(){
   else keys.forEach(function(k){
     topBox.appendChild(barRow(icon('out',k)+' '+k, money(sums[k])+' · '+Math.round(sums[k]/mOut*100)+'%', sums[k]/mOut, true));
   });
+
+  /* --- жаңа бөлімдер --- */
+  drawBudget();
+  drawWarnings();
+  var pinI=document.getElementById('pin-info'), pinB=document.getElementById('pin-btn');
+  if(pinI){
+    pinI.textContent = DB.pin
+      ? 'PIN-код қосулы. Қосымша ашылған сайын сұралады.'
+      : 'PIN-код қойылмаған. Қосымшада бүкіл қаржы дерегі тұр.';
+    pinB.textContent = DB.pin ? 'PIN-кодты өшіру' : 'PIN-код қою';
+  }
+  var bk=document.getElementById('bk-info');
+  if(bk){
+    var dd=daysSinceBackup();
+    bk.textContent = dd===null
+      ? 'Көшірме әлі жасалмаған. Дерек тек осы браузерде тұр — міндетті түрде сақтап қойыңыз.'
+      : 'Соңғы көшірме: '+(dd===0?'бүгін':dd+' күн бұрын')+'.';
+  }
+  var di=document.getElementById('dup-info');
+  if(di){
+    var seen={}, dc=0;
+    DB.tx.forEach(function(t){
+      var k=t.date+'|'+Math.round(t.amt)+'|'+t.type+'|'+(t.cat||'')+'|'+(t.note||'').slice(0,20);
+      if(seen[k]) dc++; else seen[k]=1;
+    });
+    di.textContent = dc ? dc+' қайталанған операция табылды.' : 'Қайталанған операция жоқ.';
+  }
 
   /* --- stats --- */
   renderStats();
@@ -2398,11 +2535,195 @@ function importConfirm(){
   go('ops');
 }
 
+/* ================= БЮДЖЕТ ================= */
+function budgets(){ return DB.budgets || (DB.budgets = {}); }
+function setBudget(cat, v){
+  budgets()[cat] = v > 0 ? v : 0;
+  if(!budgets()[cat]) delete budgets()[cat];
+  save(); render();
+}
+function monthSpend(cat){
+  var sum=0;
+  DB.tx.forEach(function(t){
+    if(t.type==='out' && t.cat===cat && inMonth(t.date)) sum+=t.amt;
+  });
+  return sum;
+}
+function budgetAlerts(){
+  var out=[];
+  Object.keys(budgets()).forEach(function(cat){
+    var lim=budgets()[cat], sp=monthSpend(cat);
+    if(lim>0 && sp>=lim*0.8) out.push({cat:cat, lim:lim, sp:sp, over:sp>lim});
+  });
+  return out;
+}
+function drawBudget(){
+  var box=document.getElementById('bd-list'); box.innerHTML='';
+  var totalLim=0, totalSp=0;
+  CATS.out.forEach(function(c){
+    var cat=c[0], lim=budgets()[cat]||0, sp=monthSpend(cat);
+    totalLim+=lim; if(lim>0) totalSp+=sp;
+    var pct = lim>0 ? Math.min(100, Math.round(sp/lim*100)) : 0;
+    var over = lim>0 && sp>lim;
+    var warn = lim>0 && !over && sp>=lim*0.8;
+
+    var el=document.createElement('div');
+    el.style.padding='12px 0';
+    el.style.borderTop='1px solid var(--line)';
+    el.innerHTML=
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'+
+        '<div style="font-size:18px">'+c[1]+'</div>'+
+        '<div style="flex:1;font-weight:600;font-size:15px">'+cat+'</div>'+
+        '<input class="inp" type="number" inputmode="decimal" placeholder="шек жоқ" value="'+(lim||'')+'" '+
+          'style="width:120px;margin:0;padding:9px;text-align:right;font-size:14px" '+
+          'onchange="setBudget(\'' + cat + '\', parseFloat(this.value)||0)">'+
+      '</div>'+
+      (lim>0
+        ? '<div class="track"><div class="fill'+(over||warn?' red':'')+'" style="width:'+pct+'%"></div></div>'+
+          '<div class="bar-top" style="margin:6px 0 0"><span class="muted">'+money(sp)+' / '+money(lim)+'</span>'+
+          '<b style="color:'+(over?'var(--red)':(warn?'#B26A00':'var(--ink-2)'))+'">'+
+          (over? 'шектен '+money(sp-lim)+' асты' : (warn? pct+'% — абайлаңыз' : pct+'%'))+'</b></div>'
+        : '<div class="muted">Шек қойылмаған · осы айда '+money(sp)+'</div>');
+    box.appendChild(el);
+  });
+  document.getElementById('bd-limit').textContent=money(totalLim);
+  document.getElementById('bd-spent').textContent=money(totalSp);
+  document.getElementById('bd-sub').textContent=MONTHS[cur.getMonth()]+' '+cur.getFullYear();
+}
+
+/* ================= PIN-ҚҰЛЫП ================= */
+var pinBuf='', pinMode='check', pinFirst='';
+function pinHash(v){
+  var h=5381, str='qarzhy:'+v;
+  for(var i=0;i<str.length;i++) h=((h<<5)+h+str.charCodeAt(i))|0;
+  return String(h);
+}
+function drawPad(){
+  var pad=document.getElementById('lock-pad');
+  if(pad.childNodes.length) return;
+  ['1','2','3','4','5','6','7','8','9','','0','⌫'].forEach(function(k){
+    var b=document.createElement('button');
+    if(!k){ b.className='blank'; b.disabled=true; }
+    b.textContent=k;
+    b.onclick=function(){ pinKey(k); };
+    pad.appendChild(b);
+  });
+}
+function pinDots(){
+  var d=document.getElementById('lock-dots').childNodes;
+  for(var i=0;i<d.length;i++) d[i].className = i<pinBuf.length ? 'f' : '';
+}
+function pinKey(k){
+  if(k==='⌫'){ pinBuf=pinBuf.slice(0,-1); pinDots(); return; }
+  if(!k || pinBuf.length>=4) return;
+  pinBuf+=k; pinDots();
+  if(pinBuf.length===4) setTimeout(pinDone, 140);
+}
+function pinDone(){
+  var msg=document.getElementById('lock-msg');
+  if(pinMode==='check'){
+    if(pinHash(pinBuf)===DB.pin){
+      document.getElementById('lock').classList.remove('on');
+      pinBuf=''; pinDots();
+    } else {
+      msg.textContent='PIN дұрыс емес';
+      pinBuf=''; pinDots();
+    }
+    return;
+  }
+  if(pinMode==='new'){
+    pinFirst=pinBuf; pinBuf=''; pinDots();
+    document.getElementById('lock-title').textContent='PIN-кодты қайталаңыз';
+    msg.textContent='';
+    pinMode='confirm';
+    return;
+  }
+  if(pinMode==='confirm'){
+    if(pinBuf===pinFirst){
+      DB.pin=pinHash(pinBuf); save();
+      document.getElementById('lock').classList.remove('on');
+      pinBuf=''; pinDots(); render();
+      toast('PIN-код қойылды');
+    } else {
+      pinBuf=''; pinFirst=''; pinDots();
+      pinMode='new';
+      document.getElementById('lock-title').textContent='PIN-кодты енгізіңіз';
+      msg.textContent='Сәйкес келмеді — қайтадан';
+    }
+  }
+}
+function pinSetup(){
+  if(DB.pin){
+    if(!confirm('PIN-кодты өшіресіз бе?')) return;
+    DB.pin=null; save(); render(); toast('PIN өшірілді');
+    return;
+  }
+  pinMode='new'; pinBuf=''; pinFirst='';
+  document.getElementById('lock-title').textContent='Жаңа PIN-код ойлаңыз';
+  document.getElementById('lock-msg').textContent='4 сан';
+  drawPad(); pinDots();
+  document.getElementById('lock').classList.add('on');
+}
+function pinGate(){
+  if(!DB.pin) return;
+  pinMode='check'; pinBuf='';
+  document.getElementById('lock-title').textContent='PIN-кодты енгізіңіз';
+  document.getElementById('lock-msg').textContent='';
+  drawPad(); pinDots();
+  document.getElementById('lock').classList.add('on');
+}
+
+/* ================= ДЕРЕК ҚАУІПСІЗДІГІ ================= */
+function storageOK(){
+  try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true; }
+  catch(e){ return false; }
+}
+function daysSinceBackup(){
+  if(!DB.lastBackup) return null;
+  return Math.floor((Date.now()-new Date(DB.lastBackup).getTime())/86400000);
+}
+function drawWarnings(){
+  var box=document.getElementById('home-warn');
+  if(!box) return;
+  var html='';
+  if(!storageOK()){
+    html+='<div class="warnbar" style="background:#FDECEB;color:#8A2F29"><b>Дерек сақталмайды</b>'+
+      'Браузер жадына жазу мүмкін емес. Chrome-ды жеке (инкогнито) режимде ашпаңыз.</div>';
+  }
+  var d=daysSinceBackup();
+  if(d===null && DB.tx.length>5){
+    html+='<div class="warnbar"><b>Көшірме жасаңыз</b>Дерек тек осы браузерде тұр. '+
+      'Баптау → Файлға шығару арқылы сақтап қойыңыз.</div>';
+  } else if(d!==null && d>=30){
+    html+='<div class="warnbar"><b>Көшірме ескірді</b>Соңғы көшірмеден '+d+' күн өтті. Жаңартып қойыңыз.</div>';
+  }
+  var al=budgetAlerts();
+  al.forEach(function(a){
+    html+='<div class="warnbar"'+(a.over?' style="background:#FDECEB;color:#8A2F29"':'')+'><b>'+esc(a.cat)+
+      (a.over?' — шектен асты':' — шекке жақындады')+'</b>'+money(a.sp)+' / '+money(a.lim)+'</div>';
+  });
+  box.innerHTML=html;
+}
+function cleanDups(){
+  var seen={}, dups=[];
+  DB.tx.forEach(function(t){
+    var k=t.date+'|'+Math.round(t.amt)+'|'+t.type+'|'+(t.cat||'')+'|'+(t.note||'').slice(0,20);
+    if(seen[k]) dups.push(t); else seen[k]=1;
+  });
+  if(!dups.length){ toast('Қайталанған операция жоқ'); render(); return; }
+  if(!confirm(dups.length+' қайталанған операция табылды. Өшіресіз бе?')) return;
+  dups.forEach(function(t){ applyTx(t,-1); });
+  var ids={}; dups.forEach(function(t){ ids[t.id]=1; });
+  DB.tx=DB.tx.filter(function(t){ return !ids[t.id]; });
+  save(); render(); toast(dups.length+' операция өшірілді');
+}
+
 /* ================= START ================= */
 if('serviceWorker' in navigator){
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 }
 load();
+pinGate();
 if(navigator.onLine !== false){
   var stale = !DB.rate || !DB.rate.at || (Date.now()-new Date(DB.rate.at).getTime()) > 12*3600000;
   if(stale && (!DB.rate || DB.rate.src!=='manual' || !DB.rate.v)) setTimeout(function(){ fetchRate(false); }, 800);
