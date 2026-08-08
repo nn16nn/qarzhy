@@ -6,7 +6,7 @@ var store = {
   get: function(k){ try{ return localStorage.getItem(k); }catch(e){ return k in mem ? mem[k] : null; } },
   set: function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; } }
 };
-var DB = { tx:[], goals:[], accounts:[], btx:[], budgets:{}, pin:null, lastBackup:null, lang:'kk', rate:null };
+var DB = { tx:[], goals:[], accounts:[], btx:[], budgets:{}, pin:null, lastBackup:null, lang:'kk', theme:'auto', rate:null };
 
 function load(){
   try{
@@ -14,7 +14,7 @@ function load(){
     if(raw){
       var d = JSON.parse(raw);
       DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[];
-      DB.budgets = d.budgets||{}; DB.pin = d.pin||null; DB.lang = d.lang||'kk';
+      DB.budgets = d.budgets||{}; DB.pin = d.pin||null; DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto'; DB.haptic = d.haptic!==false;
       DB.lastBackup = d.lastBackup||null; DB.rate = d.rate||null;
       if(!DB.accounts.length){
         DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:d.start||0}];
@@ -590,8 +590,7 @@ function renderBroker(){
   if(!a){ return; }
   var sym=accCurSym(a), inv=a.invested||0, pl=a.bal-inv;
   document.getElementById('br-name').textContent=a.icon+' '+a.name;
-  document.getElementById('br-val').textContent=money(a.bal,sym)+
-    (a.cur==='USD'&&rateV()? '' : '');
+  animNum(document.getElementById('br-val'), a.bal, sym);
   document.getElementById('br-inv').textContent=money(inv,sym);
   var ple=document.getElementById('br-pl');
   ple.textContent=(pl>=0?'+':'')+money(pl,sym)+(inv>0?' ('+(pl>=0?'+':'−')+Math.abs(Math.round(pl/inv*100))+'%)':'');
@@ -815,7 +814,7 @@ function render(){
   var mIn=0,mOut=0; mTx.forEach(function(t){ if(t.type==='in') mIn+=t.amt; else mOut+=t.amt; });
 
   /* --- home --- */
-  document.getElementById('h-net').textContent=money(T.net);
+  animNum(document.getElementById('h-net'), T.net);
   var pill=document.getElementById('h-pill');
   pill.textContent = T.net>=0?'↑ Оң':'↓ Теріс';
   pill.style.color = T.net>=0?'#B9C4FF':'#FFB3AE';
@@ -843,7 +842,7 @@ function render(){
 
   /* --- accounts --- */
   document.getElementById('a-count').textContent=DB.accounts.length+' шот';
-  document.getElementById('a-net').textContent=money(T.net);
+  animNum(document.getElementById('a-net'), T.net);
   document.getElementById('a-banks').textContent=money(T.banks);
   document.getElementById('a-broker').textContent=money(T.broker);
   document.getElementById('a-debts').textContent=money(T.debts);
@@ -899,7 +898,7 @@ function render(){
   }
 
   /* --- overview --- */
-  document.getElementById('ov-net').textContent=money(T.net);
+  animNum(document.getElementById('ov-net'), T.net);
   var rate = mIn>0 ? Math.round((mIn-mOut)/mIn*100) : 0;
   document.getElementById('ov-month').innerHTML=
     '<div class="kv"><span>Кіріс</span><b style="color:var(--g-bright)">'+money(mIn)+'</b></div>'+
@@ -993,11 +992,12 @@ function render(){
   /* --- stats --- */
   renderStats();
   drawLangChips();
+  drawThemeChips();
   translateDom(document.body);
 
   /* --- goals --- */
   var gt=0; DB.goals.forEach(function(g){ gt+=g.saved; });
-  document.getElementById('g-total').textContent=money(gt);
+  animNum(document.getElementById('g-total'), gt);
   document.getElementById('g-count').textContent=DB.goals.length+' мақсат';
   var gl=document.getElementById('goal-list'); gl.innerHTML='';
   if(!DB.goals.length) gl.innerHTML='<div class="card"><div class="empty">Мақсат әлі жоқ.<br>Жинайтын сомаңызды белгілеп қойыңыз.</div></div>';
@@ -1030,13 +1030,13 @@ function txRow(t){
       '<div><div class="name">Аударым</div><div class="sub2">'+
       (a?esc(a.name):'—')+' → '+(to?esc(to.name):'—')+'</div></div>'+
       '<div class="amt" style="color:var(--blue)">'+nf(t.amt)+' ₸</div>';
-    return row;
+    return swipeWrap(row, function(){ deleteTxWithUndo(t); }, function(){ openTx(t.id); });
   }
   row.innerHTML='<div class="ico'+(t.type==='out'?' red':'')+'">'+icon(t.type,t.cat)+'</div>'+
     '<div><div class="name">'+esc(t.cat)+'</div><div class="sub2">'+
     (a?esc(a.name):'—')+(t.note?' · '+esc(t.note):'')+'</div></div>'+
     '<div class="amt '+t.type+'">'+(t.type==='in'?'+':'−')+nf(t.amt)+' ₸</div>';
-  return row;
+  return swipeWrap(row, function(){ deleteTxWithUndo(t); }, function(){ openTx(t.id); });
 }
 function renderAccList(kind, elId, emptyTxt){
   var box=document.getElementById(elId); box.innerHTML='';
@@ -2037,6 +2037,11 @@ var TR = [
 ["Бірде-бір жазба белгіленбеген","Ничего не отмечено","Nothing selected"],
 ["жаңа ғана","только что","just now"],["бүгін","сегодня","today"],["(қолмен)","(вручную)","(manual)"],
 
+/* --- тақырып пен жестер --- */
+["Тақырып","Тема","Theme"],["☀ Ашық","☀ Светлая","☀ Light"],["🌙 Қараңғы","🌙 Тёмная","🌙 Dark"],
+["⚙ Жүйе бойынша","⚙ Как в системе","⚙ System"],
+["Операцияны солға сырғытсаңыз — өшіріледі, оңға сырғытсаңыз — түзетіледі.","Свайп влево — удалить, вправо — изменить.","Swipe left to delete, right to edit."],
+
 /* --- диаграммалар мен бөлісу --- */
 ["Санаттар үлесі","Доли категорий","Category split"],
 ["Шығын санаттарының үлесі","Доли категорий расходов","Expense category split"],
@@ -2533,6 +2538,146 @@ function shareReport(){
   }
 }
 
+/* ================= ТАҚЫРЫП (ашық / қараңғы) ================= */
+function themeMode(){ return DB.theme || 'auto'; }
+function isDark(){
+  var m = themeMode();
+  if(m === 'dark') return true;
+  if(m === 'light') return false;
+  return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+}
+function applyTheme(){
+  var dark = isDark();
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  var mt = document.querySelector('meta[name="theme-color"]');
+  if(mt) mt.setAttribute('content', dark ? '#04061C' : '#021cf5');
+}
+function setTheme(m){
+  DB.theme = m; save(); applyTheme(); render();
+  buzz(10);
+}
+function drawThemeChips(){
+  var box = document.getElementById('theme-chips');
+  if(!box) return;
+  box.innerHTML = '';
+  [['light','☀ Ашық'],['dark','🌙 Қараңғы'],['auto','⚙ Жүйе бойынша']].forEach(function(t){
+    var b = document.createElement('button');
+    b.className = 'chip' + (themeMode() === t[0] ? ' on' : '');
+    b.textContent = t[1];
+    b.onclick = function(){ setTheme(t[0]); };
+    box.appendChild(b);
+  });
+}
+function watchSystemTheme(){
+  if(!window.matchMedia) return;
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  var h = function(){ if(themeMode() === 'auto') applyTheme(); };
+  if(mq.addEventListener) mq.addEventListener('change', h);
+  else if(mq.addListener) mq.addListener(h);
+}
+
+/* ================= САН АНИМАЦИЯСЫ ================= */
+function animNum(el, val, sym){
+  if(!el) return;
+  sym = sym || '₸';
+  var prev = parseFloat(el.getAttribute('data-v'));
+  el.setAttribute('data-v', val);
+  if(isNaN(prev) || Math.abs(val - prev) < 1 ||
+     (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
+    el.textContent = money(val, sym);
+    return;
+  }
+  var t0 = performance.now(), dur = 520;
+  function step(t){
+    var k = Math.min(1, (t - t0) / dur);
+    var e = 1 - Math.pow(1 - k, 3);
+    el.textContent = money(prev + (val - prev) * e, sym);
+    if(k < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ================= СВАЙП ЖЕСТЕРІ ================= */
+var undoBuf = null;
+
+function toastUndo(msg, cb){
+  var t = document.getElementById('toast');
+  t.innerHTML = '';
+  t.appendChild(document.createTextNode(tr(msg)));
+  var b = document.createElement('span');
+  b.className = 'undo';
+  b.textContent = tr('Қайтару');
+  b.onclick = function(){
+    t.classList.remove('on');
+    cb();
+  };
+  t.appendChild(b);
+  t.classList.add('on');
+  clearTimeout(t._tm);
+  t._tm = setTimeout(function(){ t.classList.remove('on'); t.textContent = ''; }, 4500);
+}
+
+function swipeWrap(row, onLeft, onRight){
+  var wrap = document.createElement('div');
+  wrap.className = 'swipe';
+  var bg = document.createElement('div');
+  bg.className = 'swipe-bg';
+  bg.innerHTML = '<span>✎</span><span>🗑</span>';
+  wrap.appendChild(bg);
+  wrap.appendChild(row);
+
+  var x0 = 0, y0 = 0, dx = 0, lock = null;
+
+  row.addEventListener('touchstart', function(e){
+    if(e.touches.length !== 1) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+    dx = 0; lock = null;
+    wrap.classList.add('drag');
+  }, { passive: true });
+
+  row.addEventListener('touchmove', function(e){
+    if(e.touches.length !== 1) return;
+    var cx = e.touches[0].clientX, cy = e.touches[0].clientY;
+    var ddx = cx - x0, ddy = cy - y0;
+    if(lock === null){
+      if(Math.abs(ddx) < 8 && Math.abs(ddy) < 8) return;
+      lock = Math.abs(ddx) > Math.abs(ddy) * 1.4 ? 'x' : 'y';
+    }
+    if(lock !== 'x') return;
+    dx = Math.max(-120, Math.min(120, ddx));
+    row.style.transform = 'translateX(' + dx + 'px)';
+    bg.classList.add('show');
+    bg.style.background = dx < 0 ? 'var(--danger-bg)' : 'var(--blue-bg)';
+  }, { passive: true });
+
+  function finish(){
+    wrap.classList.remove('drag');
+    bg.classList.remove('show');
+    row.style.transform = '';
+    var d = dx; dx = 0;
+    if(lock !== 'x') return;
+    if(d < -70){ buzz(18); onLeft(); }
+    else if(d > 70){ buzz(12); onRight(); }
+  }
+  row.addEventListener('touchend', finish, { passive: true });
+  row.addEventListener('touchcancel', finish, { passive: true });
+
+  return wrap;
+}
+
+function deleteTxWithUndo(t){
+  var copy = JSON.parse(JSON.stringify(t));
+  applyTx(t, -1);
+  DB.tx = DB.tx.filter(function(x){ return x.id !== t.id; });
+  save(); render();
+  toastUndo('Өшірілді', function(){
+    DB.tx.push(copy);
+    applyTx(copy, 1);
+    save(); render();
+    toast('Қайтарылды');
+  });
+}
+
 /* ================= БЮДЖЕТ ================= */
 function budgets(){ return DB.budgets || (DB.budgets = {}); }
 function setBudget(cat, v){
@@ -2727,6 +2872,8 @@ autoSnapshot();
 askPersist();
 bindExitSave();
 bindHaptics();
+applyTheme();
+watchSystemTheme();
 LANG = DB.lang || 'kk';
 document.documentElement.lang = LANG;
 pinGate();
