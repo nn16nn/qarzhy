@@ -17,11 +17,11 @@ function load(){
       DB.budgets = d.budgets||{}; DB.pin = d.pin||null; DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto'; DB.haptic = d.haptic!==false;
       DB.lastBackup = d.lastBackup||null; DB.rate = d.rate||null;
       if(!DB.accounts.length){
-        DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:d.start||0}];
+        DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:d.start||0}];
       }
     }
   }catch(e){}
-  if(!DB.accounts.length) DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:0}];
+  if(!DB.accounts.length) DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:0}];
 }
 function save(){
   DB.updated = new Date().toISOString();
@@ -99,7 +99,12 @@ var CATS = {
        ["Денсаулық","🩺"],["Несие төлемі","💳"],["Ойын-сауық","🎬"],["Білім","📚"],["Сыйлық","🎁"],["Басқа","✦"]],
   in:[["Жалақы","💼"],["Бизнес","📈"],["Фриланс","💻"],["Инвестиция","📊"],["Несие алу","💳"],["Сыйлық","🎁"],["Басқа","✦"]]
 };
-var ACC_ICONS = ["💳","🏦","💵","📱","📊","📈","🪙","🏠"];
+var ACC_ICONS = ["card","bank","wallet","phone","invest","chart","coin","house"];
+function accIconHtml(a, cls){
+  var n = a && a.icon;
+  if(n && SVGI[n]) return svgIcon(n, cls);
+  return '<span style="font-size:19px;line-height:1">' + (n || '') + '</span>';
+}
 var BRAND = {
   'kaspi bank':      ['K','#F14635'],
   'freedom superapp':['F','#12356B'],
@@ -120,7 +125,7 @@ function brandOf(name){
 }
 function accBadge(a, small){
   var b = brandOf(a.name);
-  if(!b) return '<div class="ico'+(small?' sm':'')+'">'+a.icon+'</div>';
+  if(!b) return '<div class="ico'+(small?' sm':'')+'">'+accIconHtml(a)+'</div>';
   return '<div class="brand'+(small?' sm':'')+'" style="background:'+b[1]+
          (b[2]?';color:'+b[2]:'')+'">'+b[0]+'</div>';
 }
@@ -261,7 +266,7 @@ function drawAccs(){
     b.className='chip'+(a.id===fAcc?' on':'');
     var br=brandOf(a.name);
     b.innerHTML=(br?'<span class="brand sm" style="background:'+br[1]+(br[2]?';color:'+br[2]:'')+'">'+br[0]+'</span>'
-      :'<span>'+a.icon+'</span>')+'<span>'+esc(a.name)+'</span>';
+      :accIconHtml(a,'chip-ic'))+'<span>'+esc(a.name)+'</span>';
     b.onclick=function(){ fAcc=a.id; if(fTo===a.id) fTo=null; drawAccs(); };
     box.appendChild(b);
   });
@@ -283,7 +288,7 @@ function drawAccs(){
     dst.forEach(function(a){
       var b=document.createElement('button');
       b.className='chip'+(a.id===fTo?' on':'');
-      b.textContent=(a.kind==='broker'?'📊 ':a.icon+' ')+a.name;
+      b.innerHTML=accIconHtml(a,'chip-ic')+'<span>'+esc(a.name)+'</span>';
       b.onclick=function(){ fTo=a.id; drawAccs(); };
       tb.appendChild(b);
     });
@@ -381,7 +386,7 @@ function openView(id){
   } else {
     h='<div class="kv"><span>Санат</span><b>'+esc(t.cat)+'</b></div>'+
       '<div class="kv"><span>Күні</span><b>'+fullDate(t.date)+'</b></div>'+
-      (a?'<div class="kv"><span>Шот</span><b>'+a.icon+' '+esc(a.name)+'</b></div>':'');
+      (a?'<div class="kv"><span>Шот</span><b>'+esc(a.name)+'</b></div>':'');
   }
   if(t.loan){ var l=acc(t.loan); if(l) h+='<div class="kv"><span>Несие</span><b>'+esc(l.name)+'</b></div>'; }
   if(t.note) h+='<div class="kv"><span>Түсініктеме</span><b>'+esc(t.note)+'</b></div>';
@@ -405,7 +410,7 @@ var KIND_TITLE={asset:'Банк шоты',broker:'Брокерлік шот',deb
 function openAcc(kind, editId){
   accEdit = editId||null;
   accKind = kind;
-  accIcon = kind==='asset'?'💳':(kind==='broker'?'📊':'🏦');
+  accIcon = kind==='asset'?'card':(kind==='broker'?'invest':'bank');
   var a = accEdit ? acc(accEdit) : null;
   if(a){ accIcon=a.icon; }
   document.getElementById('acc-title').textContent = (a?'Түзету: ':'')+KIND_TITLE[kind]+(a?'':' қосу');
@@ -463,7 +468,7 @@ function drawAccIcons(){
   var box=document.getElementById('ac-icons'); box.innerHTML='';
   ACC_ICONS.forEach(function(ic){
     var b=document.createElement('button');
-    b.className='chip'+(ic===accIcon?' on':''); b.textContent=ic;
+    b.className='chip icon-chip'+(ic===accIcon?' on':''); b.innerHTML=svgIcon(ic);
     b.onclick=function(){ accIcon=ic; drawAccIcons(); };
     box.appendChild(b);
   });
@@ -616,7 +621,7 @@ function renderBroker(){
   var a=acc(brId);
   if(!a){ return; }
   var sym=accCurSym(a), inv=a.invested||0, pl=a.bal-inv;
-  document.getElementById('br-name').textContent=a.icon+' '+a.name;
+  document.getElementById('br-name').textContent=a.name;
   animNum(document.getElementById('br-val'), a.bal, sym);
   document.getElementById('br-inv').textContent=money(inv,sym);
   var ple=document.getElementById('br-pl');
@@ -673,10 +678,10 @@ function saveBVal(){
 /* ---- жылдам баптау ---- */
 function quickSetup(){
   var want=[
-    {name:'Kaspi Bank', kind:'asset', icon:'💳'},
-    {name:'Freedom SuperApp', kind:'asset', icon:'🏦'},
-    {name:'Брокерлік шот 1', kind:'broker', icon:'📊'},
-    {name:'Брокерлік шот 2', kind:'broker', icon:'📈'}
+    {name:'Kaspi Bank', kind:'asset', icon:'card'},
+    {name:'Freedom SuperApp', kind:'asset', icon:'bank'},
+    {name:'Брокерлік шот 1', kind:'broker', icon:'invest'},
+    {name:'Брокерлік шот 2', kind:'broker', icon:'chart'}
   ];
   var added=0;
   want.forEach(function(w){
@@ -731,7 +736,7 @@ function drawGvAccs(){
   list.forEach(function(a){
     var b=document.createElement('button');
     b.className='chip'+(gvAcc===a.id?' on':'');
-    b.textContent=(a.kind==='broker'?'📊 ':a.icon+' ')+a.name;
+    b.innerHTML=accIconHtml(a,'chip-ic')+'<span>'+esc(a.name)+'</span>';
     b.onclick=function(){ gvAcc=a.id; drawGvAccs(); };
     box.appendChild(b);
   });
@@ -787,7 +792,7 @@ function importData(el){
       var d=JSON.parse(r.result);
       DB.tx=d.tx||[]; DB.goals=d.goals||[]; DB.accounts=d.accounts||[]; DB.btx=d.btx||[];
       DB.budgets=d.budgets||{};
-      if(!DB.accounts.length) DB.accounts=[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:d.start||0}];
+      if(!DB.accounts.length) DB.accounts=[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:d.start||0}];
       save(); render(); toast('Қалпына келтірілді');
     }catch(e){ toast('Файл оқылмады'); }
   };
@@ -795,7 +800,7 @@ function importData(el){
 }
 function wipe(){
   if(!confirm('Барлық дерек өшіріледі. Жалғастырасыз ба?')) return;
-  DB={tx:[],goals:[],accounts:[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:0,cur:'KZT'}],
+  DB={tx:[],goals:[],accounts:[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:0,cur:'KZT'}],
       btx:[],budgets:{},pin:DB.pin,lastBackup:DB.lastBackup,lang:DB.lang,rate:DB.rate};
   save(); render(); toast('Өшірілді');
 }
@@ -906,7 +911,7 @@ function render(){
   oaList.forEach(function(a){
     var b=document.createElement('button');
     b.className='chip'+(opsAcc===a.id?' on':'');
-    b.textContent=(a.icon||'•')+' '+a.name;
+    b.innerHTML=(a.id==='all'?svgIcon('star','chip-ic'):accIconHtml(a,'chip-ic'))+'<span>'+esc(a.name)+'</span>';
     b.onclick=function(){ opsAcc=a.id; render(); };
     oab.appendChild(b);
   });
@@ -947,7 +952,7 @@ function render(){
     assets.forEach(function(a){
       var kz=toKZT(a);
       var f=T.banks>0?kz/T.banks:0;
-      wrapB.appendChild(barRow((a.kind==='broker'?'📊 ':a.icon+' ')+a.name, money(kz), f, false));
+      wrapB.appendChild(barRow(accIconHtml(a,'bar-ic')+'<span>'+esc(a.name)+'</span>', money(kz), f, false));
     });
     ob.appendChild(wrapB);
   }
@@ -963,7 +968,7 @@ function render(){
     debts.forEach(function(a){
       var kz=toKZT(a);
       var f=T.debts>0?kz/T.debts:0;
-      db.appendChild(barRow('💳 '+a.name, money(kz), f, true));
+      db.appendChild(barRow(accIconHtml(a,'bar-ic')+'<span>'+esc(a.name)+'</span>', money(kz), f, 'neg'));
     });
   }
 
@@ -1034,7 +1039,7 @@ function render(){
     var el=document.createElement('div'); el.className='card';
     el.onclick=function(){ openGview(g.id); };
     el.innerHTML='<div style="display:flex;align-items:center;gap:11px;margin-bottom:12px">'+
-      '<div class="ico blue">⚑</div><div style="font-weight:700;font-size:16px">'+esc(g.name)+'</div></div>'+
+      '<div class="ico blue">'+svgIcon('flag')+'</div><div style="font-weight:700;font-size:16px">'+esc(g.name)+'</div></div>'+
       '<div class="track"><div class="fill" style="width:'+pct+'%"></div></div>'+
       '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;color:var(--ink-2)">'+
       '<span>'+money(g.saved)+' / '+money(g.target)+'</span><b style="color:var(--ink)">'+pct+'%</b></div>'+
@@ -1083,7 +1088,7 @@ function renderAccList(kind, elId, emptyTxt){
     }
     if(a.cur==='USD') sub += ' · ≈ '+nf(toKZT(a))+' ₸';
     row.innerHTML=(kind==='asset' ? accBadge(a) :
-      '<div class="ico'+(kind==='debt'?' red':' blue')+'">'+a.icon+'</div>')+
+      '<div class="ico'+(kind==='debt'?' red':' blue')+'">'+accIconHtml(a)+'</div>')+
       '<div style="min-width:0;flex:1"><div class="name">'+esc(a.name)+(a.cur==='USD'?' <span class="badge">$</span>':'')+
       '</div><div class="sub2">'+sub+'</div></div>'+
       '<div class="amt" style="color:'+(kind==='debt'?'var(--neg)':'var(--ink)')+'">'+money(a.bal,sym)+'</div>';
@@ -1765,7 +1770,7 @@ function renderImport(){
     b.className = 'chip' + (a.id === IMP.acc ? ' on' : '');
     var br2 = brandOf(a.name);
     b.innerHTML = (br2 ? '<span class="brand sm" style="background:'+br2[1]+(br2[2]?';color:'+br2[2]:'')+'">'+br2[0]+'</span>'
-      : '<span>'+a.icon+'</span>') + '<span>'+esc(a.name)+'</span>';
+      : accIconHtml(a,'chip-ic')) + '<span>'+esc(a.name)+'</span>';
     b.onclick = function(){ IMP.acc = a.id; renderImport(); };
     ab.appendChild(b);
   });
@@ -1963,7 +1968,7 @@ var TR = [
 ["Банктердегі ақша","Деньги в банках","Money in banks"],["Инвестиция · бөлек","Инвестиции · отдельно","Investments · separate"],
 ["Соңғы операциялар","Последние операции","Recent transactions"],["Барлығы →","Все →","All →"],
 ["↑ Оң","↑ Плюс","↑ Positive"],["↓ Теріс","↓ Минус","↓ Negative"],
-["📥 Банк үзіндісін жүктеу (PDF · Excel)","📥 Загрузить выписку банка (PDF · Excel)","📥 Import bank statement (PDF · Excel)"],
+["Банк үзіндісін жүктеу (PDF · Excel)","📥 Загрузить выписку банка (PDF · Excel)","📥 Import bank statement (PDF · Excel)"],
 ["Операция жоқ.","Операций нет.","No transactions."],
 ["Жоғарыдағы + түймесімен қосыңыз.","Добавьте кнопкой + сверху.","Add with the + button above."],
 
@@ -1975,7 +1980,7 @@ var TR = [
 ["+ Банк шотын қосу","+ Добавить банковский счёт","+ Add bank account"],
 ["+ Брокерлік шот қосу","+ Добавить брокерский счёт","+ Add brokerage account"],
 ["+ Несие қосу","+ Добавить кредит","+ Add loan"],
-["⚡ Дайын үлгі: Kaspi + Freedom + брокерлік шоттар","⚡ Готовый набор: Kaspi + Freedom + брокерские счета","⚡ Quick setup: Kaspi + Freedom + brokerage"],
+["Дайын үлгі: Kaspi + Freedom + брокерлік шоттар","⚡ Готовый набор: Kaspi + Freedom + брокерские счета","⚡ Quick setup: Kaspi + Freedom + brokerage"],
 ["Банк шоты жоқ. Төмендегі түймемен қосыңыз.","Банковских счетов нет. Добавьте кнопкой ниже.","No bank accounts. Add one below."],
 ["Брокерлік шот жоқ. Инвестицияңызды осында қосыңыз.","Брокерских счетов нет. Добавьте инвестиции здесь.","No brokerage accounts. Add your investments here."],
 ["Несие жоқ — тамаша.","Кредитов нет — отлично.","No loans — excellent."],
@@ -2172,7 +2177,7 @@ var TR = [
 
 /* --- брокер импорты --- */
 ["Шоттар бойынша бөлінді","Разделено по счетам","Split by account"],
-["📥 Брокер есебін жүктеу (шоттарға бөледі)","📥 Загрузить отчёт брокера (разделит по счетам)","📥 Import broker report (splits by account)"],
+["Брокер есебін жүктеу (шоттарға бөледі)","Загрузить отчёт брокера (разделит по счетам)","Import broker report (splits by account)"],
 ["Алдымен брокерлік шот қосыңыз","Сначала добавьте брокерский счёт","Add a brokerage account first"],
 
 /* --- тақырып пен жестер --- */
@@ -2200,7 +2205,7 @@ var TR = [
 /* --- қорғаныс пен автосақтау --- */
 ["Саусақ ізі / бет арқылы кіру","Вход по отпечатку / лицу","Unlock with fingerprint / face"],
 ["Биометрияны өшіру","Отключить биометрию","Turn off biometrics"],
-["👉 Саусақ ізімен кіру","👉 Войти по отпечатку","👉 Unlock with biometrics"],
+["Саусақ ізімен кіру","Войти по отпечатку","Unlock with biometrics"],
 ["Саусағыңызды қойыңыз…","Приложите палец…","Touch the sensor…"],
 ["Танылмады — PIN-кодты енгізіңіз","Не распознано — введите PIN","Not recognized — enter your PIN"],
 ["Биометрия қосылды","Биометрия включена","Biometrics enabled"],
@@ -2627,7 +2632,7 @@ function drawTrend(){
          '" r="1.1" fill="#00BE86" style="animation-delay:' + (0.5 + i * 0.05).toFixed(2) + 's"/>';
   });
   months.forEach(function(x, i){
-    if(i % 2 && i !== 11) return;
+    if((11 - i) % 2 !== 0) return;
     var isCur = (i === 11);
     s += '<text class="' + (isCur ? 'cur' : '') + '" x="' + px(i).toFixed(1) + '" y="95.5" ' +
          'text-anchor="middle" font-size="4.3" fill="' + (isCur ? 'var(--ink)' : 'var(--ink-2)') +
@@ -3010,6 +3015,8 @@ var SVGI = {
   salary: '<rect x="2.8" y="6.6" width="18.4" height="11.4" rx="2.4"/><circle cx="12" cy="12.3" r="2.6"/><path d="M6.2 12.3h.01M17.8 12.3h.01"/>',
   biz:    '<path d="M3.6 16.8 9 11.4l3.6 3.6 7-7"/><path d="M15.6 8h4v4"/>',
   laptop: '<rect x="4.4" y="5" width="15.2" height="10.4" rx="2"/><path d="M2.6 18.6h18.8"/>',
+  down:   '<path d="M3.6 7.2 9 12.6l3.6-3.6 7 7"/><path d="M19.6 12.6v4h-4"/>',
+  coin:   '<circle cx="12" cy="12" r="8.4"/><path d="M12 7.4v9.2"/><path d="M14.6 9.6c-.6-.8-1.6-1.2-2.6-1.2-1.5 0-2.7.8-2.7 2s1.2 1.7 2.7 2 2.7.8 2.7 2-1.2 2-2.7 2c-1 0-2-.4-2.6-1.2"/>',
   invest: '<path d="M4 19.4h16"/><path d="M7.4 16.4V12"/><path d="M11.8 16.4V7.4"/><path d="M16.2 16.4v-6.4"/><path d="M6.2 8.6 12 3.8l5.8 4.8"/>'
 };
 
@@ -3034,7 +3041,7 @@ function fillIcons(root){
 function svgIcon(name, cls){
   var d = SVGI[name] || SVGI.star;
   return '<svg class="svi' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" fill="none" ' +
-         'stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' +
+         'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
          d + '</svg>';
 }
 function catSvg(type, cat, cls){

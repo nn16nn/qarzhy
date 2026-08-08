@@ -115,7 +115,8 @@
   .row{display:flex;align-items:center;gap:12px;padding:11px 2px;cursor:pointer}
   .row+.row{border-top:1px solid var(--line)}
   .ico{width:42px;height:42px;border-radius:14px;background:var(--g-soft);display:grid;place-items:center;font-size:19px;flex:none}
-  .svi{width:22px;height:22px;display:block;flex:none}
+  .stat3 .ico{width:40px;height:40px;border-radius:13px}
+  .svi{width:23px;height:23px;display:block;flex:none}
   .svi.sm{width:18px;height:18px}
   .svi.chip-ic{width:19px;height:19px}
   .svi.bar-ic{width:18px;height:18px}
@@ -165,6 +166,9 @@
     padding:8px 13px;font-size:14px;color:var(--ink);font-weight:500;
     display:inline-flex;align-items:center;gap:8px;line-height:1.15}
   .chip .brand.sm{margin:0}
+  .chip.icon-chip{padding:10px 16px}
+  .chip.icon-chip .svi{width:23px;height:23px}
+  .chip.on .svi{color:#fff}
   .chip.on{background:var(--g-mid);border-color:var(--g-mid);color:#fff}
   .chips.glass .chip{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.2);color:#fff}
   .chips.glass .chip.on{background:#fff;color:var(--g-mid)}
@@ -278,6 +282,7 @@
   svg.trend circle{animation:popIn .4s backwards}
   svg.trend text{animation:fadein .5s backwards}
   svg.trend text.cur{font-weight:700}
+  svg.trend text{font-family:inherit;letter-spacing:0}
   .wide .ic{animation:breathe 4s ease-in-out infinite}
 
   @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
@@ -355,7 +360,7 @@
       <div class="mini"><div class="t"><span class="dot out">↑</span> Шығын</div><div class="v" id="h-out">0 ₸</div></div>
     </div>
     <div class="ratebar" onclick="fetchRate(true)">
-      <span>💱</span><span id="h-rate">Курс жүктелуде…</span>
+      <span class="qi" data-i="coin" style="display:inline-flex"></span><span id="h-rate">Курс жүктелуде…</span>
       <span class="ref" id="h-rate-at">жаңарту ↻</span>
     </div>
     <div class="wide" onclick="go('stat')">
@@ -423,8 +428,8 @@
     <button class="btn dashed" onclick="openAcc('asset')">+ Банк шотын қосу</button>
     <button class="btn dashed" onclick="openAcc('broker')">+ Брокерлік шот қосу</button>
     <button class="btn dashed" onclick="openAcc('debt')">+ Несие қосу</button>
-    <button class="btn line" onclick="startBrokerImportAll()">📥 Брокер есебін жүктеу (шоттарға бөледі)</button>
-    <button class="btn line" onclick="quickSetup()">⚡ Дайын үлгі: Kaspi + Freedom + брокерлік шоттар</button>
+    <button class="btn line" onclick="startBrokerImportAll()"><span class="qi" data-i="inbox" style="display:inline-flex;vertical-align:-6px;margin-right:8px"></span>Брокер есебін жүктеу (шоттарға бөледі)</button>
+    <button class="btn line" onclick="quickSetup()">Дайын үлгі: Kaspi + Freedom + брокерлік шоттар</button>
   </div>
 </section>
 
@@ -494,9 +499,9 @@
   </div>
   <div class="wrap">
     <div class="stat3">
-      <div class="c"><div class="ico" style="margin:0 auto">📈</div><div class="l">Кіріс</div><div class="v" id="s-in" style="color:var(--pos)">0 ₸</div></div>
-      <div class="c"><div class="ico red" style="margin:0 auto">📉</div><div class="l">Шығын</div><div class="v" id="s-out" style="color:var(--red)">0 ₸</div></div>
-      <div class="c"><div class="ico" style="margin:0 auto">📊</div><div class="l">Нәтиже</div><div class="v" id="s-net">0 ₸</div></div>
+      <div class="c"><div class="ico pos" style="margin:0 auto" data-i="biz"></div><div class="l">Кіріс</div><div class="v" id="s-in" style="color:var(--pos)">0 ₸</div></div>
+      <div class="c"><div class="ico red" style="margin:0 auto" data-i="down"></div><div class="l">Шығын</div><div class="v" id="s-out" style="color:var(--red)">0 ₸</div></div>
+      <div class="c"><div class="ico" style="margin:0 auto" data-i="stats"></div><div class="l">Нәтиже</div><div class="v" id="s-net">0 ₸</div></div>
     </div>
     <div class="card" id="s-card-donut">
       <h2>Санаттар үлесі</h2>
@@ -543,13 +548,13 @@
   </div>
   <div class="wrap">
     <div class="card" onclick="go('calc-inv')" style="display:flex;align-items:center;gap:13px">
-      <div class="ico">📈</div>
+      <div class="ico" data-i="invest"></div>
       <div><div style="font-weight:700;font-size:16px">Инвестиция калькуляторы</div>
         <div class="muted">Табыс · Мерзім · Күрделі пайыз</div></div>
       <div style="margin-left:auto;color:var(--ink-2)">›</div>
     </div>
     <div class="card" onclick="go('calc-loan')" style="display:flex;align-items:center;gap:13px">
-      <div class="ico red">💳</div>
+      <div class="ico red" data-i="card"></div>
       <div><div style="font-weight:700;font-size:16px">Несие калькуляторы</div>
         <div class="muted">Ай төлем · Ерте өтеу · Кесте</div></div>
       <div style="margin-left:auto;color:var(--ink-2)">›</div>
@@ -769,7 +774,7 @@
   <div class="wrap">
     <div class="quad">
       <button onclick="openBVal(brId)"><span class="qi" data-i="invest"></span> Құнын жаңарту</button>
-      <button onclick="openBOp()"><span class="qi" data-i="star"></span> Операция қосу</button>
+      <button onclick="openBOp()"><span class="qi" data-i="coin"></span> Операция қосу</button>
       <button onclick="startBrokerImport()"><span class="qi" data-i="inbox"></span> Файл жүктеу</button>
       <button onclick="openAcc('broker', brId)"><span class="qi" data-i="gear"></span> Түзету</button>
     </div>
@@ -809,12 +814,12 @@
 </nav>
 
 <div class="lock" id="lock">
-  <div style="font-size:34px">🔒</div>
+  <div class="ico" data-i="gear" style="width:56px;height:56px;border-radius:18px;background:rgba(255,255,255,.16);color:#fff"></div>
   <div style="font-size:19px;font-weight:700;margin-top:12px" id="lock-title">PIN-кодты енгізіңіз</div>
   <div class="dots" id="lock-dots"><i></i><i></i><i></i><i></i></div>
   <div class="pad" id="lock-pad"></div>
   <div class="muted" style="color:rgba(255,255,255,.6);margin-top:22px;font-size:13px" id="lock-msg"></div>
-  <button class="btn ghost hide" id="lock-bio" style="width:auto;padding:12px 22px;margin-top:18px" onclick="bioUnlock()">👉 Саусақ ізімен кіру</button>
+  <button class="btn ghost hide" id="lock-bio" style="width:auto;padding:12px 22px;margin-top:18px" onclick="bioUnlock()">Саусақ ізімен кіру</button>
 </div>
 
 <div class="scrim" id="scrim" onclick="closeSheets()"></div>
