@@ -6,7 +6,7 @@ var store = {
   get: function(k){ try{ return localStorage.getItem(k); }catch(e){ return k in mem ? mem[k] : null; } },
   set: function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; } }
 };
-var DB = { tx:[], goals:[], accounts:[], btx:[], budgets:{}, pin:null, lastBackup:null, lang:'kk', theme:'auto', rate:null };
+var DB = { tx:[], goals:[], accounts:[], btx:[], budgets:{}, lastBackup:null, lang:'kk', theme:'auto', rate:null };
 
 function load(){
   try{
@@ -14,7 +14,7 @@ function load(){
     if(raw){
       var d = JSON.parse(raw);
       DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[];
-      DB.budgets = d.budgets||{}; DB.pin = d.pin||null; DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto'; DB.haptic = d.haptic!==false;
+      DB.budgets = d.budgets||{}; DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto';
       DB.lastBackup = d.lastBackup||null; DB.rate = d.rate||null;
       if(!DB.accounts.length){
         DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:d.start||0}];
@@ -805,7 +805,7 @@ function importData(el){
 function wipe(){
   if(!confirm('Барлық дерек өшіріледі. Жалғастырасыз ба?')) return;
   DB={tx:[],goals:[],accounts:[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:0,cur:'KZT'}],
-      btx:[],budgets:{},pin:DB.pin,lastBackup:DB.lastBackup,lang:DB.lang,rate:DB.rate};
+      btx:[],budgets:{},lastBackup:DB.lastBackup,lang:DB.lang,rate:DB.rate};
   save(); render(); toast('Өшірілді');
 }
 
@@ -915,7 +915,11 @@ function render(){
   oaList.forEach(function(a){
     var b=document.createElement('button');
     b.className='chip'+(opsAcc===a.id?' on':'');
-    b.innerHTML=(a.id==='all'?svgIcon('star','chip-ic'):accIconHtml(a,'chip-ic'))+'<span>'+esc(a.name)+'</span>';
+    var obr = a.id==='all' ? null : brandOf(a.name);
+    b.innerHTML=(a.id==='all'
+      ? svgIcon('grid','chip-ic')
+      : (obr ? '<span class="brand sm" style="background:'+obr[1]+(obr[2]?';color:'+obr[2]:'')+'">'+obr[0]+'</span>'
+             : accIconHtml(a,'chip-ic')))+'<span>'+esc(a.name)+'</span>';
     b.onclick=function(){ opsAcc=a.id; render(); };
     oab.appendChild(b);
   });
@@ -988,24 +992,6 @@ function render(){
   /* --- жаңа бөлімдер --- */
   drawBudget();
   drawWarnings();
-  var pinI=document.getElementById('pin-info'), pinB=document.getElementById('pin-btn');
-  if(pinI){
-    pinI.textContent = DB.pin
-      ? 'PIN-код қосулы. Қосымша ашылған сайын сұралады.'
-      : 'PIN-код қойылмаған. Қосымшада бүкіл қаржы дерегі тұр.';
-    pinB.textContent = DB.pin ? 'PIN-кодты өшіру' : 'PIN-код қою';
-  }
-  var bb=document.getElementById('bio-btn'), bi=document.getElementById('bio-info');
-  if(bb){
-    bb.textContent = bioOn() ? 'Биометрияны өшіру' : 'Саусақ ізі / бет арқылы кіру';
-    bi.textContent = !bioSupported()
-      ? 'Бұл телефон немесе браузер қолдамайды.'
-      : (bioOn()
-          ? 'Қосулы. Телефонда бапталған саусақ ізі немесе бет арқылы ашылады, PIN сақтық ретінде қалады.'
-          : (DB.pin ? 'Телефонның саусақ ізін немесе бетін пайдалануға болады.' : 'Алдымен PIN-код қойыңыз.'));
-  }
-  var hb=document.getElementById('hap-btn');
-  if(hb) hb.textContent = (DB.haptic===false) ? 'Дірілді қосу' : 'Дірілді өшіру';
   drawSnaps();
   var bk=document.getElementById('bk-info');
   if(bk){
@@ -2097,13 +2083,6 @@ var TR = [
 
 /* --- баптау --- */
 ["Дерек және көшірме","Данные и резервная копия","Data and backup"],["Тіл","Язык","Language"],
-["Қорғаныс","Защита","Protection"],["PIN-код қою","Установить PIN-код","Set a PIN"],
-["PIN-кодты өшіру","Убрать PIN-код","Remove PIN"],
-["PIN-код қосулы. Қосымша ашылған сайын сұралады.","PIN-код включён. Запрашивается при каждом входе.","PIN is on. Asked on every launch."],
-["PIN-код қойылмаған. Қосымшада бүкіл қаржы дерегі тұр.","PIN-код не установлен. В приложении все ваши финансы.","No PIN set. The app holds all your finances."],
-["PIN-кодты енгізіңіз","Введите PIN-код","Enter your PIN"],["Жаңа PIN-код ойлаңыз","Придумайте PIN-код","Create a PIN"],
-["PIN-кодты қайталаңыз","Повторите PIN-код","Repeat the PIN"],["PIN дұрыс емес","Неверный PIN","Wrong PIN"],
-["Сәйкес келмеді — қайтадан","Не совпало — ещё раз","Did not match — try again"],["4 сан","4 цифры","4 digits"],
 ["Қайталанған операциялар","Дубликаты операций","Duplicate transactions"],
 ["Тексеру және тазалау","Проверить и очистить","Check and clean"],
 ["Қайталанған операция жоқ.","Дубликатов нет.","No duplicates."],
@@ -2175,7 +2154,6 @@ var TR = [
 ["Қай шотқа екенін таңдаңыз","Выберите счёт получателя","Choose the destination account"],
 ["Қалпына келтірілді","Восстановлено","Restored"],["Файл оқылмады","Файл не прочитан","File could not be read"],
 ["Бұл шоттар бар","Такие счета уже есть","These accounts already exist"],
-["PIN-код қойылды","PIN-код установлен","PIN set"],["PIN өшірілді","PIN убран","PIN removed"],
 ["Бірде-бір жазба белгіленбеген","Ничего не отмечено","Nothing selected"],
 ["жаңа ғана","только что","just now"],["бүгін","сегодня","today"],["(қолмен)","(вручную)","(manual)"],
 
@@ -2201,25 +2179,8 @@ var TR = [
 ["Ең табысты ай","Самый прибыльный месяц","Best month"],
 ["Есепті бөлісу","Поделиться отчётом","Share report"],
 ["Көшірілді","Скопировано","Copied"],["Бөлісу қолжетімсіз","Поделиться недоступно","Sharing unavailable"],
-["Дірілді өшіру","Отключить вибрацию","Turn off vibration"],
-["Дірілді қосу","Включить вибрацию","Turn on vibration"],
-["Діріл қосылды","Вибрация включена","Vibration on"],
-["Діріл өшірілді","Вибрация выключена","Vibration off"],
 
 /* --- қорғаныс пен автосақтау --- */
-["Саусақ ізі / бет арқылы кіру","Вход по отпечатку / лицу","Unlock with fingerprint / face"],
-["Биометрияны өшіру","Отключить биометрию","Turn off biometrics"],
-["Саусақ ізімен кіру","Войти по отпечатку","Unlock with biometrics"],
-["Саусағыңызды қойыңыз…","Приложите палец…","Touch the sensor…"],
-["Танылмады — PIN-кодты енгізіңіз","Не распознано — введите PIN","Not recognized — enter your PIN"],
-["Биометрия қосылды","Биометрия включена","Biometrics enabled"],
-["Биометрия тіркелмеді","Не удалось включить биометрию","Could not enable biometrics"],
-["Биометрия өшіріледі. Жалғастырасыз ба?","Биометрия будет отключена. Продолжить?","Biometrics will be turned off. Continue?"],
-["Бұл телефон биометрияны қолдамайды","Этот телефон не поддерживает биометрию","This phone does not support biometrics"],
-["Алдымен PIN-код қойыңыз","Сначала установите PIN-код","Set a PIN first"],
-["Қосулы. Телефонда бапталған саусақ ізі немесе бет арқылы ашылады, PIN сақтық ретінде қалады.","Включено. Открывается отпечатком или лицом, PIN остаётся как резерв.","On. Opens with fingerprint or face; the PIN stays as a fallback."],
-["Телефонның саусақ ізін немесе бетін пайдалануға болады.","Можно использовать отпечаток или лицо телефона.","You can use your phone's fingerprint or face."],
-["Бұл телефон немесе браузер қолдамайды.","Этот телефон или браузер не поддерживает.","This phone or browser does not support it."],
 ["Автоматты көшірмелер (соңғы 7 күн)","Автоматические копии (последние 7 дней)","Automatic snapshots (last 7 days)"],
 ["Әзірге көшірме жоқ — ертең өзі жасалады.","Копий пока нет — появятся завтра.","No snapshots yet — one will appear tomorrow."],
 ["Қайтару","Вернуть","Restore"],["Қайтарылды","Возвращено","Restored"],
@@ -2227,7 +2188,6 @@ var TR = [
 ["Көшірме табылмады","Копия не найдена","Snapshot not found"],
 ["Көшірме оқылмады","Копию не удалось прочитать","Snapshot could not be read"],
 ["Дерек әр өзгерісте телефонға өзі сақталады. Файл көшірмесі әлі жасалмаған.","Данные сохраняются на телефон автоматически. Файловая копия ещё не создана.","Data is saved to your phone automatically. No file backup yet."],
-["Тіркелмеді","Не зарегистрировано","Not registered"],
 
 /* --- ескертулер --- */
 ["Дерек сақталмайды","Данные не сохраняются","Data is not being saved"],
@@ -2345,87 +2305,6 @@ function drawLangChips(){
     b.textContent = l[1];
     b.onclick = function(){ setLang(l[0]); };
     box.appendChild(b);
-  });
-}
-
-/* ================= БИОМЕТРИЯ (саусақ ізі / бет) ================= */
-function bioSupported(){
-  return !!(window.PublicKeyCredential && navigator.credentials &&
-            navigator.credentials.create && location.protocol === 'https:');
-}
-function bioId(){ try{ return localStorage.getItem('qarzhy_bio'); }catch(e){ return null; } }
-function bioOn(){ return !!bioId(); }
-
-function b64enc(buf){
-  var b = new Uint8Array(buf), s = '';
-  for(var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
-  return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-function b64dec(str){
-  var s = str.replace(/-/g,'+').replace(/_/g,'/');
-  while(s.length % 4) s += '=';
-  var raw = atob(s), b = new Uint8Array(raw.length);
-  for(var i = 0; i < raw.length; i++) b[i] = raw.charCodeAt(i);
-  return b;
-}
-function rnd(n){
-  var b = new Uint8Array(n);
-  (window.crypto || window.msCrypto).getRandomValues(b);
-  return b;
-}
-
-function bioSetup(){
-  if(!DB.pin){ toast(tr('Алдымен PIN-код қойыңыз')); return; }
-  if(bioOn()){
-    if(!confirm(tr('Биометрия өшіріледі. Жалғастырасыз ба?'))) return;
-    try{ localStorage.removeItem('qarzhy_bio'); }catch(e){}
-    render(); toast(tr('Өшірілді'));
-    return;
-  }
-  if(!bioSupported()){ toast(tr('Бұл телефон биометрияны қолдамайды')); return; }
-
-  navigator.credentials.create({
-    publicKey: {
-      challenge: rnd(32),
-      rp: { name: 'Qarzhy', id: location.hostname },
-      user: { id: rnd(16), name: 'qarzhy-local', displayName: 'Qarzhy' },
-      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
-      authenticatorSelection: {
-        authenticatorAttachment: 'platform',
-        userVerification: 'required',
-        residentKey: 'preferred'
-      },
-      timeout: 60000,
-      attestation: 'none'
-    }
-  }).then(function(cred){
-    if(!cred){ toast(tr('Тіркелмеді')); return; }
-    try{ localStorage.setItem('qarzhy_bio', b64enc(cred.rawId)); }catch(e){}
-    render(); toast(tr('Биометрия қосылды'));
-  }).catch(function(){
-    toast(tr('Биометрия тіркелмеді'));
-  });
-}
-
-function bioUnlock(){
-  var id = bioId();
-  if(!id || !bioSupported()) return;
-  var msg = document.getElementById('lock-msg');
-  msg.textContent = tr('Саусағыңызды қойыңыз…');
-  navigator.credentials.get({
-    publicKey: {
-      challenge: rnd(32),
-      allowCredentials: [{ type: 'public-key', id: b64dec(id) }],
-      userVerification: 'required',
-      timeout: 60000
-    }
-  }).then(function(a){
-    if(!a){ msg.textContent = ''; return; }
-    document.getElementById('lock').classList.remove('on');
-    pinBuf = ''; pinDots();
-    msg.textContent = '';
-  }).catch(function(){
-    msg.textContent = tr('Танылмады — PIN-кодты енгізіңіз');
   });
 }
 
@@ -2660,29 +2539,6 @@ function drawTrend(){
   box.innerHTML = s;
 }
 
-/* ================= ДІРІЛ ================= */
-function buzz(ms){
-  if(DB.haptic === false) return;
-  if(navigator.vibrate) { try{ navigator.vibrate(ms || 8); }catch(e){} }
-}
-function toggleHaptic(){
-  DB.haptic = (DB.haptic === false);
-  save(); render();
-  if(DB.haptic) buzz(25);
-  toast(DB.haptic ? 'Діріл қосылды' : 'Діріл өшірілді');
-}
-function bindHaptics(){
-  document.addEventListener('click', function(e){
-    var t = e.target;
-    while(t && t !== document.body){
-      if(t.tagName === 'BUTTON' || (t.className && String(t.className).indexOf('chip') !== -1)){
-        buzz(8); return;
-      }
-      t = t.parentNode;
-    }
-  }, true);
-}
-
 /* ================= БӨЛІСУ ================= */
 function shareReport(){
   var list = DB.tx.filter(function(t){ return inRange(t.date) && t.type !== 'tr'; });
@@ -2705,7 +2561,7 @@ function shareReport(){
 
   if(navigator.share){
     navigator.share({ title: 'Қаржы есебі', text: txt })
-      .then(function(){ buzz(15); })
+      .then(function(){})
       .catch(function(){});
   } else if(navigator.clipboard){
     navigator.clipboard.writeText(txt).then(function(){ toast('Көшірілді'); });
@@ -2730,7 +2586,6 @@ function applyTheme(){
 }
 function setTheme(m){
   DB.theme = m; save(); applyTheme(); render();
-  buzz(10);
 }
 function drawThemeChips(){
   var box = document.getElementById('theme-chips');
@@ -2833,8 +2688,8 @@ function swipeWrap(row, onLeft, onRight){
     row.style.transform = '';
     var d = dx; dx = 0;
     if(lock !== 'x') return;
-    if(d < -70){ buzz(18); onLeft(); }
-    else if(d > 70){ buzz(12); onRight(); }
+    if(d < -70){ onLeft(); }
+    else if(d > 70){ onRight(); }
   }
   row.addEventListener('touchend', finish, { passive: true });
   row.addEventListener('touchcancel', finish, { passive: true });
@@ -2992,7 +2847,8 @@ var SVGI = {
   wallet: '<rect x="3" y="6.5" width="18" height="13" rx="3"/><path d="M3 9.5V7a2.5 2.5 0 0 1 2.5-2.5H16"/><circle cx="16.5" cy="13" r="1.4"/>',
   receipt:'<path d="M6 3.2h12v17.6l-3-1.8-3 1.8-3-1.8-3 1.8V3.2Z"/><path d="M9.2 8.2h5.6"/><path d="M9.2 12h5.6"/>',
   stats:  '<path d="M4 20V11"/><path d="M9.3 20V5"/><path d="M14.7 20v-6"/><path d="M20 20V9"/>',
-  gear:   '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M4.5 12H2.1M21.9 12h-2.4M6.7 6.7 5 5M19 19l-1.7-1.7M6.7 17.3 5 19M19 5l-1.7 1.7"/>',
+  gear:   '<circle cx="12" cy="12" r="3.3"/><path d="M19 12c0 .5-.05.9-.13 1.35l2.1 1.6-2 3.46-2.5-1a7.4 7.4 0 0 1-2.33 1.35l-.37 2.64h-4l-.37-2.64A7.4 7.4 0 0 1 7.07 17.4l-2.5 1-2-3.46 2.1-1.6A7.6 7.6 0 0 1 4.54 12c0-.46.05-.9.13-1.35l-2.1-1.6 2-3.46 2.5 1a7.4 7.4 0 0 1 2.33-1.35L9.77 2.6h4l.37 2.64a7.4 7.4 0 0 1 2.33 1.35l2.5-1 2 3.46-2.1 1.6c.08.45.13.89.13 1.35Z"/>',
+  grid:   '<rect x="3.4" y="3.4" width="7.2" height="7.2" rx="2.2"/><rect x="13.4" y="3.4" width="7.2" height="7.2" rx="2.2"/><rect x="3.4" y="13.4" width="7.2" height="7.2" rx="2.2"/><rect x="13.4" y="13.4" width="7.2" height="7.2" rx="2.2"/>',
   chart:  '<path d="M4 19.2h16"/><path d="M7.2 16V9.5"/><path d="M12 16V5"/><path d="M16.8 16v-4.5"/>',
   target: '<circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r="1"/>',
   calc:   '<rect x="4.5" y="2.8" width="15" height="18.4" rx="2.6"/><path d="M8 7h8"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15h.01M8.5 18.3h.01M12 18.3h.01M15.5 18.3h.01"/>',
@@ -3120,90 +2976,6 @@ function drawBudget(){
   document.getElementById('bd-sub').textContent=MONTHS[cur.getMonth()]+' '+cur.getFullYear();
 }
 
-/* ================= PIN-ҚҰЛЫП ================= */
-var pinBuf='', pinMode='check', pinFirst='';
-function pinHash(v){
-  var h=5381, str='qarzhy:'+v;
-  for(var i=0;i<str.length;i++) h=((h<<5)+h+str.charCodeAt(i))|0;
-  return String(h);
-}
-function drawPad(){
-  var pad=document.getElementById('lock-pad');
-  if(pad.childNodes.length) return;
-  ['1','2','3','4','5','6','7','8','9','','0','⌫'].forEach(function(k){
-    var b=document.createElement('button');
-    if(!k){ b.className='blank'; b.disabled=true; }
-    b.textContent=k;
-    b.onclick=function(){ pinKey(k); };
-    pad.appendChild(b);
-  });
-}
-function pinDots(){
-  var d=document.getElementById('lock-dots').childNodes;
-  for(var i=0;i<d.length;i++) d[i].className = i<pinBuf.length ? 'f' : '';
-}
-function pinKey(k){
-  if(k==='⌫'){ pinBuf=pinBuf.slice(0,-1); pinDots(); return; }
-  if(!k || pinBuf.length>=4) return;
-  pinBuf+=k; pinDots();
-  if(pinBuf.length===4) setTimeout(pinDone, 140);
-}
-function pinDone(){
-  var msg=document.getElementById('lock-msg');
-  if(pinMode==='check'){
-    if(pinHash(pinBuf)===DB.pin){
-      document.getElementById('lock').classList.remove('on');
-      pinBuf=''; pinDots();
-    } else {
-      msg.textContent='PIN дұрыс емес';
-      pinBuf=''; pinDots();
-    }
-    return;
-  }
-  if(pinMode==='new'){
-    pinFirst=pinBuf; pinBuf=''; pinDots();
-    document.getElementById('lock-title').textContent='PIN-кодты қайталаңыз';
-    msg.textContent='';
-    pinMode='confirm';
-    return;
-  }
-  if(pinMode==='confirm'){
-    if(pinBuf===pinFirst){
-      DB.pin=pinHash(pinBuf); save();
-      document.getElementById('lock').classList.remove('on');
-      pinBuf=''; pinDots(); render();
-      toast('PIN-код қойылды');
-    } else {
-      pinBuf=''; pinFirst=''; pinDots();
-      pinMode='new';
-      document.getElementById('lock-title').textContent='PIN-кодты енгізіңіз';
-      msg.textContent='Сәйкес келмеді — қайтадан';
-    }
-  }
-}
-function pinSetup(){
-  if(DB.pin){
-    if(!confirm('PIN-кодты өшіресіз бе?')) return;
-    DB.pin=null; save(); render(); toast('PIN өшірілді');
-    return;
-  }
-  pinMode='new'; pinBuf=''; pinFirst='';
-  document.getElementById('lock-title').textContent='Жаңа PIN-код ойлаңыз';
-  document.getElementById('lock-msg').textContent='4 сан';
-  drawPad(); pinDots();
-  document.getElementById('lock').classList.add('on');
-}
-function pinGate(){
-  if(!DB.pin) return;
-  pinMode='check'; pinBuf='';
-  document.getElementById('lock-title').textContent='PIN-кодты енгізіңіз';
-  document.getElementById('lock-msg').textContent='';
-  drawPad(); pinDots();
-  document.getElementById('lock-bio').classList.toggle('hide', !bioOn());
-  document.getElementById('lock').classList.add('on');
-  if(bioOn()) setTimeout(bioUnlock, 350);
-}
-
 /* ================= ДЕРЕК ҚАУІПСІЗДІГІ ================= */
 function storageOK(){
   try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true; }
@@ -3257,12 +3029,10 @@ load();
 autoSnapshot();
 askPersist();
 bindExitSave();
-bindHaptics();
 applyTheme();
 watchSystemTheme();
 LANG = DB.lang || 'kk';
 document.documentElement.lang = LANG;
-pinGate();
 if(navigator.onLine !== false){
   var stale = !DB.rate || !DB.rate.at || (Date.now()-new Date(DB.rate.at).getTime()) > 12*3600000;
   if(stale && (!DB.rate || DB.rate.src!=='manual' || !DB.rate.v)) setTimeout(function(){ fetchRate(false); }, 800);

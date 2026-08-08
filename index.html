@@ -116,7 +116,12 @@
   .row+.row{border-top:1px solid var(--line)}
   .ico{width:42px;height:42px;border-radius:14px;background:var(--g-soft);display:grid;place-items:center;font-size:19px;flex:none}
   .stat3 .ico{width:40px;height:40px;border-radius:13px}
-  .svi{width:23px;height:23px;display:block;flex:none}
+  .svi{width:23px;height:23px;display:block;flex:none;stroke-width:2}
+  .chips.glass .chip .svi{stroke-width:2.3;color:#fff}
+  .chips.glass .chip.on .svi{color:var(--g-mid)}
+  .tabbar button .svi{stroke-width:2}
+  .tabbar button.on .svi{stroke-width:2.4}
+  .qi .svi{stroke-width:2.2}
   .svi.sm{width:18px;height:18px}
   .svi.chip-ic{width:19px;height:19px}
   .svi.bar-ic{width:18px;height:18px}
@@ -305,16 +310,7 @@
   .search{width:100%;border:0;border-radius:14px;padding:12px 14px;background:rgba(255,255,255,.16);
     color:#fff;font-size:15px;margin-top:12px}
   .search::placeholder{color:rgba(255,255,255,.6)}
-  .lock{position:fixed;inset:0;z-index:999;background:linear-gradient(160deg,#021CF5,#010B4D);
-    display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px}
-  .lock.on{display:flex}
-  .dots{display:flex;gap:14px;margin:22px 0 30px}
-  .dots i{width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.6)}
-  .dots i.f{background:#fff;border-color:#fff}
-  .pad{display:grid;grid-template-columns:repeat(3,74px);gap:16px}
-  .pad button{height:74px;border-radius:50%;border:1px solid rgba(255,255,255,.25);
     background:rgba(255,255,255,.1);color:#fff;font-size:26px;font-weight:600}
-  .pad button.blank{background:none;border:0}
   .warnbar{background:var(--warn-bg);color:var(--warn-fg);border-radius:16px;padding:13px 15px;font-size:13.5px;
     line-height:1.5;margin-bottom:12px}
   .warnbar b{display:block;margin-bottom:3px}
@@ -702,14 +698,6 @@
       <div class="chips" id="lang-chips" style="margin-bottom:0"></div>
     </div>
     <div class="card">
-      <h2>Қорғаныс</h2>
-      <p class="muted" style="margin:0 0 12px" id="pin-info">PIN-код қойылмаған. Қосымшада бүкіл қаржы дерегі тұр.</p>
-      <button class="btn line" id="pin-btn" onclick="pinSetup()">PIN-код қою</button>
-      <button class="btn line" id="bio-btn" onclick="bioSetup()">Саусақ ізі / бет арқылы кіру</button>
-      <button class="btn line" id="hap-btn" onclick="toggleHaptic()">Дірілді өшіру</button>
-      <p class="muted" style="margin:0" id="bio-info">—</p>
-    </div>
-    <div class="card">
       <h2>Қайталанған операциялар</h2>
       <p class="muted" style="margin:0 0 12px" id="dup-info">—</p>
       <button class="btn line" onclick="cleanDups()">Тексеру және тазалау</button>
@@ -813,15 +801,6 @@
   <button data-tab="stat" onclick="go('stat')"><span class="g" data-i="stats"></span>Статистика</button>
   <button data-tab="set" onclick="go('set')"><span class="g" data-i="gear"></span>Баптау</button>
 </nav>
-
-<div class="lock" id="lock">
-  <div class="ico" data-i="gear" style="width:56px;height:56px;border-radius:18px;background:rgba(255,255,255,.16);color:#fff"></div>
-  <div style="font-size:19px;font-weight:700;margin-top:12px" id="lock-title">PIN-кодты енгізіңіз</div>
-  <div class="dots" id="lock-dots"><i></i><i></i><i></i><i></i></div>
-  <div class="pad" id="lock-pad"></div>
-  <div class="muted" style="color:rgba(255,255,255,.6);margin-top:22px;font-size:13px" id="lock-msg"></div>
-  <button class="btn ghost hide" id="lock-bio" style="width:auto;padding:12px 22px;margin-top:18px" onclick="bioUnlock()">Саусақ ізімен кіру</button>
-</div>
 
 <div class="scrim" id="scrim" onclick="closeSheets()"></div>
 
