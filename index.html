@@ -149,6 +149,13 @@
   table.sched td{text-align:right;padding:7px 4px;border-bottom:1px solid var(--line)}
 
   svg.chart{width:100%;height:150px;display:block}
+  svg.donut{width:100%;max-width:220px;height:auto;display:block;margin:2px auto 14px}
+  svg.trend{width:100%;height:170px;display:block}
+  .legend2{display:grid;grid-template-columns:1fr 1fr;gap:7px 14px}
+  .legend2 .lg{display:flex;align-items:center;gap:7px;font-size:13px;min-width:0}
+  .legend2 .lg i{width:10px;height:10px;border-radius:3px;flex:none}
+  .legend2 .lg span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  .legend2 .lg b{font-weight:700;color:var(--ink-2)}
   .legend{display:flex;gap:16px;justify-content:center;font-size:12.5px;color:var(--ink-2);margin-top:8px}
   .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
 
@@ -373,11 +380,20 @@
       <div class="c"><div class="ico red" style="margin:0 auto">📉</div><div class="l">Шығын</div><div class="v" id="s-out" style="color:var(--red)">0 ₸</div></div>
       <div class="c"><div class="ico" style="margin:0 auto">📊</div><div class="l">Нәтиже</div><div class="v" id="s-net">0 ₸</div></div>
     </div>
+    <div class="card" id="s-card-donut">
+      <h2>Санаттар үлесі</h2>
+      <div id="s-donut"></div>
+    </div>
+    <div class="card">
+      <h2>12 айлық тенденция</h2>
+      <div id="trend-chart"></div>
+    </div>
     <div class="card">
       <h2>Кіріс / Шығын</h2>
       <div id="s-chart"></div>
       <div class="legend"><span><i style="background:var(--g-bright)"></i>Кіріс</span><span><i style="background:var(--red)"></i>Шығын</span></div>
     </div>
+    <button class="btn line" onclick="shareReport()">Есепті бөлісу</button>
     <div class="card" id="s-card-out"><h2>Шығын санаттары</h2><div id="s-cat-out"></div></div>
     <div class="card" id="s-card-in"><h2>Кіріс көздері</h2><div id="s-cat-in"></div></div>
   </div>
@@ -562,6 +578,7 @@
       <p class="muted" style="margin:0 0 12px" id="pin-info">PIN-код қойылмаған. Қосымшада бүкіл қаржы дерегі тұр.</p>
       <button class="btn line" id="pin-btn" onclick="pinSetup()">PIN-код қою</button>
       <button class="btn line" id="bio-btn" onclick="bioSetup()">Саусақ ізі / бет арқылы кіру</button>
+      <button class="btn line" id="hap-btn" onclick="toggleHaptic()">Дірілді өшіру</button>
       <p class="muted" style="margin:0" id="bio-info">—</p>
     </div>
     <div class="card">
@@ -1785,6 +1802,8 @@ function render(){
           ? 'Қосулы. Телефонда бапталған саусақ ізі немесе бет арқылы ашылады, PIN сақтық ретінде қалады.'
           : (DB.pin ? 'Телефонның саусақ ізін немесе бетін пайдалануға болады.' : 'Алдымен PIN-код қойыңыз.'));
   }
+  var hb=document.getElementById('hap-btn');
+  if(hb) hb.textContent = (DB.haptic===false) ? 'Дірілді қосу' : 'Дірілді өшіру';
   drawSnaps();
   var bk=document.getElementById('bk-info');
   if(bk){
@@ -1901,6 +1920,11 @@ function renderStats(){
   drawCatBars('s-cat-out','out',list,sOut);
   drawCatBars('s-cat-in','in',list,sIn);
   drawChart(list);
+  var dType = statFilter==='in' ? 'in' : 'out';
+  document.getElementById('s-card-donut').querySelector('h2').textContent =
+    dType==='in' ? 'Кіріс көздерінің үлесі' : 'Шығын санаттарының үлесі';
+  drawDonut('s-donut', catItems(list, dType), dType==='in' ? 'Барлық кіріс' : 'Барлық шығын');
+  drawTrend();
 }
 function drawCatBars(elId,type,list,total){
   var box=document.getElementById(elId); box.innerHTML='';
@@ -2846,6 +2870,23 @@ var TR = [
 ["Бірде-бір жазба белгіленбеген","Ничего не отмечено","Nothing selected"],
 ["жаңа ғана","только что","just now"],["бүгін","сегодня","today"],["(қолмен)","(вручную)","(manual)"],
 
+/* --- диаграммалар мен бөлісу --- */
+["Санаттар үлесі","Доли категорий","Category split"],
+["Шығын санаттарының үлесі","Доли категорий расходов","Expense category split"],
+["Кіріс көздерінің үлесі","Доли источников дохода","Income source split"],
+["12 айлық тенденция","Тренд за 12 месяцев","12-month trend"],
+["Барлық шығын","Все расходы","All expenses"],["Барлық кіріс","Все доходы","All income"],
+["Басқалары","Прочее","Other"],
+["Айлық орташа кіріс","Средний доход в месяц","Average monthly income"],
+["Айлық орташа шығын","Средний расход в месяц","Average monthly expense"],
+["Ең табысты ай","Самый прибыльный месяц","Best month"],
+["Есепті бөлісу","Поделиться отчётом","Share report"],
+["Көшірілді","Скопировано","Copied"],["Бөлісу қолжетімсіз","Поделиться недоступно","Sharing unavailable"],
+["Дірілді өшіру","Отключить вибрацию","Turn off vibration"],
+["Дірілді қосу","Включить вибрацию","Turn on vibration"],
+["Діріл қосылды","Вибрация включена","Vibration on"],
+["Діріл өшірілді","Вибрация выключена","Vibration off"],
+
 /* --- қорғаныс пен автосақтау --- */
 ["Саусақ ізі / бет арқылы кіру","Вход по отпечатку / лицу","Unlock with fingerprint / face"],
 ["Биометрияны өшіру","Отключить биометрию","Turn off biometrics"],
@@ -3149,6 +3190,182 @@ function bindExitSave(){
   window.addEventListener('beforeunload', function(){ save(); });
 }
 
+/* ================= ДИАГРАММАЛАР ================= */
+var PIE_COLORS = ['#021CF5','#3F5CFF','#6D3FE8','#00A3C4','#E2534B',
+                  '#F0913C','#9B51E0','#2BB673','#7A8199','#C4CAE0'];
+
+function drawDonut(elId, items, centerLabel){
+  var box = document.getElementById(elId);
+  if(!box) return;
+  var total = 0;
+  items.forEach(function(i){ total += i.value; });
+  if(!total){ box.innerHTML = '<div class="empty">Бұл кезеңде дерек жоқ.</div>'; return; }
+
+  var R = 40, C = 2 * Math.PI * R, off = 0;
+  var svg = '<svg viewBox="0 0 100 100" class="donut">' +
+    '<circle cx="50" cy="50" r="' + R + '" fill="none" stroke="var(--g-soft)" stroke-width="15"/>';
+  items.forEach(function(it, k){
+    var len = it.value / total * C;
+    if(len <= 0) return;
+    svg += '<circle cx="50" cy="50" r="' + R + '" fill="none" stroke="' + it.color +
+      '" stroke-width="15" stroke-dasharray="' + (len - 0.6) + ' ' + (C - len + 0.6) +
+      '" stroke-dashoffset="' + (-off) + '" transform="rotate(-90 50 50)"/>';
+    off += len;
+  });
+  svg += '<text x="50" y="46" text-anchor="middle" font-size="6.5" fill="var(--ink-2)">' +
+         esc(centerLabel) + '</text>' +
+         '<text x="50" y="58" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--ink)">' +
+         nf(total) + ' ₸</text></svg>';
+
+  var leg = '<div class="legend2">';
+  items.forEach(function(it){
+    leg += '<div class="lg"><i style="background:' + it.color + '"></i>' +
+      '<span>' + esc(it.label) + '</span><b>' + Math.round(it.value / total * 100) + '%</b></div>';
+  });
+  leg += '</div>';
+  box.innerHTML = svg + leg;
+}
+
+function catItems(list, type){
+  var sums = {};
+  list.filter(function(t){ return t.type === type; })
+      .forEach(function(t){ sums[t.cat] = (sums[t.cat] || 0) + t.amt; });
+  var keys = Object.keys(sums).sort(function(a,b){ return sums[b] - sums[a]; });
+  var out = [], rest = 0;
+  keys.forEach(function(k, i){
+    if(i < 6) out.push({ label: k, value: sums[k], color: PIE_COLORS[i] });
+    else rest += sums[k];
+  });
+  if(rest) out.push({ label: 'Басқалары', value: rest, color: PIE_COLORS[9] });
+  return out;
+}
+
+/* --- 12 айлық тенденция --- */
+function drawTrend(){
+  var box = document.getElementById('trend-chart');
+  if(!box) return;
+  var now = new Date(), months = [];
+  for(var i = 11; i >= 0; i--){
+    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      key: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'),
+      m: d.getMonth(), y: d.getFullYear(), in: 0, out: 0
+    });
+  }
+  var map = {};
+  months.forEach(function(x){ map[x.key] = x; });
+  DB.tx.forEach(function(t){
+    if(t.type === 'tr') return;
+    var k = t.date.slice(0, 7);
+    if(map[k]) map[k][t.type] += t.amt;
+  });
+
+  var max = 1;
+  months.forEach(function(x){ max = Math.max(max, x.in, x.out); });
+
+  var W = 100, H = 100, pad = 6, top = 8, bot = 84;
+  function px(i){ return pad + i * ((W - pad * 2) / 11); }
+  function py(v){ return bot - (v / max) * (bot - top); }
+
+  function path(field){
+    var p = '';
+    months.forEach(function(x, i){ p += (i ? ' L' : 'M') + px(i).toFixed(1) + ' ' + py(x[field]).toFixed(1); });
+    return p;
+  }
+  function area(field){
+    return path(field) + ' L' + px(11).toFixed(1) + ' ' + bot + ' L' + px(0).toFixed(1) + ' ' + bot + ' Z';
+  }
+
+  var s = '<svg viewBox="0 0 100 100" class="trend" preserveAspectRatio="none">';
+  [0.25, 0.5, 0.75].forEach(function(f){
+    var y = bot - f * (bot - top);
+    s += '<line x1="' + pad + '" y1="' + y + '" x2="' + (W - pad) + '" y2="' + y +
+         '" stroke="var(--line)" stroke-width="0.3"/>';
+  });
+  s += '<path d="' + area('in') + '" fill="#3F5CFF" opacity="0.13"/>';
+  s += '<path d="' + path('in') + '" fill="none" stroke="#3F5CFF" stroke-width="1.4" ' +
+       'stroke-linejoin="round" stroke-linecap="round"/>';
+  s += '<path d="' + path('out') + '" fill="none" stroke="#E2534B" stroke-width="1.4" ' +
+       'stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="2.5 1.6"/>';
+  months.forEach(function(x, i){
+    s += '<circle cx="' + px(i).toFixed(1) + '" cy="' + py(x.in).toFixed(1) + '" r="1.1" fill="#3F5CFF"/>';
+  });
+  months.forEach(function(x, i){
+    if(i % 2) return;
+    s += '<text x="' + px(i).toFixed(1) + '" y="95" text-anchor="middle" font-size="4.2" ' +
+         'fill="var(--ink-2)">' + MONTHS[x.m].slice(0, 3) + '</text>';
+  });
+  s += '</svg>';
+
+  var last = months[11];
+  s += '<div class="legend"><span><i style="background:#3F5CFF"></i>Кіріс ' + nf(last.in) + ' ₸</span>' +
+       '<span><i style="background:#E2534B"></i>Шығын ' + nf(last.out) + ' ₸</span></div>';
+
+  var best = months.slice().sort(function(a,b){ return (b.in-b.out) - (a.in-a.out); })[0];
+  var avgIn = 0, avgOut = 0;
+  months.forEach(function(x){ avgIn += x.in; avgOut += x.out; });
+  s += '<div class="kv" style="margin-top:10px"><span>Айлық орташа кіріс</span><b>' +
+       money(avgIn / 12) + '</b></div>' +
+       '<div class="kv"><span>Айлық орташа шығын</span><b>' + money(avgOut / 12) + '</b></div>' +
+       '<div class="kv"><span>Ең табысты ай</span><b>' + MONTHS[best.m] + ' ' + best.y + '</b></div>';
+
+  box.innerHTML = s;
+}
+
+/* ================= ДІРІЛ ================= */
+function buzz(ms){
+  if(DB.haptic === false) return;
+  if(navigator.vibrate) { try{ navigator.vibrate(ms || 8); }catch(e){} }
+}
+function toggleHaptic(){
+  DB.haptic = (DB.haptic === false);
+  save(); render();
+  if(DB.haptic) buzz(25);
+  toast(DB.haptic ? 'Діріл қосылды' : 'Діріл өшірілді');
+}
+function bindHaptics(){
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    while(t && t !== document.body){
+      if(t.tagName === 'BUTTON' || (t.className && String(t.className).indexOf('chip') !== -1)){
+        buzz(8); return;
+      }
+      t = t.parentNode;
+    }
+  }, true);
+}
+
+/* ================= БӨЛІСУ ================= */
+function shareReport(){
+  var list = DB.tx.filter(function(t){ return inRange(t.date) && t.type !== 'tr'; });
+  var sIn = 0, sOut = 0;
+  list.forEach(function(t){ if(t.type === 'in') sIn += t.amt; else sOut += t.amt; });
+  var sums = {};
+  list.filter(function(t){ return t.type === 'out'; })
+      .forEach(function(t){ sums[t.cat] = (sums[t.cat] || 0) + t.amt; });
+  var top = Object.keys(sums).sort(function(a,b){ return sums[b] - sums[a]; }).slice(0, 3);
+
+  var txt = 'Қаржы есебі\n' +
+    fullDate(range.from) + ' — ' + fullDate(range.to) + '\n\n' +
+    'Кіріс: ' + money(sIn) + '\n' +
+    'Шығын: ' + money(sOut) + '\n' +
+    'Нәтиже: ' + (sIn - sOut >= 0 ? '+' : '') + money(sIn - sOut) + '\n';
+  if(top.length){
+    txt += '\nЕң көп шығын:\n';
+    top.forEach(function(k, i){ txt += (i + 1) + '. ' + k + ' — ' + money(sums[k]) + '\n'; });
+  }
+
+  if(navigator.share){
+    navigator.share({ title: 'Қаржы есебі', text: txt })
+      .then(function(){ buzz(15); })
+      .catch(function(){});
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(txt).then(function(){ toast('Көшірілді'); });
+  } else {
+    toast('Бөлісу қолжетімсіз');
+  }
+}
+
 /* ================= БЮДЖЕТ ================= */
 function budgets(){ return DB.budgets || (DB.budgets = {}); }
 function setBudget(cat, v){
@@ -3342,6 +3559,7 @@ load();
 autoSnapshot();
 askPersist();
 bindExitSave();
+bindHaptics();
 LANG = DB.lang || 'kk';
 document.documentElement.lang = LANG;
 pinGate();
