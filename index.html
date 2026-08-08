@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#0B6B3A">
+<meta name="theme-color" content="#021cf5">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -545,42 +545,13 @@
     <div class="card">
       <h2>Дерек көшірмесі</h2>
       <p class="muted" style="margin:0 0 12px" id="bk-info">Дерек тек осы телефонда сақталады.</p>
-      <button class="btn line" onclick="exportData()">Файлға шығару</button>
+      <div id="snap-box" style="margin-bottom:14px">
+        <label class="f">Автоматты көшірмелер (соңғы 7 күн)</label>
+        <div id="snap-list"></div>
+      </div>
+      <button class="btn line" onclick="exportData()">Деректі сақтау</button>
       <input type="file" id="imp" accept="application/json" class="hide" onchange="importData(this)">
-      <button class="btn line" onclick="document.getElementById('imp').click()">Файлдан қалпына келтіру</button>
-    </div>
-    <div class="card">
-      <h2>Бұлт · Supabase</h2>
-      <p class="muted" style="margin:0 0 12px" id="sb-info">—</p>
-
-      <div id="sb-setup">
-        <label class="f">Project URL</label>
-        <input class="inp" id="sb-url" type="url" placeholder="https://xxxx.supabase.co" autocapitalize="off" autocorrect="off">
-        <label class="f">anon public key</label>
-        <input class="inp" id="sb-key" type="text" placeholder="eyJhbGciOi..." autocapitalize="off" autocorrect="off">
-        <button class="btn" onclick="sbSaveKeys()">Қосу</button>
-        <p class="muted" style="margin:0">Supabase-те тегін жоба ашып, Settings → API бөлімінен осы екеуін көшіріп алыңыз.</p>
-      </div>
-
-      <div id="sb-auth" class="hide">
-        <label class="f">Пошта</label>
-        <input class="inp" id="sb-email" type="email" placeholder="you@mail.com" autocapitalize="off" autocorrect="off">
-        <label class="f">Пароль</label>
-        <input class="inp" id="sb-pass" type="password" placeholder="6+ таңба">
-        <button class="btn" onclick="sbAuth('in')">Кіру</button>
-        <button class="btn ghost" onclick="sbAuth('up')">Тіркелу</button>
-        <button class="btn line" onclick="sbForget()">Кілттерді өшіру</button>
-      </div>
-
-      <div id="sb-user" class="hide">
-        <div class="res" style="margin-bottom:12px">
-          <div class="lab">Кірген пайдаланушы</div>
-          <div style="font-weight:700" id="sb-email-txt">—</div>
-        </div>
-        <button class="btn" onclick="sbPush(true)">Бұлтқа жіберу</button>
-        <button class="btn line" onclick="sbPull(true)">Бұлттан алу</button>
-        <button class="btn ghost" onclick="sbOut()">Шығу</button>
-      </div>
+      <button class="btn line" onclick="document.getElementById('imp').click()">Деректі ашу</button>
     </div>
     <div class="card">
       <h2>Тіл</h2>
@@ -590,6 +561,8 @@
       <h2>Қорғаныс</h2>
       <p class="muted" style="margin:0 0 12px" id="pin-info">PIN-код қойылмаған. Қосымшада бүкіл қаржы дерегі тұр.</p>
       <button class="btn line" id="pin-btn" onclick="pinSetup()">PIN-код қою</button>
+      <button class="btn line" id="bio-btn" onclick="bioSetup()">Саусақ ізі / бет арқылы кіру</button>
+      <p class="muted" style="margin:0" id="bio-info">—</p>
     </div>
     <div class="card">
       <h2>Қайталанған операциялар</h2>
@@ -702,6 +675,7 @@
   <div class="dots" id="lock-dots"><i></i><i></i><i></i><i></i></div>
   <div class="pad" id="lock-pad"></div>
   <div class="muted" style="color:rgba(255,255,255,.6);margin-top:22px;font-size:13px" id="lock-msg"></div>
+  <button class="btn ghost hide" id="lock-bio" style="width:auto;padding:12px 22px;margin-top:18px" onclick="bioUnlock()">👉 Саусақ ізімен кіру</button>
 </div>
 
 <div class="scrim" id="scrim" onclick="closeSheets()"></div>
@@ -828,9 +802,13 @@
 <div class="sheet" id="sheet-gview">
   <div class="grab"></div>
   <h3 id="gv-title">Мақсат</h3>
+  <div class="res" id="gv-sum" style="margin-bottom:14px"></div>
   <label class="f">Салым қосу, ₸</label>
   <input class="inp" id="gv-add" type="number" inputmode="decimal" placeholder="0">
+  <label class="f">Қай шоттан алынды</label>
+  <div class="chips" id="gv-accs"></div>
   <button class="btn" onclick="addToGoal()">Қосу</button>
+  <div id="gv-hist"></div>
   <button class="btn danger" onclick="delGoal()">Мақсатты өшіру</button>
   <button class="btn ghost" onclick="closeSheets()">Жабу</button>
 </div>
@@ -861,12 +839,9 @@ function load(){
   }catch(e){}
   if(!DB.accounts.length) DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'💵',bal:0}];
 }
-function save(noSync){
-  if(!noSync){
-    DB.updated = new Date().toISOString();
-  }
+function save(){
+  DB.updated = new Date().toISOString();
   store.set('qarzhy_v1', JSON.stringify(DB));
-  if(!noSync && typeof sbAutoPush === 'function') sbAutoPush();
 }
 
 /* ================= ВАЛЮТА ЖӘНЕ КУРС ================= */
@@ -1521,19 +1496,66 @@ function saveGoal(){
   DB.goals.push({id:newId(),name:n,target:t,saved:parseFloat(document.getElementById('g-saved').value)||0});
   save(); closeSheets(); render(); toast('Мақсат қосылды');
 }
+var gvAcc=null;
+function goal(id){ var r=null; DB.goals.forEach(function(x){ if(x.id===id) r=x; }); return r; }
+
 function openGview(id){
   goalId=id;
-  var g=null; DB.goals.forEach(function(x){ if(x.id===id) g=x; });
+  var g=goal(id);
   if(!g) return;
   document.getElementById('gv-title').textContent=g.name;
   document.getElementById('gv-add').value='';
+  var pct=Math.min(100,Math.round(g.saved/g.target*100));
+  document.getElementById('gv-sum').innerHTML=
+    '<div class="kv"><span>Жиналған</span><b>'+money(g.saved)+' / '+money(g.target)+'</b></div>'+
+    '<div class="kv"><span>Орындалды</span><b>'+pct+'%</b></div>'+
+    '<div class="kv"><span>Қалды</span><b>'+money(Math.max(0,g.target-g.saved))+'</b></div>';
+  drawGvAccs(); drawGvHist();
   openSheet('sheet-gview');
+}
+function drawGvAccs(){
+  var box=document.getElementById('gv-accs'); box.innerHTML='';
+  var list=spendable();
+  var ok=false; list.forEach(function(a){ if(a.id===gvAcc) ok=true; });
+  if(!ok) gvAcc = list.length? list[0].id : null;
+  list.forEach(function(a){
+    var b=document.createElement('button');
+    b.className='chip'+(gvAcc===a.id?' on':'');
+    b.textContent=(a.kind==='broker'?'📊 ':a.icon+' ')+a.name;
+    b.onclick=function(){ gvAcc=a.id; drawGvAccs(); };
+    box.appendChild(b);
+  });
+  var none=document.createElement('button');
+  none.className='chip'+(!gvAcc?' on':'');
+  none.textContent='Шотсыз — тек белгілеу';
+  none.onclick=function(){ gvAcc=null; drawGvAccs(); };
+  box.appendChild(none);
+}
+function drawGvHist(){
+  var box=document.getElementById('gv-hist'); box.innerHTML='';
+  var g=goal(goalId);
+  if(!g || !g.hist || !g.hist.length) return;
+  var h='<label class="f" style="margin-top:8px">Салым тарихы</label>';
+  g.hist.slice().reverse().slice(0,8).forEach(function(x){
+    var a=x.acc?acc(x.acc):null;
+    h+='<div class="kv"><span>'+fullDate(x.date)+' · '+(a?esc(a.name):'Шотсыз')+'</span><b>+'+nf(x.amt)+' ₸</b></div>';
+  });
+  box.innerHTML=h;
 }
 function addToGoal(){
   var v=parseFloat(document.getElementById('gv-add').value);
-  if(!v){ toast('Соманы жазыңыз'); return; }
-  DB.goals.forEach(function(g){ if(g.id===goalId) g.saved+=v; });
-  save(); closeSheets(); render(); toast('Салым қосылды');
+  if(!v || v<=0){ toast('Соманы жазыңыз'); return; }
+  var g=goal(goalId);
+  if(!g) return;
+  if(gvAcc){
+    var a=acc(gvAcc);
+    if(a) a.bal -= toAcc(a, v);
+  }
+  g.saved += v;
+  g.hist = g.hist || [];
+  g.hist.push({ date: todayISO(), acc: gvAcc || null, amt: v });
+  save(); closeSheets(); render();
+  toast(gvAcc ? (acc(gvAcc).name+' шотынан алынды') : 'Салым қосылды');
 }
 function delGoal(){
   DB.goals=DB.goals.filter(function(g){return g.id!==goalId;});
@@ -1754,12 +1776,23 @@ function render(){
       : 'PIN-код қойылмаған. Қосымшада бүкіл қаржы дерегі тұр.';
     pinB.textContent = DB.pin ? 'PIN-кодты өшіру' : 'PIN-код қою';
   }
+  var bb=document.getElementById('bio-btn'), bi=document.getElementById('bio-info');
+  if(bb){
+    bb.textContent = bioOn() ? 'Биометрияны өшіру' : 'Саусақ ізі / бет арқылы кіру';
+    bi.textContent = !bioSupported()
+      ? 'Бұл телефон немесе браузер қолдамайды.'
+      : (bioOn()
+          ? 'Қосулы. Телефонда бапталған саусақ ізі немесе бет арқылы ашылады, PIN сақтық ретінде қалады.'
+          : (DB.pin ? 'Телефонның саусақ ізін немесе бетін пайдалануға болады.' : 'Алдымен PIN-код қойыңыз.'));
+  }
+  drawSnaps();
   var bk=document.getElementById('bk-info');
   if(bk){
     var dd=daysSinceBackup();
-    bk.textContent = dd===null
-      ? 'Көшірме әлі жасалмаған. Дерек тек осы браузерде тұр — міндетті түрде сақтап қойыңыз.'
-      : 'Соңғы көшірме: '+(dd===0?'бүгін':dd+' күн бұрын')+'.';
+    var pt = persisted===true ? ' Браузер деректі тұрақты сақтауға келісті.' : '';
+    bk.textContent = (dd===null
+      ? 'Дерек әр өзгерісте телефонға өзі сақталады. Файл көшірмесі әлі жасалмаған.'
+      : 'Дерек өзі сақталып отырады. Соңғы файл көшірмесі: '+(dd===0?'бүгін':dd+' күн бұрын')+'.') + pt;
   }
   var di=document.getElementById('dup-info');
   if(di){
@@ -1774,7 +1807,6 @@ function render(){
   /* --- stats --- */
   renderStats();
   drawLangChips();
-  drawCloud();
   translateDom(document.body);
 
   /* --- goals --- */
@@ -1791,7 +1823,13 @@ function render(){
       '<div class="ico blue">⚑</div><div style="font-weight:700;font-size:16px">'+esc(g.name)+'</div></div>'+
       '<div class="track"><div class="fill" style="width:'+pct+'%"></div></div>'+
       '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;color:var(--ink-2)">'+
-      '<span>'+money(g.saved)+' / '+money(g.target)+'</span><b style="color:var(--ink)">'+pct+'%</b></div>';
+      '<span>'+money(g.saved)+' / '+money(g.target)+'</span><b style="color:var(--ink)">'+pct+'%</b></div>'+
+      (function(){
+        if(!g.hist || !g.hist.length) return '';
+        var last=g.hist[g.hist.length-1], la=last.acc?acc(last.acc):null;
+        return '<div class="muted" style="margin-top:6px">Соңғы салым: '+fullDate(last.date)+
+               ' · '+(la?esc(la.name)+' шотынан':'шотсыз')+'</div>';
+      })();
     gl.appendChild(el);
   });
 }
@@ -2656,6 +2694,10 @@ var TR = [
 ["Жинайтын сомаңызды белгілеп қойыңыз.","Укажите сумму, которую копите.","Set the amount you are saving for."],
 ["Мақсат сомасы, ₸","Сумма цели, ₸","Goal amount, ₸"],["Қазір жиналған, ₸","Уже накоплено, ₸","Already saved, ₸"],
 ["Салым қосу, ₸","Пополнить, ₸","Add funds, ₸"],["Қосу","Добавить","Add"],
+["Қай шоттан алынды","С какого счёта взято","Taken from which account"],
+["Шотсыз — тек белгілеу","Без счёта — только отметка","No account — just track"],
+["Салым тарихы","История пополнений","Deposit history"],
+["Шотсыз","Без счёта","No account"],["Орындалды","Выполнено","Progress"],["Қалды","Осталось","Remaining"],
 ["Мақсатты өшіру","Удалить цель","Delete goal"],
 
 /* --- калькулятор --- */
@@ -2735,8 +2777,8 @@ var TR = [
 ["Доллар курсы","Курс доллара","USD rate"],["Интернеттен жаңарту","Обновить из интернета","Update online"],
 ["Немесе қолмен жазыңыз (1 $ = ? ₸)","Или введите вручную (1 $ = ? ₸)","Or enter manually (1 $ = ? ₸)"],
 ["Сақтау","Сохранить","Save"],["Банк үзіндісі","Выписка банка","Bank statement"],
-["Дерек көшірмесі","Резервная копия","Backup"],["Файлға шығару","Сохранить в файл","Export to file"],
-["Файлдан қалпына келтіру","Восстановить из файла","Restore from file"],
+["Дерек көшірмесі","Резервная копия","Backup"],["Деректі сақтау","Сохранить данные","Save data"],
+["Деректі ашу","Открыть данные","Open data"],["Ашу","Открыть","Open"],["Ашылды","Открыто","Opened"],
 ["Барлығын өшіру","Удалить всё","Delete everything"],["Барлық деректі өшіру","Удалить все данные","Delete all data"],
 ["Шоттар, операциялар және мақсаттар қайтарылмайды.","Счета, операции и цели не восстановить.","Accounts, transactions and goals cannot be restored."],
 ["Қосымша туралы","О приложении","About"],
@@ -2804,30 +2846,28 @@ var TR = [
 ["Бірде-бір жазба белгіленбеген","Ничего не отмечено","Nothing selected"],
 ["жаңа ғана","только что","just now"],["бүгін","сегодня","today"],["(қолмен)","(вручную)","(manual)"],
 
-/* --- бұлт --- */
-["Бұлт · Supabase","Облако · Supabase","Cloud · Supabase"],
-["Қосылмаған. Дерек тек осы телефонда.","Не подключено. Данные только на этом телефоне.","Not connected. Data stays on this phone."],
-["Кілттер сақталды. Енді кіріңіз немесе тіркеліңіз.","Ключи сохранены. Войдите или зарегистрируйтесь.","Keys saved. Sign in or sign up."],
-["Барлығы сақталды","Всё сохранено","All synced"],["Жіберілмеген өзгеріс бар","Есть несохранённые изменения","Unsent changes"],
-["Синхрондалуда…","Синхронизация…","Syncing…"],["Пошта","Почта","Email"],["Пароль","Пароль","Password"],
-["Кіру","Войти","Sign in"],["Тіркелу","Регистрация","Sign up"],["Шығу","Выйти","Sign out"],
-["Кірген пайдаланушы","Вы вошли как","Signed in as"],
-["Бұлтқа жіберу","Отправить в облако","Push to cloud"],["Бұлттан алу","Загрузить из облака","Pull from cloud"],
-["Кілттерді өшіру","Удалить ключи","Remove keys"],["Қосу","Подключить","Connect"],
-["6+ таңба","6+ символов","6+ characters"],
-["Supabase-те тегін жоба ашып, Settings → API бөлімінен осы екеуін көшіріп алыңыз.","Создайте бесплатный проект в Supabase и скопируйте оба значения из Settings → API.","Create a free Supabase project and copy both values from Settings → API."],
-["Бұлт қосылды","Облако подключено","Cloud connected"],
-["Бұлтқа қосылмады — кілттерді тексеріңіз","Не удалось подключиться — проверьте ключи","Could not connect — check the keys"],
-["Кірдіңіз","Вы вошли","Signed in"],["Шықтыңыз","Вы вышли","Signed out"],
-["Бұлтқа жіберілді","Отправлено в облако","Pushed to cloud"],["Бұлттан алынды","Загружено из облака","Pulled from cloud"],
-["Поштаңызды растаңыз, сосын кіріңіз","Подтвердите почту, затем войдите","Confirm your email, then sign in"],
-["Пошта мен парольді жазыңыз (6+ таңба)","Введите почту и пароль (6+ символов)","Enter email and password (6+ characters)"],
-["URL дұрыс емес","Неверный URL","Invalid URL"],["Кілт дұрыс емес","Неверный ключ","Invalid key"],
-["Алдымен кілттерді сақтаңыз","Сначала сохраните ключи","Save the keys first"],
-["Бұлттағы дерек","Данных в облаке","Records in cloud"],["Телефондағы дерек","Данных на телефоне","Records on phone"],
-["Бұлттағысымен ауыстырасыз ба?","Заменить данными из облака?","Replace with the cloud version?"],
-["Бұлт баптауы өшіріледі. Жалғастырасыз ба?","Настройки облака будут удалены. Продолжить?","Cloud settings will be removed. Continue?"],
-["Қате шықты","Произошла ошибка","Something went wrong"],
+/* --- қорғаныс пен автосақтау --- */
+["Саусақ ізі / бет арқылы кіру","Вход по отпечатку / лицу","Unlock with fingerprint / face"],
+["Биометрияны өшіру","Отключить биометрию","Turn off biometrics"],
+["👉 Саусақ ізімен кіру","👉 Войти по отпечатку","👉 Unlock with biometrics"],
+["Саусағыңызды қойыңыз…","Приложите палец…","Touch the sensor…"],
+["Танылмады — PIN-кодты енгізіңіз","Не распознано — введите PIN","Not recognized — enter your PIN"],
+["Биометрия қосылды","Биометрия включена","Biometrics enabled"],
+["Биометрия тіркелмеді","Не удалось включить биометрию","Could not enable biometrics"],
+["Биометрия өшіріледі. Жалғастырасыз ба?","Биометрия будет отключена. Продолжить?","Biometrics will be turned off. Continue?"],
+["Бұл телефон биометрияны қолдамайды","Этот телефон не поддерживает биометрию","This phone does not support biometrics"],
+["Алдымен PIN-код қойыңыз","Сначала установите PIN-код","Set a PIN first"],
+["Қосулы. Телефонда бапталған саусақ ізі немесе бет арқылы ашылады, PIN сақтық ретінде қалады.","Включено. Открывается отпечатком или лицом, PIN остаётся как резерв.","On. Opens with fingerprint or face; the PIN stays as a fallback."],
+["Телефонның саусақ ізін немесе бетін пайдалануға болады.","Можно использовать отпечаток или лицо телефона.","You can use your phone's fingerprint or face."],
+["Бұл телефон немесе браузер қолдамайды.","Этот телефон или браузер не поддерживает.","This phone or browser does not support it."],
+["Автоматты көшірмелер (соңғы 7 күн)","Автоматические копии (последние 7 дней)","Automatic snapshots (last 7 days)"],
+["Әзірге көшірме жоқ — ертең өзі жасалады.","Копий пока нет — появятся завтра.","No snapshots yet — one will appear tomorrow."],
+["Қайтару","Вернуть","Restore"],["Қайтарылды","Возвращено","Restored"],
+["Осы күнгі күйге қайтарамыз ба?","Вернуться к состоянию на эту дату?","Restore the state from this date?"],
+["Көшірме табылмады","Копия не найдена","Snapshot not found"],
+["Көшірме оқылмады","Копию не удалось прочитать","Snapshot could not be read"],
+["Дерек әр өзгерісте телефонға өзі сақталады. Файл көшірмесі әлі жасалмаған.","Данные сохраняются на телефон автоматически. Файловая копия ещё не создана.","Data is saved to your phone automatically. No file backup yet."],
+["Тіркелмеді","Не зарегистрировано","Not registered"],
 
 /* --- ескертулер --- */
 ["Дерек сақталмайды","Данные не сохраняются","Data is not being saved"],
@@ -2948,160 +2988,165 @@ function drawLangChips(){
   });
 }
 
-/* ================= БҰЛТ (SUPABASE) ================= */
-var SB_CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
-var sb = null, sbUser = null, sbCfg = null, sbBusy = false, sbTimer = null;
+/* ================= БИОМЕТРИЯ (саусақ ізі / бет) ================= */
+function bioSupported(){
+  return !!(window.PublicKeyCredential && navigator.credentials &&
+            navigator.credentials.create && location.protocol === 'https:');
+}
+function bioId(){ try{ return localStorage.getItem('qarzhy_bio'); }catch(e){ return null; } }
+function bioOn(){ return !!bioId(); }
 
-function sbLoadCfg(){
-  try{
-    var raw = store.get('qarzhy_sb');
-    sbCfg = raw ? JSON.parse(raw) : null;
-  }catch(e){ sbCfg = null; }
+function b64enc(buf){
+  var b = new Uint8Array(buf), s = '';
+  for(var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+  return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
-function sbSaveCfg(url, key){
-  sbCfg = { url: url, key: key };
-  store.set('qarzhy_sb', JSON.stringify(sbCfg));
+function b64dec(str){
+  var s = str.replace(/-/g,'+').replace(/_/g,'/');
+  while(s.length % 4) s += '=';
+  var raw = atob(s), b = new Uint8Array(raw.length);
+  for(var i = 0; i < raw.length; i++) b[i] = raw.charCodeAt(i);
+  return b;
 }
-function sbForget(){
-  if(!confirm(tr('Бұлт баптауы өшіріледі. Жалғастырасыз ба?'))) return;
-  store.set('qarzhy_sb', '');
-  try{ localStorage.removeItem('qarzhy_sb'); }catch(e){}
-  sbCfg = null; sb = null; sbUser = null;
-  render(); toast(tr('Өшірілді'));
-}
-
-function sbSaveKeys(){
-  var url = document.getElementById('sb-url').value.trim().replace(/\/+$/, '');
-  var key = document.getElementById('sb-key').value.trim();
-  if(!/^https:\/\/.+\.supabase\.co$/.test(url)){ toast(tr('URL дұрыс емес')); return; }
-  if(key.length < 30){ toast(tr('Кілт дұрыс емес')); return; }
-  sbSaveCfg(url, key);
-  sbInit(true);
+function rnd(n){
+  var b = new Uint8Array(n);
+  (window.crypto || window.msCrypto).getRandomValues(b);
+  return b;
 }
 
-function sbInit(announce){
-  sbLoadCfg();
-  if(!sbCfg){ render(); return; }
-  loadScript(SB_CDN).then(function(){
-    if(!window.supabase){ throw new Error('lib'); }
-    sb = window.supabase.createClient(sbCfg.url, sbCfg.key);
-    return sb.auth.getSession();
-  }).then(function(r){
-    sbUser = (r && r.data && r.data.session) ? r.data.session.user : null;
-    render();
-    if(announce) toast(tr('Бұлт қосылды'));
-    if(sbUser) sbPull(false);
+function bioSetup(){
+  if(!DB.pin){ toast(tr('Алдымен PIN-код қойыңыз')); return; }
+  if(bioOn()){
+    if(!confirm(tr('Биометрия өшіріледі. Жалғастырасыз ба?'))) return;
+    try{ localStorage.removeItem('qarzhy_bio'); }catch(e){}
+    render(); toast(tr('Өшірілді'));
+    return;
+  }
+  if(!bioSupported()){ toast(tr('Бұл телефон биометрияны қолдамайды')); return; }
+
+  navigator.credentials.create({
+    publicKey: {
+      challenge: rnd(32),
+      rp: { name: 'Qarzhy', id: location.hostname },
+      user: { id: rnd(16), name: 'qarzhy-local', displayName: 'Qarzhy' },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: {
+        authenticatorAttachment: 'platform',
+        userVerification: 'required',
+        residentKey: 'preferred'
+      },
+      timeout: 60000,
+      attestation: 'none'
+    }
+  }).then(function(cred){
+    if(!cred){ toast(tr('Тіркелмеді')); return; }
+    try{ localStorage.setItem('qarzhy_bio', b64enc(cred.rawId)); }catch(e){}
+    render(); toast(tr('Биометрия қосылды'));
   }).catch(function(){
-    sb = null;
-    render();
-    toast(tr('Бұлтқа қосылмады — кілттерді тексеріңіз'));
+    toast(tr('Биометрия тіркелмеді'));
   });
 }
 
-function sbAuth(mode){
-  if(!sb){ toast(tr('Алдымен кілттерді сақтаңыз')); return; }
-  var email = document.getElementById('sb-email').value.trim();
-  var pass = document.getElementById('sb-pass').value;
-  if(!email || pass.length < 6){ toast(tr('Пошта мен парольді жазыңыз (6+ таңба)')); return; }
-  sbBusy = true; render();
-  var p = mode === 'up'
-    ? sb.auth.signUp({ email: email, password: pass })
-    : sb.auth.signInWithPassword({ email: email, password: pass });
-  p.then(function(r){
-    sbBusy = false;
-    if(r.error){ toast(r.error.message); render(); return; }
-    sbUser = r.data.user || null;
-    if(mode === 'up' && r.data && !r.data.session){
-      toast(tr('Поштаңызды растаңыз, сосын кіріңіз'));
-      render(); return;
+function bioUnlock(){
+  var id = bioId();
+  if(!id || !bioSupported()) return;
+  var msg = document.getElementById('lock-msg');
+  msg.textContent = tr('Саусағыңызды қойыңыз…');
+  navigator.credentials.get({
+    publicKey: {
+      challenge: rnd(32),
+      allowCredentials: [{ type: 'public-key', id: b64dec(id) }],
+      userVerification: 'required',
+      timeout: 60000
     }
-    render();
-    toast(tr('Кірдіңіз'));
-    sbPull(false);
-  }).catch(function(){ sbBusy = false; render(); toast(tr('Қате шықты')); });
+  }).then(function(a){
+    if(!a){ msg.textContent = ''; return; }
+    document.getElementById('lock').classList.remove('on');
+    pinBuf = ''; pinDots();
+    msg.textContent = '';
+  }).catch(function(){
+    msg.textContent = tr('Танылмады — PIN-кодты енгізіңіз');
+  });
 }
 
-function sbOut(){
-  if(!sb) return;
-  sb.auth.signOut().then(function(){ sbUser = null; render(); toast(tr('Шықтыңыз')); });
+/* ================= АВТОМАТТЫ САҚТАУ (телефонда) ================= */
+function snapList(){
+  try{ return JSON.parse(store.get('qarzhy_snaps') || '[]'); }catch(e){ return []; }
 }
-
-function sbPush(manual){
-  if(!sb || !sbUser) return;
-  sbBusy = true; if(manual) render();
-  var stamp = DB.updated || new Date().toISOString();
-  DB.updated = stamp;
-  sb.from('qarzhy').upsert({ user_id: sbUser.id, data: DB, updated: stamp })
-    .then(function(r){
-      sbBusy = false;
-      if(r.error){ if(manual) toast(r.error.message); render(); return; }
-      DB.synced = stamp; save(true); render();
-      if(manual) toast(tr('Бұлтқа жіберілді'));
-    })
-    .catch(function(){ sbBusy = false; render(); });
+function autoSnapshot(){
+  var day = todayISO();
+  var idx = snapList();
+  if(idx.indexOf(day) !== -1) return;
+  if(!DB.tx.length && !DB.accounts.length) return;
+  try{
+    store.set('qarzhy_snap_' + day, JSON.stringify(DB));
+    idx.push(day); idx.sort();
+    while(idx.length > 7){
+      var old = idx.shift();
+      try{ localStorage.removeItem('qarzhy_snap_' + old); }catch(e){}
+    }
+    store.set('qarzhy_snaps', JSON.stringify(idx));
+  }catch(e){}
 }
-
-function sbPull(manual){
-  if(!sb || !sbUser) return;
-  sbBusy = true; render();
-  sb.from('qarzhy').select('data,updated').eq('user_id', sbUser.id).maybeSingle()
-    .then(function(r){
-      sbBusy = false;
-      if(r.error){ if(manual) toast(r.error.message); render(); return; }
-      if(!r.data){ sbPush(manual); return; }
-      var remote = r.data.data, rUp = r.data.updated || '';
-      var lUp = DB.updated || '';
-      var localCount = DB.tx.length + DB.accounts.length;
-      var remoteCount = (remote.tx ? remote.tx.length : 0) + (remote.accounts ? remote.accounts.length : 0);
-
-      if(!manual && rUp <= lUp){ sbPush(false); return; }
-      if(manual || rUp > lUp){
-        var ask = tr('Бұлттағы дерек') + ': ' + remoteCount + '. ' +
-                  tr('Телефондағы дерек') + ': ' + localCount + '. ' +
-                  tr('Бұлттағысымен ауыстырасыз ба?');
-        if(!confirm(ask)){ render(); return; }
-        var keepPin = DB.pin, keepLang = DB.lang;
-        DB.tx = remote.tx || []; DB.goals = remote.goals || [];
-        DB.accounts = remote.accounts || []; DB.btx = remote.btx || [];
-        DB.budgets = remote.budgets || {}; DB.rate = remote.rate || DB.rate;
-        DB.lastBackup = remote.lastBackup || DB.lastBackup;
-        DB.pin = keepPin; DB.lang = keepLang;
-        DB.updated = rUp; DB.synced = rUp;
-        save(true); render(); toast(tr('Бұлттан алынды'));
-      }
-    })
-    .catch(function(){ sbBusy = false; render(); });
+function restoreSnap(day){
+  var raw = store.get('qarzhy_snap_' + day);
+  if(!raw){ toast(tr('Көшірме табылмады')); return; }
+  if(!confirm(tr('Осы күнгі күйге қайтарамыз ба?') + ' ' + fullDate(day))) return;
+  try{
+    var d = JSON.parse(raw);
+    DB.tx = d.tx || []; DB.goals = d.goals || []; DB.accounts = d.accounts || [];
+    DB.btx = d.btx || []; DB.budgets = d.budgets || {};
+    DB.rate = d.rate || DB.rate;
+    save(); render(); toast(tr('Қайтарылды'));
+  }catch(e){ toast(tr('Көшірме оқылмады')); }
 }
-
-/* дерек өзгерген сайын автоматты жіберу (3 сек кідіріспен) */
-function sbAutoPush(){
-  if(!sb || !sbUser) return;
-  if(sbTimer) clearTimeout(sbTimer);
-  sbTimer = setTimeout(function(){ sbPush(false); }, 3000);
-}
-
-function drawCloud(){
-  var setup = document.getElementById('sb-setup');
-  var auth = document.getElementById('sb-auth');
-  var user = document.getElementById('sb-user');
-  var info = document.getElementById('sb-info');
-  if(!setup) return;
-
-  setup.classList.toggle('hide', !!sbCfg);
-  auth.classList.toggle('hide', !(sbCfg && !sbUser));
-  user.classList.toggle('hide', !sbUser);
-
-  if(!sbCfg){
-    info.textContent = tr('Қосылмаған. Дерек тек осы телефонда.');
-  } else if(!sbUser){
-    info.textContent = tr('Кілттер сақталды. Енді кіріңіз немесе тіркеліңіз.');
-  } else {
-    var st = sbBusy ? tr('Синхрондалуда…')
-      : (DB.synced && DB.synced === DB.updated ? tr('Барлығы сақталды') : tr('Жіберілмеген өзгеріс бар'));
-    info.textContent = sbUser.email + ' · ' + st;
+function drawSnaps(){
+  var box = document.getElementById('snap-list');
+  if(!box) return;
+  var idx = snapList().slice().reverse();
+  box.innerHTML = '';
+  if(!idx.length){
+    box.innerHTML = '<div class="muted">Әзірге көшірме жоқ — ертең өзі жасалады.</div>';
+    return;
   }
-  var ue = document.getElementById('sb-email-txt');
-  if(ue && sbUser) ue.textContent = sbUser.email;
+  idx.forEach(function(day){
+    var row = document.createElement('div');
+    row.className = 'row';
+    var cnt = 0;
+    try{ cnt = (JSON.parse(store.get('qarzhy_snap_' + day)).tx || []).length; }catch(e){}
+    row.innerHTML = '<div class="ico">🕘</div>' +
+      '<div style="flex:1"><div class="name">' + fullDate(day) + '</div>' +
+      '<div class="sub2">' + cnt + ' операция</div></div>';
+    var b = document.createElement('button');
+    b.className = 'btn sm ghost';
+    b.style.width = 'auto';
+    b.style.padding = '9px 14px';
+    b.textContent = tr('Қайтару');
+    b.onclick = function(){ restoreSnap(day); };
+    row.appendChild(b);
+    box.appendChild(row);
+  });
+}
+
+/* дерек өшіп қалмасын деп браузерден тұрақты сақтау сұраймыз */
+var persisted = null;
+function askPersist(){
+  if(navigator.storage && navigator.storage.persist){
+    navigator.storage.persisted().then(function(ok){
+      persisted = ok;
+      if(ok) return;
+      navigator.storage.persist().then(function(g){ persisted = g; });
+    }).catch(function(){});
+  }
+}
+
+/* қосымшадан шыққанда / фонға кеткенде бірден сақтау */
+function bindExitSave(){
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'hidden'){ save(); autoSnapshot(); }
+  });
+  window.addEventListener('pagehide', function(){ save(); });
+  window.addEventListener('beforeunload', function(){ save(); });
 }
 
 /* ================= БЮДЖЕТ ================= */
@@ -3239,7 +3284,9 @@ function pinGate(){
   document.getElementById('lock-title').textContent='PIN-кодты енгізіңіз';
   document.getElementById('lock-msg').textContent='';
   drawPad(); pinDots();
+  document.getElementById('lock-bio').classList.toggle('hide', !bioOn());
   document.getElementById('lock').classList.add('on');
+  if(bioOn()) setTimeout(bioUnlock, 350);
 }
 
 /* ================= ДЕРЕК ҚАУІПСІЗДІГІ ================= */
@@ -3262,7 +3309,7 @@ function drawWarnings(){
   var d=daysSinceBackup();
   if(d===null && DB.tx.length>5){
     html+='<div class="warnbar"><b>Көшірме жасаңыз</b>Дерек тек осы браузерде тұр. '+
-      'Баптау → Файлға шығару арқылы сақтап қойыңыз.</div>';
+      'Баптау → Деректі сақтау арқылы сақтап қойыңыз.</div>';
   } else if(d!==null && d>=30){
     html+='<div class="warnbar"><b>Көшірме ескірді</b>Соңғы көшірмеден '+d+' күн өтті. Жаңартып қойыңыз.</div>';
   }
@@ -3292,10 +3339,11 @@ if('serviceWorker' in navigator){
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 }
 load();
+autoSnapshot();
+askPersist();
+bindExitSave();
 LANG = DB.lang || 'kk';
 document.documentElement.lang = LANG;
-sbLoadCfg();
-if(sbCfg) setTimeout(function(){ sbInit(false); }, 400);
 pinGate();
 if(navigator.onLine !== false){
   var stale = !DB.rate || !DB.rate.at || (Date.now()-new Date(DB.rate.at).getTime()) > 12*3600000;
