@@ -245,7 +245,7 @@ function drawCats(){
   CATS[fType].forEach(function(c){
     var b=document.createElement('button');
     b.className='chip'+(c[0]===fCat?' on':'');
-    b.textContent=c[1]+' '+c[0];
+    b.innerHTML=catSvg(fType,c[0],'chip-ic')+'<span>'+c[0]+'</span>';
     b.onclick=function(){ fCat=c[0]; drawCats(); drawAccs(); };
     box.appendChild(b);
   });
@@ -260,8 +260,8 @@ function drawAccs(){
     var b=document.createElement('button');
     b.className='chip'+(a.id===fAcc?' on':'');
     var br=brandOf(a.name);
-    b.innerHTML=(br?'<span class="brand sm" style="background:'+br[1]+(br[2]?';color:'+br[2]:'')+
-      ';display:inline-grid;vertical-align:-9px;margin-right:7px">'+br[0]+'</span>':a.icon+' ')+esc(a.name);
+    b.innerHTML=(br?'<span class="brand sm" style="background:'+br[1]+(br[2]?';color:'+br[2]:'')+'">'+br[0]+'</span>'
+      :'<span>'+a.icon+'</span>')+'<span>'+esc(a.name)+'</span>';
     b.onclick=function(){ fAcc=a.id; if(fTo===a.id) fTo=null; drawAccs(); };
     box.appendChild(b);
   });
@@ -379,7 +379,7 @@ function openView(id){
       '<div class="kv"><span>Қайда</span><b>'+(to2?esc(to2.name):'—')+'</b></div>'+
       '<div class="kv"><span>Күні</span><b>'+fullDate(t.date)+'</b></div>';
   } else {
-    h='<div class="kv"><span>Санат</span><b>'+icon(t.type,t.cat)+' '+esc(t.cat)+'</b></div>'+
+    h='<div class="kv"><span>Санат</span><b>'+esc(t.cat)+'</b></div>'+
       '<div class="kv"><span>Күні</span><b>'+fullDate(t.date)+'</b></div>'+
       (a?'<div class="kv"><span>Шот</span><b>'+a.icon+' '+esc(a.name)+'</b></div>':'');
   }
@@ -645,7 +645,7 @@ function renderBroker(){
     } else {
       var t=it.o, from=acc(t.acc);
       row.onclick=function(){ openView(t.id); };
-      row.innerHTML='<div class="ico blue">⇄</div>'+
+      row.innerHTML='<div class="ico blue">'+svgIcon('swap')+'</div>'+
         '<div style="min-width:0;flex:1"><div class="name">Банктен аударым</div>'+
         '<div class="sub2">'+fullDate(t.date)+' · '+(from?esc(from.name):'—')+'</div></div>'+
         '<div class="amt" style="color:var(--blue)">+'+nf(toAcc(a,t.amt))+' '+sym+'</div>';
@@ -973,7 +973,7 @@ function render(){
   var keys=Object.keys(sums).sort(function(a,b){return sums[b]-sums[a];}).slice(0,5);
   if(!keys.length) topBox.innerHTML='<div class="empty">Бұл айда шығын жоқ.</div>';
   else keys.forEach(function(k){
-    topBox.appendChild(barRow(icon('out',k)+' '+k, money(sums[k])+' · '+Math.round(sums[k]/mOut*100)+'%', sums[k]/mOut, true));
+    topBox.appendChild(barRow(catSvg('out',k,'bar-ic')+'<span>'+k+'</span>', money(sums[k])+' · '+Math.round(sums[k]/mOut*100)+'%', sums[k]/mOut, true));
   });
 
   /* --- жаңа бөлімдер --- */
@@ -1018,6 +1018,7 @@ function render(){
 
   /* --- stats --- */
   renderStats();
+  fillIcons();
   drawLangChips();
   drawThemeChips();
   translateDom(document.body);
@@ -1059,7 +1060,7 @@ function txRow(t){
       '<div class="amt" style="color:var(--blue)">'+nf(t.amt)+' ₸</div>';
     return swipeWrap(row, function(){ deleteTxWithUndo(t); }, function(){ openTx(t.id); });
   }
-  row.innerHTML='<div class="ico'+(t.type==='out'?' red':' pos')+'">'+icon(t.type,t.cat)+'</div>'+
+  row.innerHTML=catBox(t.type,t.cat)+
     '<div style="min-width:0;flex:1"><div class="name">'+esc(t.cat)+'</div><div class="sub2">'+
     (a?esc(a.name):'—')+(t.note?' · '+esc(t.note):'')+'</div></div>'+
     '<div class="amt '+t.type+'">'+(t.type==='in'?'+':'−')+nf(t.amt)+' ₸</div>';
@@ -1130,7 +1131,7 @@ function drawCatBars(elId,type,list,total){
   if(!keys.length){ box.innerHTML='<div class="empty">Бұл кезеңде дерек жоқ.</div>'; return; }
   keys.forEach(function(k){
     var pct=total?sums[k]/total:0;
-    box.appendChild(barRow(icon(type,k)+' '+k, money(sums[k])+' · '+Math.round(pct*100)+'%', pct, type==='out'?'neg':'pos'));
+    box.appendChild(barRow(catSvg(type,k,'bar-ic')+'<span>'+k+'</span>', money(sums[k])+' · '+Math.round(pct*100)+'%', pct, type==='out'?'neg':'pos'));
   });
 }
 function drawChart(list){
@@ -1763,8 +1764,8 @@ function renderImport(){
     var b = document.createElement('button');
     b.className = 'chip' + (a.id === IMP.acc ? ' on' : '');
     var br2 = brandOf(a.name);
-    b.innerHTML = (br2 ? '<span class="brand sm" style="background:'+br2[1]+(br2[2]?';color:'+br2[2]:'')+
-      ';display:inline-grid;vertical-align:-9px;margin-right:7px">'+br2[0]+'</span>' : a.icon+' ') + esc(a.name);
+    b.innerHTML = (br2 ? '<span class="brand sm" style="background:'+br2[1]+(br2[2]?';color:'+br2[2]:'')+'">'+br2[0]+'</span>'
+      : '<span>'+a.icon+'</span>') + '<span>'+esc(a.name)+'</span>';
     b.onclick = function(){ IMP.acc = a.id; renderImport(); };
     ab.appendChild(b);
   });
@@ -2626,9 +2627,12 @@ function drawTrend(){
          '" r="1.1" fill="#00BE86" style="animation-delay:' + (0.5 + i * 0.05).toFixed(2) + 's"/>';
   });
   months.forEach(function(x, i){
-    if(i % 2) return;
-    s += '<text x="' + px(i).toFixed(1) + '" y="95" text-anchor="middle" font-size="4.2" ' +
-         'fill="var(--ink-2)">' + MONTHS[x.m].slice(0, 3) + '</text>';
+    if(i % 2 && i !== 11) return;
+    var isCur = (i === 11);
+    s += '<text class="' + (isCur ? 'cur' : '') + '" x="' + px(i).toFixed(1) + '" y="95.5" ' +
+         'text-anchor="middle" font-size="4.3" fill="' + (isCur ? 'var(--ink)' : 'var(--ink-2)') +
+         '" style="animation-delay:' + (0.35 + i * 0.045).toFixed(2) + 's">' +
+         MONTHS[x.m].slice(0, 3) + '</text>';
   });
   s += '</svg>';
 
@@ -2972,6 +2976,75 @@ function parseFreedom(lines){
   return out;
 }
 
+/* ================= SVG БЕЛГІШЕЛЕР ================= */
+var SVGI = {
+  home:   '<path d="M3.5 11 12 3.5 20.5 11"/><path d="M5.8 9.7V20h12.4V9.7"/><path d="M10 20v-5h4v5"/>',
+  wallet: '<rect x="3" y="6.5" width="18" height="13" rx="3"/><path d="M3 9.5V7a2.5 2.5 0 0 1 2.5-2.5H16"/><circle cx="16.5" cy="13" r="1.4"/>',
+  receipt:'<path d="M6 3.2h12v17.6l-3-1.8-3 1.8-3-1.8-3 1.8V3.2Z"/><path d="M9.2 8.2h5.6"/><path d="M9.2 12h5.6"/>',
+  stats:  '<path d="M4 20V11"/><path d="M9.3 20V5"/><path d="M14.7 20v-6"/><path d="M20 20V9"/>',
+  gear:   '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M4.5 12H2.1M21.9 12h-2.4M6.7 6.7 5 5M19 19l-1.7-1.7M6.7 17.3 5 19M19 5l-1.7 1.7"/>',
+  chart:  '<path d="M4 19.2h16"/><path d="M7.2 16V9.5"/><path d="M12 16V5"/><path d="M16.8 16v-4.5"/>',
+  target: '<circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r="1"/>',
+  calc:   '<rect x="4.5" y="2.8" width="15" height="18.4" rx="2.6"/><path d="M8 7h8"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15h.01M8.5 18.3h.01M12 18.3h.01M15.5 18.3h.01"/>',
+  budget: '<circle cx="12" cy="12" r="8.4"/><path d="M12 3.6V12l6 5.8"/>',
+  inbox:  '<path d="M12 3v9.5"/><path d="M8.2 9.2 12 13l3.8-3.8"/><path d="M3.5 14.5h4l1.6 2.6h5.8l1.6-2.6h4"/><path d="M3.5 14.5V18a2.5 2.5 0 0 0 2.5 2.5h12a2.5 2.5 0 0 0 2.5-2.5v-3.5"/>',
+  flag:   '<path d="M6 21V3.8"/><path d="M6 4.4h11.5l-2.2 3.8 2.2 3.8H6"/>',
+  swap:   '<path d="M4 8.5h13"/><path d="M13.6 5 17 8.5 13.6 12"/><path d="M20 15.5H7"/><path d="M10.4 12 7 15.5 10.4 19"/>',
+  bank:   '<path d="M3.5 9.5 12 4l8.5 5.5"/><path d="M5.5 10.5v8M10 10.5v8M14 10.5v8M18.5 10.5v8"/><path d="M3.5 20.5h17"/>',
+  brief:  '<rect x="3" y="7" width="18" height="13" rx="2.6"/><path d="M8.8 7V5.4a1.8 1.8 0 0 1 1.8-1.8h2.8a1.8 1.8 0 0 1 1.8 1.8V7"/><path d="M3 12.5h18"/>',
+
+  /* --- шығын санаттары --- */
+  food:   '<path d="M3.6 12.2h16.8a8.4 8.4 0 0 1-16.8 0Z"/><path d="M6.4 12.2a5.6 5.6 0 0 1 11.2 0"/><path d="M2.5 20.4h19"/>',
+  car:    '<path d="M4.8 13.4 6.4 8.9A2.2 2.2 0 0 1 8.5 7.4h7a2.2 2.2 0 0 1 2.1 1.5l1.6 4.5"/><rect x="3.4" y="13.4" width="17.2" height="5" rx="1.8"/><circle cx="7.4" cy="18.4" r="1.5"/><circle cx="16.6" cy="18.4" r="1.5"/>',
+  house:  '<path d="M3.5 11 12 3.5 20.5 11"/><path d="M5.8 9.7V20h12.4V9.7"/><path d="M10.2 20v-4.6h3.6V20"/>',
+  phone:  '<rect x="6.6" y="2.6" width="10.8" height="18.8" rx="2.6"/><path d="M10.6 18.6h2.8"/>',
+  shirt:  '<path d="M8.6 3.4 12 5.2l3.4-1.8 4.4 3.6-2.6 2.6V20.6H6.8V9.4L4.2 6.8Z"/>',
+  health: '<path d="M12 20.6s-7.2-4.4-7.2-9.4a4.1 4.1 0 0 1 7.2-2.7 4.1 4.1 0 0 1 7.2 2.7c0 5-7.2 9.4-7.2 9.4Z"/>',
+  card:   '<rect x="2.8" y="5.4" width="18.4" height="13.2" rx="2.6"/><path d="M2.8 10h18.4"/><path d="M6.4 14.6h3.4"/>',
+  fun:    '<circle cx="12" cy="12" r="8.6"/><path d="M10.2 8.9 15.6 12l-5.4 3.1Z"/>',
+  book:   '<path d="M4 4.6h6.2A1.8 1.8 0 0 1 12 6.4v13.2a1.8 1.8 0 0 0-1.8-1.8H4Z"/><path d="M20 4.6h-6.2A1.8 1.8 0 0 0 12 6.4v13.2a1.8 1.8 0 0 1 1.8-1.8H20Z"/>',
+  gift:   '<rect x="3.4" y="9.4" width="17.2" height="11.2" rx="1.8"/><path d="M2.6 9.4h18.8"/><path d="M12 9.4v11.2"/><path d="M12 9.4S9 9.2 8 8a2.1 2.1 0 0 1 2.6-3.2c1.1.6 1.4 3 1.4 4.6Z"/><path d="M12 9.4s3-.2 4-1.4a2.1 2.1 0 0 0-2.6-3.2C12.3 5.4 12 7.8 12 9.4Z"/>',
+  star:   '<path d="M12 3.4 14 9.6l6.2 2-6.2 2-2 6.2-2-6.2-6.2-2 6.2-2Z"/>',
+
+  /* --- кіріс көздері --- */
+  salary: '<rect x="2.8" y="6.6" width="18.4" height="11.4" rx="2.4"/><circle cx="12" cy="12.3" r="2.6"/><path d="M6.2 12.3h.01M17.8 12.3h.01"/>',
+  biz:    '<path d="M3.6 16.8 9 11.4l3.6 3.6 7-7"/><path d="M15.6 8h4v4"/>',
+  laptop: '<rect x="4.4" y="5" width="15.2" height="10.4" rx="2"/><path d="M2.6 18.6h18.8"/>',
+  invest: '<path d="M4 19.4h16"/><path d="M7.4 16.4V12"/><path d="M11.8 16.4V7.4"/><path d="M16.2 16.4v-6.4"/><path d="M6.2 8.6 12 3.8l5.8 4.8"/>'
+};
+
+var CAT_ICON = {
+  'Тамақ':'food','Көлік':'car','Тұрғын үй':'house','Байланыс':'phone','Киім':'shirt',
+  'Денсаулық':'health','Несие төлемі':'card','Ойын-сауық':'fun','Білім':'book',
+  'Сыйлық':'gift','Басқа':'star',
+  'Жалақы':'salary','Бизнес':'biz','Фриланс':'laptop','Инвестиция':'invest','Несие алу':'card',
+  'Аударым':'swap'
+};
+
+/* HTML-дегі data-i="..." орындарын SVG-мен толтыру */
+function fillIcons(root){
+  var els = (root || document).querySelectorAll('[data-i]');
+  for(var i = 0; i < els.length; i++){
+    var n = els[i].getAttribute('data-i');
+    if(els[i].getAttribute('data-done') === n) continue;
+    els[i].innerHTML = svgIcon(n);
+    els[i].setAttribute('data-done', n);
+  }
+}
+function svgIcon(name, cls){
+  var d = SVGI[name] || SVGI.star;
+  return '<svg class="svi' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" fill="none" ' +
+         'stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' +
+         d + '</svg>';
+}
+function catSvg(type, cat, cls){
+  return svgIcon(CAT_ICON[cat] || (type === 'in' ? 'salary' : 'star'), cls);
+}
+function catBox(type, cat){
+  var kind = type === 'in' ? 'pos' : (type === 'tr' ? 'blue' : 'red');
+  return '<div class="ico ' + kind + '">' + catSvg(type, cat) + '</div>';
+}
+
 /* ================= БЮДЖЕТ ================= */
 function budgets(){ return DB.budgets || (DB.budgets = {}); }
 function setBudget(cat, v){
@@ -3009,7 +3082,7 @@ function drawBudget(){
     el.style.borderTop='1px solid var(--line)';
     el.innerHTML=
       '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'+
-        '<div style="font-size:18px">'+c[1]+'</div>'+
+        '<div class="ico red" style="width:34px;height:34px;border-radius:11px">'+catSvg('out',cat,'sm')+'</div>'+
         '<div style="flex:1;font-weight:600;font-size:15px">'+cat+'</div>'+
         '<input class="inp" type="number" inputmode="decimal" placeholder="шек жоқ" value="'+(lim||'')+'" '+
           'style="width:120px;margin:0;padding:9px;text-align:right;font-size:14px" '+

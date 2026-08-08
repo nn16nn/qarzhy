@@ -1,10 +1,10 @@
 /* Қаржы — офлайн кэш (v4) */
-const CACHE = 'qarzhy-v4';
+const CACHE = 'qarzhy-v5';
 const FILES = [
   './', './index.html', './app.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable.png'
 ];
-const CDN_OK = ['cdn.jsdelivr.net', 'cdnjs.cloudflare.com'];
+const CDN_OK = ['cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES); })

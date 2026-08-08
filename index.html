@@ -11,6 +11,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Қаржы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --g-deep:#010B4D; --g-mid:#021CF5; --g-bright:#3F5CFF; --g-soft:#E9ECFF;
@@ -43,10 +46,18 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
   body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-    background:var(--bg);color:var(--ink);font-variant-numeric:tabular-nums;
-    -webkit-font-smoothing:antialiased;padding-bottom:calc(86px + env(safe-area-inset-bottom));
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:var(--bg);color:var(--ink);
+    font-variant-numeric:tabular-nums;
+    font-feature-settings:"cv11","ss01";
+    letter-spacing:-0.011em;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+    text-rendering:optimizeLegibility;
+    padding-bottom:calc(86px + env(safe-area-inset-bottom));
   }
+  h1,h2,h3,.cap,.amt,.v{letter-spacing:-0.024em}
+  .muted,.sub,.sub2,.l,.f{letter-spacing:0}
   button,input,select{font-family:inherit;font-size:16px}
   .page{display:none}
   .page.on{display:block}
@@ -104,6 +115,16 @@
   .row{display:flex;align-items:center;gap:12px;padding:11px 2px;cursor:pointer}
   .row+.row{border-top:1px solid var(--line)}
   .ico{width:42px;height:42px;border-radius:14px;background:var(--g-soft);display:grid;place-items:center;font-size:19px;flex:none}
+  .svi{width:22px;height:22px;display:block;flex:none}
+  .svi.sm{width:18px;height:18px}
+  .svi.chip-ic{width:19px;height:19px}
+  .svi.bar-ic{width:18px;height:18px}
+  .ico.pos{color:var(--pos)} .ico.red{color:var(--neg)} .ico.blue{color:var(--blue)}
+  .ico:not(.pos):not(.red):not(.blue){color:var(--g-mid)}
+  .qi{color:var(--g-mid)}
+  .bar-top span{display:inline-flex;align-items:center;gap:8px;min-width:0}
+  .bar-top span span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
   .brand{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;flex:none;
     font-size:16px;font-weight:800;letter-spacing:-.5px;color:#fff;
     box-shadow:inset 0 -2px 6px rgba(0,0,0,.16)}
@@ -140,7 +161,10 @@
   .seg.glass button{color:#DDE3FF}
   .seg.glass button.on{background:#fff;color:var(--g-mid)}
   .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-  .chip{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:9px 13px;font-size:14px;color:var(--ink)}
+  .chip{border:1px solid var(--line);background:var(--surface);border-radius:14px;
+    padding:8px 13px;font-size:14px;color:var(--ink);font-weight:500;
+    display:inline-flex;align-items:center;gap:8px;line-height:1.15}
+  .chip .brand.sm{margin:0}
   .chip.on{background:var(--g-mid);border-color:var(--g-mid);color:#fff}
   .chips.glass .chip{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.2);color:#fff}
   .chips.glass .chip.on{background:#fff;color:var(--g-mid)}
@@ -194,7 +218,8 @@
     background:var(--tabbar);backdrop-filter:blur(14px);border:1px solid var(--line);
     border-radius:22px;display:flex;padding:7px;box-shadow:0 8px 26px var(--shadow-2);z-index:40}
   .tabbar button{flex:1;background:0;border:0;padding:6px 0;color:var(--ink-2);font-size:10.5px;font-weight:600;border-radius:15px}
-  .tabbar button .g{display:block;font-size:18px;margin-bottom:2px}
+  .tabbar button .g{display:flex;justify-content:center;margin-bottom:3px}
+  .tabbar button .g .svi{width:23px;height:23px}
   .tabbar button.on{background:var(--g-soft);color:var(--g-mid)}
 
   /* ---------- Sheets ---------- */
@@ -251,6 +276,8 @@
     background-size:220% 100%;animation:shine 5.5s ease-in-out infinite}
   svg.trend path.line{stroke-dasharray:420;stroke-dashoffset:420;animation:draw 1.2s cubic-bezier(.3,.9,.4,1) forwards}
   svg.trend circle{animation:popIn .4s backwards}
+  svg.trend text{animation:fadein .5s backwards}
+  svg.trend text.cur{font-weight:700}
   .wide .ic{animation:breathe 4s ease-in-out infinite}
 
   @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
@@ -332,7 +359,7 @@
       <span class="ref" id="h-rate-at">жаңарту ↻</span>
     </div>
     <div class="wide" onclick="go('stat')">
-      <div class="ic">◍</div>
+      <div class="ic" data-i="stats"></div>
       <div><div style="font-weight:700">Статистика</div><div class="sub">Кіріс · Шығын · Санаттар</div></div>
       <div style="margin-left:auto">→</div>
     </div>
@@ -341,7 +368,7 @@
   <div class="wrap">
     <div class="card" onclick="go('accounts')">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-        <div class="ico">💼</div>
+        <div class="ico" data-i="brief"></div>
         <div><div style="font-weight:700;font-size:16px">Менің қаржым</div>
           <div class="muted" id="acc-count">0 шот</div></div>
         <div style="margin-left:auto;color:var(--ink-2)">→</div>
@@ -355,15 +382,15 @@
     </div>
 
     <div class="quad">
-      <button onclick="go('overview')"><span class="qi">📊</span> Шолу</button>
-      <button onclick="go('ops')"><span class="qi">🧾</span> Операциялар</button>
-      <button onclick="go('goals')"><span class="qi">⚑</span> Мақсаттар</button>
-      <button onclick="go('calc')"><span class="qi">🧮</span> Калькулятор</button>
-      <button onclick="go('budget')" style="grid-column:1/-1"><span class="qi">🎯</span> Бюджет — санат лимиттері</button>
+      <button onclick="go('overview')"><span class="qi" data-i="chart"></span> Шолу</button>
+      <button onclick="go('ops')"><span class="qi" data-i="receipt"></span> Операциялар</button>
+      <button onclick="go('goals')"><span class="qi" data-i="flag"></span> Мақсаттар</button>
+      <button onclick="go('calc')"><span class="qi" data-i="calc"></span> Калькулятор</button>
+      <button onclick="go('budget')" style="grid-column:1/-1"><span class="qi" data-i="budget"></span> Бюджет — санат лимиттері</button>
     </div>
     <div id="home-warn"></div>
 
-    <button class="btn dashed" onclick="startBankImport()" style="margin-bottom:12px">📥 Банк үзіндісін жүктеу (PDF · Excel)</button>
+    <button class="btn dashed" onclick="startBankImport()" style="margin-bottom:12px"><span class="qi" data-i="inbox" style="display:inline-flex;vertical-align:-6px;margin-right:8px"></span>Банк үзіндісін жүктеу (PDF · Excel)</button>
 
     <div class="card">
       <h2>Соңғы операциялар <small onclick="go('ops')">Барлығы →</small></h2>
@@ -741,10 +768,10 @@
   </div>
   <div class="wrap">
     <div class="quad">
-      <button onclick="openBVal(brId)"><span class="qi">🔄</span> Құнын жаңарту</button>
-      <button onclick="openBOp()"><span class="qi">➕</span> Операция қосу</button>
-      <button onclick="startBrokerImport()"><span class="qi">📥</span> Файл жүктеу</button>
-      <button onclick="openAcc('broker', brId)"><span class="qi">✎</span> Түзету</button>
+      <button onclick="openBVal(brId)"><span class="qi" data-i="invest"></span> Құнын жаңарту</button>
+      <button onclick="openBOp()"><span class="qi" data-i="star"></span> Операция қосу</button>
+      <button onclick="startBrokerImport()"><span class="qi" data-i="inbox"></span> Файл жүктеу</button>
+      <button onclick="openAcc('broker', brId)"><span class="qi" data-i="gear"></span> Түзету</button>
     </div>
     <div class="card"><h2>Операциялар <small id="br-count"></small></h2><div id="br-list"></div></div>
     <button class="btn danger" onclick="delBrokerAcc()">Шотты өшіру</button>
@@ -774,11 +801,11 @@
 
 <!-- ============ TABBAR ============ -->
 <nav class="tabbar">
-  <button class="on" data-tab="home" onclick="go('home')"><span class="g">⌂</span>Басты</button>
-  <button data-tab="accounts" onclick="go('accounts')"><span class="g">💼</span>Қаржы</button>
-  <button data-tab="ops" onclick="go('ops')"><span class="g">🧾</span>Операция</button>
-  <button data-tab="stat" onclick="go('stat')"><span class="g">▤</span>Статистика</button>
-  <button data-tab="set" onclick="go('set')"><span class="g">⚙</span>Баптау</button>
+  <button class="on" data-tab="home" onclick="go('home')"><span class="g" data-i="home"></span>Басты</button>
+  <button data-tab="accounts" onclick="go('accounts')"><span class="g" data-i="wallet"></span>Қаржы</button>
+  <button data-tab="ops" onclick="go('ops')"><span class="g" data-i="receipt"></span>Операция</button>
+  <button data-tab="stat" onclick="go('stat')"><span class="g" data-i="stats"></span>Статистика</button>
+  <button data-tab="set" onclick="go('set')"><span class="g" data-i="gear"></span>Баптау</button>
 </nav>
 
 <div class="lock" id="lock">
