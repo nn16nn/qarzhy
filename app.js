@@ -1414,6 +1414,7 @@ function onImportFile(el){
   var f = el.files[0]; el.value = '';
   if(!f) return;
   document.getElementById('imp-result').innerHTML = '';
+  IMP.freedom = null;
   impStatus('<div class="card"><div class="spin"></div><div class="empty">Файл оқылып жатыр…<br><b>'+esc(f.name)+'</b></div></div>');
 
   var name = f.name.toLowerCase();
@@ -1424,6 +1425,46 @@ function onImportFile(el){
 
   task.then(function(lines){
     IMP.bank = null; IMP.bankUsed = false;
+
+    /* Freedom брокер есебі — арнайы оқу */
+    if(IMP.mode === 'broker' && isFreedomReport(lines)){
+      var frRows = parseFreedom(lines);
+      if(frRows && frRows.length){
+        var code = freedomClientCode(lines);
+        var target = IMP.brAcc;
+        if(code){
+          accsOf('broker').forEach(function(a){
+            var c = brokerCode(a.name);
+            if(c && (c === code || code.indexOf(c) !== -1 || c.indexOf(code) !== -1)) target = a.id;
+          });
+        }
+        var ta = acc(target);
+        var accCur = (ta && ta.cur === 'USD') ? 'USD' : 'KZT';
+        var need = false;
+        frRows.forEach(function(r){
+          r.bacc = target;
+          if(r.cur !== accCur){
+            if(rateV() > 0){
+              r.origAmt = r.amt; r.origCur = r.cur;
+              r.amt = (r.cur === 'KZT') ? r.amt / rateV() : r.amt * rateV();
+              r.note = r.note + ' · ' + nf(r.origAmt) + ' ' + (r.origCur === 'KZT' ? '₸' : '$');
+            } else { need = true; }
+          }
+        });
+        var have = {};
+        DB.btx.forEach(function(b){ have[b.acc + '|' + b.date + '|' + b.amt.toFixed(2)] = 1; });
+        frRows.forEach(function(r){
+          r.dup = !!have[r.bacc + '|' + r.date + '|' + r.amt.toFixed(2)];
+          r.on = !r.dup;
+        });
+        IMP.rows = frRows;
+        IMP.freedom = { code: code, cur: accCur, needRate: need };
+        impStatus('');
+        renderImport();
+        return;
+      }
+    }
+
     var head = lines.slice(0, 40).join(' ') + ' ' + f.name;
     for(var i = 0; i < BANKS.length; i++){
       if(BANKS[i][2] && BANKS[i][2].test(head)){ IMP.bank = BANKS[i]; break; }
@@ -1675,7 +1716,15 @@ function renderImport(){
     });
     var oneOnly = Object.keys(per).length === 1 && accsOf('broker').length > 1;
 
-    head.innerHTML = '<h2>Табылды: ' + IMP.rows.length + ' жазба</h2>' + rowsHtml + split +
+    var frNote2 = '';
+    if(IMP.freedom){
+      frNote2 = '<p class="muted" style="margin:12px 0 0">Freedom есебі танылды' +
+        (IMP.freedom.code ? ' · клиент коды <b>' + esc(IMP.freedom.code) + '</b>' : '') +
+        '. Тек ақша қозғалысы алынды — сауда мәмілелері мен комиссия кестесі есептелмеді.' +
+        (IMP.freedom.needRate ? ' <b>Курс белгісіз</b> — теңгедегі жазбалар долларға аударылмады, алдымен курсты жаңартыңыз.' : '') +
+        '</p>';
+    }
+    head.innerHTML = '<h2>Табылды: ' + IMP.rows.length + ' жазба</h2>' + rowsHtml + split + frNote2 +
       (oneOnly
         ? '<p class="muted" style="margin:12px 0 0">Файлдан екінші шоттың нөмірі табылмады — бәрі бір шотқа жазылды. Әр жолдың шотын төменнен өзгертуге болады.</p>'
         : '<p class="muted" style="margin:12px 0 0">Шот нөмірі бойынша автоматты бөлінді. Бұл жазбалар жалпы кіріс-шығынға қосылмайды.</p>');
@@ -2764,6 +2813,137 @@ function deleteTxWithUndo(t){
     save(); render();
     toast('Қайтарылды');
   });
+}
+
+/* ================= FREEDOM БРОКЕР ЕСЕБІ ================= */
+/* Есептің "Ақша қаражатын салу/шығару" бөлімін ғана оқиды.
+   Сауда мәмілелері, комиссия кестесі, корпоративтік әрекеттер бөлімі алынбайды —
+   олар портфель құнын өзгертпейді немесе ақша бөлімінде қайталанады. */
+
+var FR_MARK  = /(клиент коды|код клиента|брокер есебі|отчет брокера|freedom finance)/i;
+var FR_START = /(ақша қаражатын салу|ввод\s*\/?\s*вывод\s*денежных|движение денежных средств)/i;
+var FR_STOP  = /(бағалы қағаздарды енгізу|есепті кезеңде жасалған|ценные бумаги ввод|сделки с ценными|бағалы қағаздар қозғалысы)/i;
+var FR_BLOCK = /(бұғатта|блокиров|разблокир)/i;
+
+function isFreedomReport(lines){
+  var head = lines.slice(0, 60).join(' ');
+  return FR_MARK.test(head) && lines.some(function(l){ return FR_START.test(l); });
+}
+
+function freedomClientCode(lines){
+  for(var i = 0; i < Math.min(lines.length, 80); i++){
+    var m = lines[i].match(/(?:клиент коды|код клиента)\s*[:№]?\s*([A-Za-z0-9]{4,})/i);
+    if(m) return m[1].toUpperCase();
+  }
+  return null;
+}
+
+function frType(txt, val){
+  if(/(дивиденд|купон|coupon|dividend)/i.test(txt)) return val >= 0 ? 'div' : 'fee';
+  if(/(салық|налог|комисси|fee|tax)/i.test(txt))    return 'fee';
+  return val >= 0 ? 'dep' : 'wd';
+}
+
+function frNote(txt){
+  var t = txt.replace(/\s+/g, ' ')
+    .replace(/по поручению\s*\d+/ig, '')
+    .replace(/\b20\d{2}-\d{2}-\d{2}\b/g, '')
+    .replace(/остаток на дату среза\s*[\d.,]+/ig, '')
+    .replace(/на одну бумагу\s*[\d.,]+\s*\w*/ig, '')
+    .replace(/торговый/ig, '')
+    .replace(/\s{2,}/g, ' ').trim();
+  if(t.length > 70) t = t.slice(0, 70);
+  return t;
+}
+
+function parseFreedom(lines){
+  var i0 = -1, i1 = lines.length;
+  for(var i = 0; i < lines.length; i++){
+    if(i0 < 0 && FR_START.test(lines[i])) { i0 = i + 1; continue; }
+    if(i0 >= 0 && FR_STOP.test(lines[i])) { i1 = i; break; }
+  }
+  if(i0 < 0) return null;
+
+  var sec = lines.slice(i0, i1);
+
+  /* жазбаларға бөлу: әр жазба "20XX-" деген жол фрагментінен басталады */
+  var recs = [], cur = null;
+  sec.forEach(function(l){
+    if(/20\d{2}-(?!\d)/.test(l)){ if(cur) recs.push(cur); cur = [l]; }
+    else if(cur) cur.push(l);
+  });
+  if(cur) recs.push(cur);
+
+  var out = [];
+  recs.forEach(function(rec){
+    var raw = rec.join(' ');
+    if(FR_BLOCK.test(raw)) return;                       // бұғаттау/босату — нақты қозғалыс емес
+
+    /* бөлініп қалған минусты жабыстыру: "- 115.80" */
+    var t = raw.replace(/(^|\s)-\s+(?=\d)/g, '$1-');
+
+    /* түсініктемедегі күндер мен коэффициенттер сомамен шатаспас үшін */
+    t = t.replace(/\b20\d{2}-\d{2}-\d{2}\b/g, ' ')
+         .replace(/на одну бумагу\s*[\d.,]+\s*(KZT|USD|RUR|EUR)?/ig, ' ')
+         .replace(/остаток на дату среза\s*[\d.,]+/ig, ' ')
+         .replace(/ставка налога\s*[\d.,]+/ig, ' ')
+         .replace(/по поручению\s*\d+/ig, ' ')
+         .replace(/№\s*\S+/g, ' ')
+         .replace(/\b\d{1,2}\.\d{2}\.\d{4}\S*/g, ' ');
+
+    /* күні: "2025-" бір жолда, "11-18" екінші жолда */
+    var y = t.match(/\b(20\d{2})-(?!\d)/);
+    if(!y) return;
+    t = t.replace(y[0], ' ');
+    var md = t.match(/\b(\d{2})-(\d{2})\b/);
+    if(!md) return;
+    var date = y[1] + '-' + md[1] + '-' + md[2];
+    t = t.replace(md[0], ' ');
+
+    var cm = t.match(/\b(KZT|USD|RUR|EUR)\b/);
+    if(!cm) return;
+
+    /* шот кодтары мен ұзын нөмірлерді алып тастау */
+    t = t.replace(/\b[A-Za-zА-Яа-яӘәҒғҚқҢңӨөҰұҮүҺһІі]+\d[\wА-Яа-я]*\b/g, ' ')
+         .replace(/\b\d[\wА-Яа-я]*[A-Za-zА-Яа-я][\wА-Яа-я]*\b/g, ' ')
+         .replace(/\b\d{5,}\b/g, ' ');
+
+    var toks = t.match(/-?\d[\d \u00A0]*(?:[.,]\d+)?/g) || [];
+    var nums = [];
+    toks.forEach(function(tk){
+      var s = tk.replace(/[\s\u00A0]/g, '');
+      if(s && s !== '-') nums.push(s);
+    });
+
+    /* PDF мыңдықты бөліп жіберген: "5" + "000.00" -> "5000.00" */
+    var merged = [], k = 0;
+    while(k < nums.length){
+      var a = nums[k];
+      if(k + 1 < nums.length && /^-?\d{1,3}$/.test(a) && /^\d{3}[.,]\d{2}$/.test(nums[k + 1])){
+        merged.push(a + nums[k + 1]); k += 2;
+      } else { merged.push(a); k += 1; }
+    }
+
+    var cands = merged.filter(function(m){ return /[.,]\d{2}$/.test(m); });
+    if(!cands.length) return;
+    var val = parseFloat(cands[0].replace(',', '.'));
+    if(!isFinite(val)) return;
+    /* жеке тұрып қалған минус */
+    if(val > 0 && /(^|\s)[-−–](\s|$)/.test(t)) val = -val;
+    if(val === 0) return;
+
+    out.push({
+      date: date,
+      amt: Math.abs(val),
+      cur: cm[1] === 'RUR' ? 'RUB' : cm[1],
+      bt: frType(raw, val),
+      note: frNote(raw),
+      type: val >= 0 ? 'in' : 'out'
+    });
+  });
+
+  out.sort(function(a, b){ return a.date < b.date ? 1 : -1; });
+  return out;
 }
 
 /* ================= БЮДЖЕТ ================= */
