@@ -371,7 +371,10 @@ function spendable(){ return DB.accounts.filter(function(a){ return a.kind==='as
 
 /* ================= NAV ================= */
 var view = 'home';
-function go(v){
+function sheetOpen(){ return !!document.querySelector('.sheet.on'); }
+
+function go(v, silent){
+  var same = (v === view);
   view = v;
   var pages = document.querySelectorAll('.page');
   for(var i=0;i<pages.length;i++) pages[i].classList.remove('on');
@@ -381,10 +384,18 @@ function go(v){
   for(var j=0;j<btns.length;j++) btns[j].classList.toggle('on', btns[j].dataset.tab===v);
   window.scrollTo(0,0);
   render();
+
+  /* Android-тың «артқа» түймесі қосымшадан шығармай, алдыңғы бетке қайтсын */
+  if(!silent && history && history.pushState){
+    var st = history.state || {};
+    if(same && !st.sheet) history.replaceState({ v: v }, '', '#' + v);
+    else history.pushState({ v: v }, '', '#' + v);
+  }
 }
 
 /* ================= SHEETS ================= */
 function openSheet(id){
+  var wasOpen = sheetOpen();
   // алдымен барлық ашық терезелерді жабамыз — үстіне-үсті ашылмасын
   var all = document.querySelectorAll('.sheet');
   for(var i=0;i<all.length;i++){
@@ -396,13 +407,23 @@ function openSheet(id){
   el.classList.add('on');
   if(typeof translateDom==='function') translateDom(el);
   document.body.classList.add('locked');
+
+  if(history && history.pushState){
+    var st = { v: view, sheet: id };
+    if(wasOpen && history.state && history.state.sheet) history.replaceState(st, '', '#' + view);
+    else history.pushState(st, '', '#' + view);
+  }
 }
-function closeSheets(){
+function closeSheets(fromPop){
   accEdit = null;
+  var had = sheetOpen();
   document.getElementById('scrim').classList.remove('on');
   var s = document.querySelectorAll('.sheet');
   for(var i=0;i<s.length;i++) s[i].classList.remove('on');
   document.body.classList.remove('locked');
+  if(!fromPop && had && history && history.state && history.state.sheet){
+    history.back();
+  }
 }
 
 /* ---- transaction ---- */
@@ -3719,11 +3740,23 @@ function cleanDups(){
   save(); render(); toast(dups.length+' операция өшірілді');
 }
 
+/* ================= АРТҚА ҚАЙТУ ================= */
+function initHistory(){
+  if(!(history && history.replaceState)) return;
+  history.replaceState({ v: 'home' }, '', '#home');
+  window.addEventListener('popstate', function(e){
+    var st = e.state || { v: 'home' };
+    if(!st.sheet && sheetOpen()) closeSheets(true);
+    if(st.v && st.v !== view) go(st.v, true);
+  });
+}
+
 /* ================= START ================= */
 if('serviceWorker' in navigator){
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 }
 function boot(){
+  initHistory();
   autoSnapshot();
   loadSnaps();
   askPersist();
