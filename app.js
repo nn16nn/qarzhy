@@ -863,10 +863,15 @@ function render(){
   document.getElementById('h-banks').textContent=money(T.banks);
   document.getElementById('h-broker').textContent=money(T.broker);
   if(view==='broker') renderBroker();
-  document.getElementById('h-debts').textContent=money(T.debts + T.owed);
+  document.getElementById('h-debts').textContent=money(T.debts);
+  var hl=document.getElementById('h-lent'), ho=document.getElementById('h-owed');
+  if(hl) hl.textContent=money(T.lent);
+  if(ho) ho.textContent=money(T.owed);
   document.getElementById('h-net2').textContent=money(T.net);
+  var openDebts = (DB.debts||[]).filter(function(d){ return debtLeft(d) > 0; }).length;
   document.getElementById('acc-count').textContent=
-    accsOf('asset').length+' банк · '+accsOf('broker').length+' брокер';
+    accsOf('asset').length+' банк · '+accsOf('broker').length+' брокер'+
+    (openDebts ? ' · '+openDebts+' қарыз' : '');
   document.getElementById('h-rate').textContent=rateText();
   document.getElementById('h-rate-at').textContent = rateV()? (rateAgo()+' · ↻') : '↻';
   var sri=document.getElementById('set-rate-info');
@@ -955,6 +960,8 @@ function render(){
   else {
     ob.innerHTML='<div class="kv"><span>Банктердегі ақша</span><b style="color:var(--pos)">'+money(T.banks)+'</b></div>'+
       '<div class="kv"><span>Міндеттемелер</span><b style="color:var(--neg)">'+money(T.debts)+'</b></div>'+
+      (T.lent?'<div class="kv"><span>Маған қарыз</span><b style="color:var(--pos)">'+money(T.lent)+'</b></div>':'')+
+      (T.owed?'<div class="kv"><span>Мен қарызбын</span><b style="color:var(--neg)">'+money(T.owed)+'</b></div>':'')+
       '<div class="kv"><span>Таза капитал</span><b>'+money(T.net)+'</b></div>'+
       '<div class="kv" style="margin-top:8px"><span>Инвестиция портфелі (бөлек)</span><b style="color:var(--blue)">'+money(T.broker)+'</b></div>'+
       (T.invested>0?'<div class="kv"><span>Портфель табысы</span><b style="color:'+(T.brokerPL>=0?'var(--pos)':'var(--neg)')+'">'+
@@ -2177,10 +2184,13 @@ var TR = [
 ["Қарызға берілді","Записано: дал в долг","Recorded: lent"],["Қарыз алынды","Записано: взял в долг","Recorded: borrowed"],
 ["Толық жабылды","Полностью закрыт","Fully repaid"],["Төлем жазылды","Платёж записан","Payment recorded"],
 ["Кімге екенін жазыңыз","Укажите имя","Enter a name"],
-["Ешкім қарыз емес.","Вам никто не должен.","Nobody owes you."],["Қарызыңыз жоқ.","У вас нет долгов.","You owe nothing."],
+["Ешкім қарыз емес.<br>Біреуге ақша берсеңіз, төмендегі түймемен жазып қойыңыз.","Вам никто не должен.<br>Дали кому-то денег — запишите кнопкой ниже.","Nobody owes you.<br>Lent someone money? Add it with the button below."],
+["Қарызыңыз жоқ.<br>Біреуден ақша алсаңыз, төмендегі түймемен жазып қойыңыз.","У вас нет долгов.<br>Взяли у кого-то — запишите кнопкой ниже.","You owe nothing.<br>Borrowed from someone? Add it below."],
+["+ Мен қарызға бердім","+ Я дал в долг","+ I lent money"],
+["+ Мен қарызға алдым","+ Я взял в долг","+ I borrowed money"],
 ["мерзімі өтті","просрочен","overdue"],["жабылды","закрыт","closed"],["дейін","до","by"],
 ["Бердім","Дал","Lent"],["Алдым","Взял","Borrowed"],["Қайтарылды","Возвращено","Repaid"],
-["Қарыз мерзімі өтті","Просроченные долги","Overdue debts"],
+["Қарыз мерзімі өтті","Просроченные долги","Overdue debts"],["қарыз","долг","debt"],
 
 ["Депозит калькуляторы","Депозитный калькулятор","Deposit calculator"],
 ["Банк салымының табысы","Доход по вкладу","Deposit return"],
@@ -2993,8 +3003,8 @@ function debtTotals(){
 
 var dDir = 'out', dAcc = null, dId = null, dPayAcc = null;
 
-function openDebt(){
-  dDir = 'out';
+function openDebt(dir){
+  dDir = (dir === 'in' || dir === 'out') ? dir : 'out';
   document.getElementById('de-who').value = '';
   document.getElementById('de-amt').value = '';
   document.getElementById('de-note').value = '';
@@ -3138,7 +3148,9 @@ function drawDebts(){
       });
     if(!list.length){
       box.innerHTML = '<div class="empty">' +
-        (dir === 'out' ? 'Ешкім қарыз емес.' : 'Қарызыңыз жоқ.') + '</div>';
+        (dir === 'out'
+          ? 'Ешкім қарыз емес.<br>Біреуге ақша берсеңіз, төмендегі түймемен жазып қойыңыз.'
+          : 'Қарызыңыз жоқ.<br>Біреуден ақша алсаңыз, төмендегі түймемен жазып қойыңыз.') + '</div>';
       return;
     }
     list.forEach(function(d){

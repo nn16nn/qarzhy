@@ -378,6 +378,8 @@
       <div class="trio" style="grid-template-columns:1fr 1fr;row-gap:14px">
         <div><div class="l">Банктердегі ақша</div><div class="v" id="h-banks" style="color:var(--pos-light)">0 ₸</div></div>
         <div><div class="l">Міндеттемелер</div><div class="v" id="h-debts" style="color:var(--red)">0 ₸</div></div>
+        <div><div class="l">Маған қарыз</div><div class="v" id="h-lent" style="color:var(--pos)">0 ₸</div></div>
+        <div><div class="l">Мен қарызбын</div><div class="v" id="h-owed" style="color:var(--neg)">0 ₸</div></div>
         <div><div class="l">Таза капитал</div><div class="v" id="h-net2">0 ₸</div></div>
         <div><div class="l">Инвестиция · бөлек</div><div class="v" id="h-broker" style="color:var(--blue)">0 ₸</div></div>
       </div>
@@ -735,7 +737,7 @@
     </div>
     <div class="card">
       <h2>Қосымша туралы</h2>
-      <p class="muted" style="margin:0">Қаржы · 2.0 · офлайн жұмыс істейді, ешқандай серверге дерек жіберілмейді.</p>
+      <p class="muted" style="margin:0">Қаржы · 3.0 · офлайн жұмыс істейді, ешқандай серверге дерек жіберілмейді.</p>
     </div>
   </div>
 </section>
@@ -755,8 +757,16 @@
     </div>
   </div>
   <div class="wrap">
-    <div class="card"><h2>Маған қарыз <small id="d-sum-lent"></small></h2><div id="d-list-lent"></div></div>
-    <div class="card"><h2>Мен қарызбын <small id="d-sum-owed"></small></h2><div id="d-list-owed"></div></div>
+    <div class="card">
+      <h2>Маған қарыз <small id="d-sum-lent"></small></h2>
+      <div id="d-list-lent"></div>
+      <button class="btn dashed" style="margin:12px 0 0" onclick="openDebt('out')">+ Мен қарызға бердім</button>
+    </div>
+    <div class="card">
+      <h2>Мен қарызбын <small id="d-sum-owed"></small></h2>
+      <div id="d-list-owed"></div>
+      <button class="btn dashed" style="margin:12px 0 0" onclick="openDebt('in')">+ Мен қарызға алдым</button>
+    </div>
   </div>
 </section>
 
