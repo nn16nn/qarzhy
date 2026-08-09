@@ -750,10 +750,41 @@ function bopSvg(t, cls){ return svgIcon(bopIcon(t), cls); }
 function applyBTx(b, sign){
   var a=acc(b.acc); if(!a) return;
   var v=sign*b.amt;
-  if(b.t==='dep'){ a.bal+=v; a.invested=(a.invested||0)+v; }
-  else if(b.t==='wd'){ a.bal-=v; a.invested=(a.invested||0)-v; }
-  else if(b.t==='div'){ a.bal+=v; }
-  else { a.bal-=v; }
+  /* Салынған қаражат әрқашан жаңарады */
+  if(b.t==='dep') a.invested=(a.invested||0)+v;
+  else if(b.t==='wd') a.invested=(a.invested||0)-v;
+  /* Портфель құны: егер қолмен қойылған болса — тимейміз (қосарланбауы үшін).
+     Қойылмаса — операциялардан шамамен есептейміз. */
+  if(a.valSet) return;
+  if(b.t==='dep') a.bal+=v;
+  else if(b.t==='wd') a.bal-=v;
+  else if(b.t==='div') a.bal+=v;
+  else a.bal-=v;
+}
+
+/* брокерлік шоттың дивиденд/комиссия жиынтығы */
+function brokerStats(id){
+  var d=0, f=0, dep=0, wd=0;
+  (DB.btx||[]).forEach(function(b){
+    if(b.acc!==id) return;
+    if(b.t==='div') d+=b.amt;
+    else if(b.t==='fee') f+=b.amt;
+    else if(b.t==='dep') dep+=b.amt;
+    else if(b.t==='wd') wd+=b.amt;
+  });
+  return { div:d, fee:f, dep:dep, wd:wd };
+}
+
+/* салынған қаражатты жазбалардан қайта есептеу */
+function recalcInvested(){
+  var a=acc(brId); if(!a) return;
+  var st=brokerStats(brId), inv=st.dep-st.wd;
+  (DB.tx||[]).forEach(function(t){
+    if(t.type==='tr' && t.to===brId) inv += toAcc(a, t.amt);
+  });
+  if(!confirm(tr('Салынған қаражат жазбалар бойынша қайта есептеледі:')+' '+money(inv, accCurSym(a))+'. '+tr('Жалғастырасыз ба?'))) return;
+  a.invested=inv;
+  save(); render(); toast('Қайта есептелді');
 }
 
 var brId=null, boType='dep', boViewId=null;
@@ -826,6 +857,18 @@ function renderBroker(){
   ple.textContent=(pl>=0?'+':'')+money(pl,sym)+(inv>0?' ('+(pl>=0?'+':'−')+Math.abs(Math.round(pl/inv*100))+'%)':'');
   ple.style.color = pl>=0?'#7CF2CE':'#FFA8B3';
 
+  var st=brokerStats(brId);
+  var info=document.getElementById('br-info');
+  if(info){
+    info.innerHTML =
+      (st.div||st.fee ?
+        '<div class="kv"><span>Дивиденд · купон</span><b style="color:var(--pos)">+'+nf(st.div)+' '+sym+'</b></div>'+
+        '<div class="kv"><span>Комиссия · салық</span><b style="color:var(--neg)">−'+nf(st.fee)+' '+sym+'</b></div>' : '') +
+      '<div class="kv"><span>Портфель құны</span><b>'+
+        (a.valSet ? tr('қолмен қойылған')+(a.valAt?' · '+fullDate(a.valAt):'') : tr('жазбалардан есептелген'))+
+      '</b></div>';
+  }
+
   var ops=DB.btx.filter(function(b){ return b.acc===brId; });
   var trs=DB.tx.filter(function(t){ return t.type==='tr' && t.to===brId; });
   var box=document.getElementById('br-list'); box.innerHTML='';
@@ -869,7 +912,8 @@ function openBVal(id){
 function saveBVal(){
   var v=parseFloat(document.getElementById('bv-val').value);
   if(isNaN(v)){ toast('Соманы жазыңыз'); return; }
-  var a=acc(bvId); if(a) a.bal=v;
+  var a=acc(bvId);
+  if(a){ a.bal=v; a.valSet=true; a.valAt=todayISO(); }
   save(); closeSheets(); render(); toast('Жаңартылды');
 }
 
@@ -2125,6 +2169,8 @@ function importConfirm(){
       DB.btx.push(b);
       applyBTx(b, 1);
     });
+    var ta = acc(IMP.brAcc);
+    if(ta && !ta.valSet){ ta.bal = ta.invested || 0; }
     save();
     IMP.rows = [];
     document.getElementById('imp-result').innerHTML = '';
@@ -2261,7 +2307,15 @@ var TR = [
 
 /* --- брокер --- */
 ["Жеке есеп — жалпы ақшаға қосылмайды","Отдельный учёт — в общие деньги не входит","Separate — not counted in total money"],
-["Құнын жаңарту","Обновить стоимость","Update value"],["Операция қосу","Добавить операцию","Add transaction"],
+["Құнын жаңарту","Обновить стоимость","Update value"],
+["қолмен қойылған","задано вручную","set manually"],
+["жазбалардан есептелген","рассчитано по записям","calculated from records"],
+["Дивиденд · купон","Дивиденды · купоны","Dividends · coupons"],
+["Комиссия · салық","Комиссии · налоги","Fees · taxes"],
+["Салынғанды қайта есептеу","Пересчитать вложения","Recalculate invested"],
+["Салынған қаражат жазбалар бойынша қайта есептеледі:","Вложения будут пересчитаны по записям:","Invested will be recalculated from records:"],
+["Жалғастырасыз ба?","Продолжить?","Continue?"],
+["Қайта есептелді","Пересчитано","Recalculated"],["Операция қосу","Добавить операцию","Add transaction"],
 ["Файл жүктеу","Загрузить файл","Import file"],["Шотты өшіру","Удалить счёт","Delete account"],
 ["Салым","Пополнение","Deposit"],["Шығару","Вывод","Withdrawal"],["Дивиденд","Дивиденды","Dividend"],
 ["Комиссия · салық","Комиссия · налог","Fee · tax"],["Банктен аударым","Перевод из банка","Transfer from bank"],
