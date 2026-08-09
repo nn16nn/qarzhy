@@ -23,10 +23,180 @@ function load(){
   }catch(e){}
   if(!DB.accounts.length) DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:0}];
 }
+/* ================= IndexedDB ҚОЙМАСЫ ================= */
+/* localStorage шегі ~5 МБ. IndexedDB — жүздеген МБ.
+   Дерек әрі IndexedDB-де, әрі (сыйса) localStorage-те қосарланып сақталады. */
+
+var IDB = null, idbBoot = null, idbOK = false;
+
+function idbOpen(){
+  if(idbBoot) return idbBoot;
+  idbBoot = new Promise(function(res, rej){
+    if(!window.indexedDB){ rej(); return; }
+    var r;
+    try { r = indexedDB.open('qarzhy', 1); } catch(e){ rej(); return; }
+    r.onupgradeneeded = function(){
+      var db = r.result;
+      if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
+    };
+    r.onsuccess = function(){ IDB = r.result; idbOK = true; res(IDB); };
+    r.onerror = function(){ rej(); };
+    r.onblocked = function(){ rej(); };
+  });
+  return idbBoot;
+}
+function idbSet(k, v){
+  return idbOpen().then(function(db){
+    return new Promise(function(res, rej){
+      var tx = db.transaction('kv', 'readwrite');
+      tx.objectStore('kv').put(v, k);
+      tx.oncomplete = function(){ res(); };
+      tx.onerror = function(){ rej(); };
+      tx.onabort = function(){ rej(); };
+    });
+  });
+}
+function idbGet(k){
+  return idbOpen().then(function(db){
+    return new Promise(function(res, rej){
+      var tx = db.transaction('kv', 'readonly');
+      var q = tx.objectStore('kv').get(k);
+      q.onsuccess = function(){ res(q.result); };
+      q.onerror = function(){ rej(); };
+    });
+  });
+}
+function idbDel(k){
+  return idbOpen().then(function(db){
+    return new Promise(function(res){
+      var tx = db.transaction('kv', 'readwrite');
+      tx.objectStore('kv').delete(k);
+      tx.oncomplete = function(){ res(); };
+      tx.onerror = function(){ res(); };
+    });
+  });
+}
+
+/* --- деректі қою --- */
+function applyDB(d){
+  if(!d) return;
+  DB.tx = d.tx || []; DB.goals = d.goals || []; DB.accounts = d.accounts || [];
+  DB.btx = d.btx || []; DB.debts = d.debts || []; DB.budgets = d.budgets || {};
+  DB.lastBackup = d.lastBackup || null; DB.lang = d.lang || 'kk';
+  DB.theme = d.theme || 'auto'; DB.rate = d.rate || null;
+  DB.updated = d.updated || null;
+  if(!DB.accounts.length) DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:0,cur:'KZT'}];
+}
+
+var saveTimer = null;
 function save(){
   DB.updated = new Date().toISOString();
-  store.set('qarzhy_v1', JSON.stringify(DB));
+  /* localStorage — жеделдігі үшін, сыймаса үнсіз өтеді */
+  try { localStorage.setItem('qarzhy_v1', JSON.stringify(DB)); } catch(e){}
+  /* IndexedDB — негізгі қойма, 300 мс кідіріспен */
+  if(saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(function(){
+    idbSet('db', JSON.parse(JSON.stringify(DB))).catch(function(){});
+  }, 300);
 }
+
+/* --- жад көлемі --- */
+var STO = { usage: 0, quota: 0, persisted: null };
+function refreshStorage(){
+  if(!(navigator.storage && navigator.storage.estimate)) return Promise.resolve();
+  return navigator.storage.estimate().then(function(e){
+    STO.usage = e.usage || 0;
+    STO.quota = e.quota || 0;
+    drawStorage();
+  }).catch(function(){});
+}
+function fmtBytes(b){
+  if(b < 1024) return b + ' Б';
+  if(b < 1048576) return (b / 1024).toFixed(1).replace('.', ',') + ' КБ';
+  if(b < 1073741824) return (b / 1048576).toFixed(1).replace('.', ',') + ' МБ';
+  return (b / 1073741824).toFixed(2).replace('.', ',') + ' ГБ';
+}
+function drawStorage(){
+  var box = document.getElementById('sto-box');
+  if(!box) return;
+  var pct = STO.quota > 0 ? (STO.usage / STO.quota * 100) : 0;
+  var w = Math.max(1, Math.min(100, pct));
+  var warn = pct >= 80;
+  box.innerHTML =
+    '<div class="bar-top"><span>' + fmtBytes(STO.usage) + ' пайдаланылды</span>' +
+    '<b>' + (STO.quota ? fmtBytes(STO.quota) + ' қолжетімді' : '') + '</b></div>' +
+    '<div class="track"><div class="fill' + (warn ? ' neg' : '') + '" style="width:' + w.toFixed(2) + '%"></div></div>' +
+    '<p class="muted" style="margin:10px 0 0">' +
+      (idbOK
+        ? 'Дерек IndexedDB қоймасында — көлем шегі іс жүзінде шексіз.'
+        : 'IndexedDB қолжетімсіз, дерек браузердің қарапайым жадында (шегі ~5 МБ).') +
+      (STO.persisted === true ? ' Браузер деректі тұрақты сақтауға келісті.' : '') +
+      (warn ? ' <b>Жад толуға жақын — көшірме жасап, ескі жазбаларды тазалаңыз.</b>' : '') +
+    '</p>';
+}
+
+/* ================= АВТОКӨШІРМЕЛЕР (IndexedDB-де) ================= */
+var SNAPS = [];
+
+function loadSnaps(){
+  return idbGet('snaps').then(function(v){
+    SNAPS = v || [];
+    drawSnaps();
+  drawStorage();
+    return SNAPS;
+  }).catch(function(){ SNAPS = []; });
+}
+function autoSnapshot(){
+  var day = todayISO();
+  if(!DB.tx.length && !DB.accounts.length) return;
+  loadSnaps().then(function(list){
+    var has = false;
+    list.forEach(function(x){ if(x.day === day) has = true; });
+    if(has) return;
+    return idbSet('snap:' + day, JSON.parse(JSON.stringify(DB))).then(function(){
+      list.push({ day: day, count: DB.tx.length });
+      list.sort(function(a, b){ return a.day < b.day ? -1 : 1; });
+      var drop = [];
+      while(list.length > 7) drop.push(list.shift());
+      SNAPS = list;
+      drop.forEach(function(x){ idbDel('snap:' + x.day); });
+      return idbSet('snaps', list).then(drawSnaps);
+    });
+  }).catch(function(){});
+}
+function restoreSnap(day){
+  idbGet('snap:' + day).then(function(d){
+    if(!d){ toast('Көшірме табылмады'); return; }
+    if(!confirm(tr('Осы күнгі күйге қайтарамыз ба?') + ' ' + fullDate(day))) return;
+    applyDB(d);
+    save(); render(); toast('Қайтарылды');
+  }).catch(function(){ toast('Көшірме оқылмады'); });
+}
+function drawSnaps(){
+  var box = document.getElementById('snap-list');
+  if(!box) return;
+  box.innerHTML = '';
+  if(!SNAPS.length){
+    box.innerHTML = '<div class="muted">Әзірге көшірме жоқ — ертең өзі жасалады.</div>';
+    return;
+  }
+  SNAPS.slice().reverse().forEach(function(x){
+    var row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = '<div class="ico">' + svgIcon('clock') + '</div>' +
+      '<div style="flex:1"><div class="name">' + fullDate(x.day) + '</div>' +
+      '<div class="sub2">' + x.count + ' операция</div></div>';
+    var b = document.createElement('button');
+    b.className = 'btn sm ghost';
+    b.style.width = 'auto';
+    b.style.padding = '9px 14px';
+    b.textContent = tr('Қайтару');
+    b.onclick = function(){ restoreSnap(x.day); };
+    row.appendChild(b);
+    box.appendChild(row);
+  });
+}
+
 
 /* ================= ВАЛЮТА ЖӘНЕ КУРС ================= */
 var RATE_URLS = [
@@ -809,6 +979,8 @@ function wipe(){
   if(!confirm('Барлық дерек өшіріледі. Жалғастырасыз ба?')) return;
   DB={tx:[],goals:[],accounts:[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:0,cur:'KZT'}],
       btx:[],debts:[],budgets:{},lastBackup:DB.lastBackup,lang:DB.lang,rate:DB.rate};
+  SNAPS.forEach(function(x){ idbDel('snap:'+x.day); });
+  SNAPS=[]; idbSet('snaps',[]).catch(function(){});
   save(); render(); toast('Өшірілді');
 }
 
@@ -1006,6 +1178,7 @@ function render(){
   calcTax();
   drawWarnings();
   drawSnaps();
+  drawStorage();
   var bk=document.getElementById('bk-info');
   if(bk){
     var dd=daysSinceBackup();
@@ -2249,6 +2422,10 @@ var TR = [
 
 /* --- қорғаныс пен автосақтау --- */
 ["Автоматты көшірмелер (соңғы 7 күн)","Автоматические копии (последние 7 дней)","Automatic snapshots (last 7 days)"],
+["Жад","Память","Storage"],
+["пайдаланылды","использовано","used"],["қолжетімді","доступно","available"],
+["Дерек IndexedDB қоймасында — көлем шегі іс жүзінде шексіз.","Данные в хранилище IndexedDB — предел объёма практически не ограничен.","Data is stored in IndexedDB — practically no size limit."],
+["IndexedDB қолжетімсіз, дерек браузердің қарапайым жадында (шегі ~5 МБ).","IndexedDB недоступен, данные в обычном хранилище браузера (лимит ~5 МБ).","IndexedDB unavailable; data is in basic browser storage (~5 MB limit)."],
 ["Әзірге көшірме жоқ — ертең өзі жасалады.","Копий пока нет — появятся завтра.","No snapshots yet — one will appear tomorrow."],
 ["Қайтару","Вернуть","Restore"],["Қайтарылды","Возвращено","Restored"],
 ["Осы күнгі күйге қайтарамыз ба?","Вернуться к состоянию на эту дату?","Restore the state from this date?"],
@@ -2376,72 +2553,14 @@ function drawLangChips(){
 }
 
 /* ================= АВТОМАТТЫ САҚТАУ (телефонда) ================= */
-function snapList(){
-  try{ return JSON.parse(store.get('qarzhy_snaps') || '[]'); }catch(e){ return []; }
-}
-function autoSnapshot(){
-  var day = todayISO();
-  var idx = snapList();
-  if(idx.indexOf(day) !== -1) return;
-  if(!DB.tx.length && !DB.accounts.length) return;
-  try{
-    store.set('qarzhy_snap_' + day, JSON.stringify(DB));
-    idx.push(day); idx.sort();
-    while(idx.length > 7){
-      var old = idx.shift();
-      try{ localStorage.removeItem('qarzhy_snap_' + old); }catch(e){}
-    }
-    store.set('qarzhy_snaps', JSON.stringify(idx));
-  }catch(e){}
-}
-function restoreSnap(day){
-  var raw = store.get('qarzhy_snap_' + day);
-  if(!raw){ toast(tr('Көшірме табылмады')); return; }
-  if(!confirm(tr('Осы күнгі күйге қайтарамыз ба?') + ' ' + fullDate(day))) return;
-  try{
-    var d = JSON.parse(raw);
-    DB.tx = d.tx || []; DB.goals = d.goals || []; DB.accounts = d.accounts || [];
-    DB.btx = d.btx || []; DB.budgets = d.budgets || {};
-    DB.rate = d.rate || DB.rate;
-    save(); render(); toast(tr('Қайтарылды'));
-  }catch(e){ toast(tr('Көшірме оқылмады')); }
-}
-function drawSnaps(){
-  var box = document.getElementById('snap-list');
-  if(!box) return;
-  var idx = snapList().slice().reverse();
-  box.innerHTML = '';
-  if(!idx.length){
-    box.innerHTML = '<div class="muted">Әзірге көшірме жоқ — ертең өзі жасалады.</div>';
-    return;
-  }
-  idx.forEach(function(day){
-    var row = document.createElement('div');
-    row.className = 'row';
-    var cnt = 0;
-    try{ cnt = (JSON.parse(store.get('qarzhy_snap_' + day)).tx || []).length; }catch(e){}
-    row.innerHTML = '<div class="ico">' + svgIcon('clock') + '</div>' +
-      '<div style="flex:1"><div class="name">' + fullDate(day) + '</div>' +
-      '<div class="sub2">' + cnt + ' операция</div></div>';
-    var b = document.createElement('button');
-    b.className = 'btn sm ghost';
-    b.style.width = 'auto';
-    b.style.padding = '9px 14px';
-    b.textContent = tr('Қайтару');
-    b.onclick = function(){ restoreSnap(day); };
-    row.appendChild(b);
-    box.appendChild(row);
-  });
-}
-
 /* дерек өшіп қалмасын деп браузерден тұрақты сақтау сұраймыз */
 var persisted = null;
 function askPersist(){
   if(navigator.storage && navigator.storage.persist){
     navigator.storage.persisted().then(function(ok){
-      persisted = ok;
-      if(ok) return;
-      navigator.storage.persist().then(function(g){ persisted = g; });
+      persisted = ok; STO.persisted = ok;
+      if(ok){ drawStorage(); return; }
+      navigator.storage.persist().then(function(g){ persisted = g; STO.persisted = g; drawStorage(); });
     }).catch(function(){});
   }
 }
@@ -3604,21 +3723,38 @@ function cleanDups(){
 if('serviceWorker' in navigator){
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 }
-load();
-autoSnapshot();
-askPersist();
-bindExitSave();
-applyTheme();
-watchSystemTheme();
-LANG = DB.lang || 'kk';
-document.documentElement.lang = LANG;
-if(navigator.onLine !== false){
-  var stale = !DB.rate || !DB.rate.at || (Date.now()-new Date(DB.rate.at).getTime()) > 12*3600000;
-  if(stale && (!DB.rate || DB.rate.src!=='manual' || !DB.rate.v)) setTimeout(function(){ fetchRate(false); }, 800);
+function boot(){
+  autoSnapshot();
+  loadSnaps();
+  askPersist();
+  refreshStorage();
+  bindExitSave();
+  applyTheme();
+  watchSystemTheme();
+  LANG = DB.lang || 'kk';
+  document.documentElement.lang = LANG;
+  if(navigator.onLine !== false){
+    var stale = !DB.rate || !DB.rate.at || (Date.now()-new Date(DB.rate.at).getTime()) > 12*3600000;
+    if(stale && (!DB.rate || DB.rate.src!=='manual' || !DB.rate.v)) setTimeout(function(){ fetchRate(false); }, 800);
+  }
+  drawCats();
+  drawAccs();
+  setPeriod('month');
+  setInvMode('income');
+  setLoanMode('pay');
+  render();
 }
-drawCats();
-drawAccs();
-setPeriod('month');
-setInvMode('income');
-setLoanMode('pay');
-render();
+
+/* алдымен IndexedDB, ол бос болса — ескі localStorage деректі көшіріп аламыз */
+idbGet('db').then(function(v){
+  if(v && (v.tx || v.accounts)){
+    applyDB(v);
+  } else {
+    load();
+    if(DB.tx.length || DB.accounts.length) idbSet('db', JSON.parse(JSON.stringify(DB))).catch(function(){});
+  }
+  boot();
+}).catch(function(){
+  load();
+  boot();
+});
