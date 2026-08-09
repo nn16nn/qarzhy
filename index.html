@@ -935,7 +935,7 @@
       <h2>Операциялар <span><small id="br-count"></small>
         <small class="act" style="margin-left:10px" onclick="selStart('btx')">Таңдау</small></span></h2>
       <div id="br-list"></div></div>
-    <button class="btn line" onclick="recalcInvested()">Салынғанды қайта есептеу</button>
+    <button class="btn line" onclick="recalcInvested()">Құнды жазбалардан қайта есептеу</button>
     <button class="btn danger" onclick="delBrokerAcc()">Шотты өшіру</button>
   </div>
 </section>
@@ -1023,8 +1023,10 @@
     <label class="f">Валютасы</label>
     <div class="chips" id="ac-curs"></div>
   </div>
-  <label class="f" id="ac-bal-lab">Қалдық, ₸</label>
-  <input class="inp" id="ac-bal" type="number" inputmode="decimal" placeholder="0">
+  <div id="ac-bal-box">
+    <label class="f" id="ac-bal-lab">Қалдық, ₸</label>
+    <input class="inp" id="ac-bal" type="number" inputmode="decimal" placeholder="0">
+  </div>
   <div id="ac-inv-box" class="hide">
     <label class="f">Салынған қаражат (барлығы), ₸</label>
     <input class="inp" id="ac-inv" type="number" inputmode="decimal" placeholder="0">
@@ -1045,6 +1047,8 @@
   <h3>Брокерлік операция</h3>
   <label class="f">Түрі</label>
   <div class="chips" id="bo-types"></div>
+  <label class="f">Валютасы</label>
+  <div class="chips" id="bo-curs"></div>
   <label class="f" id="bo-amt-lab">Сома</label>
   <input class="inp big" id="bo-amt" type="number" inputmode="decimal" placeholder="0">
   <label class="f">Күні</label>
@@ -1124,8 +1128,10 @@
   <div class="grab"></div>
   <h3 id="bv-title">Шот құнын жаңарту</h3>
   <p class="muted" style="margin:0 0 14px">Брокерлік қосымшада қазір көрініп тұрған жалпы портфель құнын жазыңыз. Табыс автоматты есептеледі.</p>
-  <label class="f">Ағымдағы құны, ₸</label>
-  <input class="inp" id="bv-val" type="number" inputmode="decimal" placeholder="0">
+  <label class="f">Доллармен, $</label>
+  <input class="inp" id="bv-usd" type="number" inputmode="decimal" placeholder="0">
+  <label class="f">Теңгемен, ₸</label>
+  <input class="inp" id="bv-kzt" type="number" inputmode="decimal" placeholder="0">
   <button class="btn" onclick="saveBVal()">Сақтау</button>
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
 </div>

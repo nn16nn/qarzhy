@@ -553,10 +553,7 @@ function applyTx(t, sign){
   if(t.type==='tr'){
     var to=acc(t.to);
     if(a) a.bal -= sign * toAcc(a, t.amt);
-    if(to){
-      to.bal += sign * toAcc(to, t.amt);
-      if(to.kind==='broker') to.invested = (to.invested||0) + sign * toAcc(to, t.amt);
-    }
+    if(to && to.kind !== 'broker') to.bal += sign * toAcc(to, t.amt);
     return;
   }
   if(a) a.bal += sign * toAcc(a, (t.type==='in' ? t.amt : -t.amt));
@@ -702,13 +699,15 @@ function openAccView(id){
   var a=acc(id); if(!a) return;
   viewId=id;
   document.getElementById('v-title').textContent=a.name;
+  if(a.kind==='broker') syncBroker(a);
   var sym=accCurSym(a);
-  var h='<div class="kv"><span>'+(a.kind==='asset'?'Қалдық':(a.kind==='broker'?'Портфель құны':'Несие қалдығы'))+'</span><b>'+money(a.bal,sym)+'</b></div>';
+  var h='<div class="kv"><span>'+(a.kind==='asset'?'Қалдық':(a.kind==='broker'?'Портфель құны':'Несие қалдығы'))+'</span><b>'+
+    (a.kind==='broker' ? curPair(bVals(a),true) : money(a.bal,sym))+'</b></div>';
   if(a.cur==='USD') h+='<div class="kv"><span>Теңгемен</span><b>'+money(toKZT(a))+'</b></div>'+
     '<div class="kv"><span>Қолданылған курс</span><b>'+(rateV()?rateV().toFixed(2).replace('.',','):'—')+'</b></div>';
   if(a.kind==='broker'){
     var inv=a.invested||0, pl=a.bal-inv;
-    h+='<div class="kv"><span>Салынған қаражат</span><b>'+money(inv,sym)+'</b></div>'+
+    h+='<div class="kv"><span>Салынған қаражат</span><b>'+curPair(bInv(a.id),true)+'</b></div>'+
        '<div class="kv"><span>Табыс / шығын</span><b style="color:'+(pl>=0?'var(--pos)':'var(--neg)')+'">'+
        (pl>=0?'+':'')+money(pl,sym)+(inv>0?' ('+(pl>=0?'+':'−')+Math.abs(Math.round(pl/inv*100))+'%)':'')+'</b></div>';
   }
@@ -749,20 +748,9 @@ function bopName(t){ for(var i=0;i<BOP.length;i++) if(BOP[i][0]===t) return BOP[
 function bopIcon(t){ for(var i=0;i<BOP.length;i++) if(BOP[i][0]===t) return BOP[i][2]; return 'star'; }
 function bopSvg(t, cls){ return svgIcon(bopIcon(t), cls); }
 
-function applyBTx(b, sign){
-  var a=acc(b.acc); if(!a) return;
-  var v=sign*b.amt;
-  /* Салынған қаражат әрқашан жаңарады */
-  if(b.t==='dep') a.invested=(a.invested||0)+v;
-  else if(b.t==='wd') a.invested=(a.invested||0)-v;
-  /* Портфель құны: егер қолмен қойылған болса — тимейміз (қосарланбауы үшін).
-     Қойылмаса — операциялардан шамамен есептейміз. */
-  if(a.valSet) return;
-  if(b.t==='dep') a.bal+=v;
-  else if(b.t==='wd') a.bal-=v;
-  else if(b.t==='div') a.bal+=v;
-  else a.bal-=v;
-}
+/* Брокердің қалдығы мен салынған қаражаты жазбалардан есептеледі (syncBroker),
+   сондықтан бұл жерде ештеңе өзгертудің қажеті жоқ. */
+function applyBTx(b, sign){ }
 
 /* брокерлік шоттың дивиденд/комиссия жиынтығы */
 function brokerStats(id){
@@ -780,12 +768,9 @@ function brokerStats(id){
 /* салынған қаражатты жазбалардан қайта есептеу */
 function recalcInvested(){
   var a=acc(brId); if(!a) return;
-  var st=brokerStats(brId), inv=st.dep-st.wd;
-  (DB.tx||[]).forEach(function(t){
-    if(t.type==='tr' && t.to===brId) inv += toAcc(a, t.amt);
-  });
-  if(!confirm(tr('Салынған қаражат жазбалар бойынша қайта есептеледі:')+' '+money(inv, accCurSym(a))+'. '+tr('Жалғастырасыз ба?'))) return;
-  a.invested=inv;
+  if(!confirm(tr('Портфель құны жазбалардан қайта есептеледі, қолмен қойылған сома жойылады. Жалғастырасыз ба?'))) return;
+  a.valSet=false; a.valAt=null;
+  syncBroker(a);
   save(); render(); toast('Қайта есептелді');
 }
 
@@ -799,7 +784,7 @@ function openBOp(){
   document.getElementById('bo-note').value='';
   document.getElementById('bo-date').value=todayISO();
   var a=acc(brId);
-  document.getElementById('bo-amt-lab').textContent='Сома, '+accCurSym(a);
+  document.getElementById('bo-amt-lab').textContent='Сома';
   drawBOpTypes(); openSheet('sheet-bop');
 }
 function drawBOpTypes(){
@@ -825,7 +810,7 @@ function openBView(id){
   var b=null; DB.btx.forEach(function(x){ if(x.id===id) b=x; });
   if(!b) return;
   boViewId=id;
-  var a=acc(b.acc), sym=accCurSym(a);
+  var sym = (b.cur==='USD') ? '$' : '₸';
   document.getElementById('v-title').textContent=bopName(b.t)+': '+money(b.amt,sym);
   document.getElementById('v-body').innerHTML=
     '<div class="kv"><span>Түрі</span><b>'+bopName(b.t)+'</b></div>'+
@@ -851,38 +836,41 @@ function delBrokerAcc(){
 function renderBroker(){
   var a=acc(brId);
   if(!a){ return; }
-  var sym=accCurSym(a), inv=a.invested||0, pl=a.bal-inv;
+  syncBroker(a);
+  var v=bVals(a), inv=bInv(brId), df=bDivFee(brId);
+  var invT=kztOf(inv), pl=a.bal-invT;
   document.getElementById('br-name').textContent=a.name;
-  animNum(document.getElementById('br-val'), a.bal, sym);
-  document.getElementById('br-inv').textContent=money(inv,sym);
+  document.getElementById('br-val').textContent=curPair(v, true);
+  document.getElementById('br-inv').textContent=curPair(inv, true);
   var ple=document.getElementById('br-pl');
-  ple.textContent=(pl>=0?'+':'')+money(pl,sym)+(inv>0?' ('+(pl>=0?'+':'−')+Math.abs(Math.round(pl/inv*100))+'%)':'');
+  ple.textContent=(pl>=0?'+':'')+money(pl,'₸')+(invT>0?' ('+(pl>=0?'+':'−')+Math.abs(Math.round(pl/invT*100))+'%)':'');
   ple.style.color = pl>=0?'#7CF2CE':'#FFA8B3';
 
-  var st=brokerStats(brId);
   var info=document.getElementById('br-info');
   if(info){
-    var byCur = brokerByCur(brId), curs = Object.keys(byCur).filter(function(c){ return c!=='ACC'; });
-    var curBlock = '';
-    if(curs.length){
-      curs.sort();
-      curBlock = '<label class="f" style="margin-top:12px">Валюта бойынша</label>';
-      curs.forEach(function(c){
-        var x = byCur[c], sg = curSign(c);
-        curBlock +=
-          '<div class="kv"><span>' + sg + ' салым − шығару</span><b>' + nf(x.dep - x.wd) + ' ' + sg + '</b></div>' +
-          (x.div ? '<div class="kv"><span>' + sg + ' дивиденд</span><b style="color:var(--pos)">+' + nf(x.div) + ' ' + sg + '</b></div>' : '') +
-          (x.fee ? '<div class="kv"><span>' + sg + ' комиссия</span><b style="color:var(--neg)">−' + nf(x.fee) + ' ' + sg + '</b></div>' : '');
-      });
-    }
-    info.innerHTML =
-      '<div class="kv"><span>Салынған қаражат</span><b>'+money(inv,sym)+'</b></div>' +
-      (st.div||st.fee ?
-        '<div class="kv"><span>Дивиденд · купон</span><b style="color:var(--pos)">+'+nf(st.div)+' '+sym+'</b></div>'+
-        '<div class="kv"><span>Комиссия · салық</span><b style="color:var(--neg)">−'+nf(st.fee)+' '+sym+'</b></div>' : '') +
-      '<div class="kv"><span>Портфель құны</span><b>'+
-        (a.valSet ? tr('қолмен қойылған')+(a.valAt?' · '+fullDate(a.valAt):'') : tr('жазбалардан есептелген'))+
-      '</b></div>' + curBlock;
+    var block = '';
+    ['USD','KZT'].forEach(function(c){
+      var sg = c === 'USD' ? '$' : '₸';
+      if(!v[c] && !inv[c] && !df[c].div && !df[c].fee) return;
+      var p = v[c] - inv[c];
+      block +=
+        '<label class="f" style="margin-top:12px">' + (c === 'USD' ? 'Доллар' : 'Теңге') + '</label>' +
+        '<div class="kv"><span>Портфель құны</span><b>' + nf(v[c]) + ' ' + sg + '</b></div>' +
+        '<div class="kv"><span>Салынған</span><b>' + nf(inv[c]) + ' ' + sg + '</b></div>' +
+        '<div class="kv"><span>Табыс</span><b style="color:' + (p >= 0 ? 'var(--pos)' : 'var(--neg)') + '">' +
+          (p >= 0 ? '+' : '−') + nf(p) + ' ' + sg +
+          (inv[c] > 0 ? ' (' + (p >= 0 ? '+' : '−') + Math.abs(Math.round(p / inv[c] * 100)) + '%)' : '') + '</b></div>' +
+        (df[c].div ? '<div class="kv"><span>Дивиденд · купон</span><b style="color:var(--pos)">+' + nf(df[c].div) + ' ' + sg + '</b></div>' : '') +
+        (df[c].fee ? '<div class="kv"><span>Комиссия · салық</span><b style="color:var(--neg)">−' + nf(df[c].fee) + ' ' + sg + '</b></div>' : '');
+    });
+    info.innerHTML = block +
+      '<label class="f" style="margin-top:14px">Барлығы теңгемен</label>' +
+      '<div class="kv"><span>Портфель құны</span><b>' + money(a.bal) + '</b></div>' +
+      '<div class="kv"><span>Салынған қаражат</span><b>' + money(invT) + '</b></div>' +
+      '<div class="kv"><span>Курс</span><b>' + (rateV() ? '1 $ = ' + rateV().toFixed(2).replace('.', ',') + ' ₸' : '—') + '</b></div>' +
+      '<div class="kv"><span>Құн көзі</span><b>' +
+        (a.valSet ? tr('қолмен қойылған') + (a.valAt ? ' · ' + fullDate(a.valAt) : '') : tr('жазбалардан есептелген')) +
+      '</b></div>';
   }
 
   var ops=DB.btx.filter(function(b){ return b.acc===brId; });
@@ -904,14 +892,14 @@ function renderBroker(){
         '<div style="min-width:0;flex:1"><div class="name">'+bopName(b.t)+'</div>'+
         '<div class="sub2">'+fullDate(b.date)+(b.note?' · '+esc(b.note):'')+'</div></div>'+
         '<div class="amt" style="color:'+(plus?'var(--pos)':'var(--neg)')+'">'+
-        (plus?'+':'−')+nf(b.amt)+' '+sym+'</div>';
+        (plus?'+':'−')+nf(b.amt)+' '+(b.cur==='USD'?'$':'₸')+'</div>';
     } else {
       var t=it.o, from=acc(t.acc);
       row.onclick=function(){ openView(t.id); };
       row.innerHTML=(pick?selBox(t.id):'')+'<div class="ico blue">'+svgIcon('swap')+'</div>'+
         '<div style="min-width:0;flex:1"><div class="name">Банктен аударым</div>'+
         '<div class="sub2">'+fullDate(t.date)+' · '+(from?esc(from.name):'—')+'</div></div>'+
-        '<div class="amt" style="color:var(--blue)">+'+nf(toAcc(a,t.amt))+' '+sym+'</div>';
+        '<div class="amt" style="color:var(--blue)">+'+nf(t.amt)+' ₸</div>';
     }
     box.appendChild(row);
   });
@@ -922,15 +910,22 @@ var bvId=null;
 function openBVal(id){
   var a=acc(id); if(!a) return;
   bvId=id;
-  document.getElementById('bv-title').textContent=a.name+' — құнын жаңарту ('+accCurSym(a)+')';
-  document.getElementById('bv-val').value=a.bal;
+  document.getElementById('bv-title').textContent=a.name+' — құнын жаңарту';
+  var v0=bVals(a);
+  document.getElementById('bv-usd').value = v0.USD || '';
+  document.getElementById('bv-kzt').value = v0.KZT || '';
   openSheet('sheet-bval');
 }
 function saveBVal(){
-  var v=parseFloat(document.getElementById('bv-val').value);
-  if(isNaN(v)){ toast('Соманы жазыңыз'); return; }
-  var a=acc(bvId);
-  if(a){ a.bal=v; a.valSet=true; a.valAt=todayISO(); }
+  var a=acc(bvId); if(!a) return;
+  var u=parseFloat(document.getElementById('bv-usd').value);
+  var k=parseFloat(document.getElementById('bv-kzt').value);
+  if(isNaN(u) && isNaN(k)){ toast('Соманы жазыңыз'); return; }
+  var v=bVals(a);
+  v.USD = isNaN(u) ? 0 : u;
+  v.KZT = isNaN(k) ? 0 : k;
+  a.valSet=true; a.valAt=todayISO();
+  syncBroker(a);
   save(); closeSheets(); render(); toast('Жаңартылды');
 }
 
@@ -1102,6 +1097,7 @@ function inRange(d){ return (!range.from || d>=range.from) && (!range.to || d<=r
 
 /* ================= RENDER ================= */
 function render(){
+  syncBrokers();
   var T=totals();
   var mTx=DB.tx.filter(function(t){return inMonth(t.date) && t.type!=='tr';});
   var mIn=0,mOut=0; mTx.forEach(function(t){ if(t.type==='in') mIn+=t.amt; else mOut+=t.amt; });
@@ -1706,19 +1702,7 @@ function onImportFile(el){
             if(c && (c === code || code.indexOf(c) !== -1 || c.indexOf(code) !== -1)) target = a.id;
           });
         }
-        var ta = acc(target);
-        var accCur = (ta && ta.cur === 'USD') ? 'USD' : 'KZT';
-        var need = false;
-        frRows.forEach(function(r){
-          r.bacc = target;
-          if(r.cur !== accCur){
-            if(rateV() > 0){
-              r.origAmt = r.amt; r.origCur = r.cur;
-              r.amt = (r.cur === 'KZT') ? r.amt / rateV() : r.amt * rateV();
-              r.note = r.note + ' · ' + nf(r.origAmt) + ' ' + (r.origCur === 'KZT' ? '₸' : '$');
-            } else { need = true; }
-          }
-        });
+        frRows.forEach(function(r){ r.bacc = target; });
         var have = {};
         DB.btx.forEach(function(b){ have[b.acc + '|' + b.date + '|' + b.amt.toFixed(2)] = 1; });
         frRows.forEach(function(r){
@@ -1726,7 +1710,7 @@ function onImportFile(el){
           r.on = !r.dup;
         });
         IMP.rows = frRows;
-        IMP.freedom = { code: code, cur: accCur, needRate: need };
+        IMP.freedom = { code: code };
         impStatus('');
         renderImport();
         return;
@@ -1989,7 +1973,7 @@ function renderImport(){
       frNote2 = '<p class="muted" style="margin:12px 0 0">Freedom есебі танылды' +
         (IMP.freedom.code ? ' · клиент коды <b>' + esc(IMP.freedom.code) + '</b>' : '') +
         '. Тек ақша қозғалысы алынды — сауда мәмілелері мен комиссия кестесі есептелмеді.' +
-        (IMP.freedom.needRate ? ' <b>Курс белгісіз</b> — теңгедегі жазбалар долларға аударылмады, алдымен курсты жаңартыңыз.' : '') +
+        ' Теңге мен доллар бөлек есептеледі, бір-біріне аударылмайды.' +
         '</p>';
     }
     head.innerHTML = '<h2>Табылды: ' + IMP.rows.length + ' жазба</h2>' + rowsHtml + split + frNote2 +
@@ -2151,7 +2135,7 @@ function renderImportList(box){
     am.style.whiteSpace = 'nowrap';
     var plus = isBr ? (r.bt === 'dep' || r.bt === 'div') : (r.type === 'in');
     am.style.color = plus ? 'var(--pos)' : 'var(--neg)';
-    var rowSym = isBr ? accCurSym(acc(r.bacc)) : bsym;
+    var rowSym = isBr ? (r.cur === 'USD' ? '$' : '₸') : bsym;
     am.textContent = (plus ? '+' : '−') + nf(r.amt) + ' ' + rowSym;
 
     row.appendChild(cb); row.appendChild(txt); row.appendChild(am);
@@ -2186,12 +2170,10 @@ function importConfirm(){
     sel.forEach(function(r){
       var b = { id: newId(), acc: r.bacc || IMP.brAcc, t: r.bt, amt: r.amt, date: r.date,
                 note: r.note === '—' ? '' : r.note,
-                cur: r.origCur || null, orig: r.origAmt || null };
+                cur: (r.cur === 'USD') ? 'USD' : 'KZT' };
       DB.btx.push(b);
       applyBTx(b, 1);
     });
-    var ta = acc(IMP.brAcc);
-    if(ta && !ta.valSet){ ta.bal = ta.invested || 0; }
     save();
     IMP.rows = [];
     document.getElementById('imp-result').innerHTML = '';
@@ -2329,6 +2311,12 @@ var TR = [
 /* --- брокер --- */
 ["Жеке есеп — жалпы ақшаға қосылмайды","Отдельный учёт — в общие деньги не входит","Separate — not counted in total money"],
 ["Құнын жаңарту","Обновить стоимость","Update value"],
+["Доллармен, $","В долларах, $","In dollars, $"],["Теңгемен, ₸","В тенге, ₸","In tenge, ₸"],
+["Доллар","Доллар","Dollars"],["Теңге","Тенге","Tenge"],
+["Барлығы теңгемен","Итого в тенге","Total in tenge"],["Құн көзі","Источник стоимости","Value source"],
+["Портфель құны жазбалардан қайта есептеледі, қолмен қойылған сома жойылады. Жалғастырасыз ба?","Стоимость будет пересчитана по записям, введённая вручную сумма удалится. Продолжить?","The value will be recalculated from records; the manual amount will be discarded. Continue?"],
+["Құнды жазбалардан қайта есептеу","Пересчитать стоимость по записям","Recalculate value from records"],
+["Курс","Курс","Rate"],
 ["Таңдау","Выбрать","Select"],["Кері","Инверсия","Invert"],
 ["Белгіні алу","Снять все","Deselect"],["Ештеңе таңдалмаған","Ничего не выбрано","Nothing selected"],
 ["жазба өшіріледі. Жалғастырасыз ба?","записей будет удалено. Продолжить?","records will be deleted. Continue?"],
@@ -3638,7 +3626,8 @@ function buildReport(){
     accRows += rpRow(esc(a.name), money(a.bal, accCurSym(a)));
   });
   accsOf('broker').forEach(function(a){
-    accRows += rpRow(esc(a.name) + ' · брокер', money(a.bal, accCurSym(a)), '#6D3FE8');
+    syncBroker(a);
+    accRows += rpRow(esc(a.name) + ' · брокер', curPair(bVals(a), true) + ' ≈ ' + money(a.bal), '#6D3FE8');
   });
   accsOf('debt').forEach(function(a){
     accRows += rpRow(esc(a.name) + ' · несие', money(a.bal), '#FF4D67');
@@ -4129,6 +4118,82 @@ function brokerByCur(id){
   return out;
 }
 function curSign(c){ return c === 'KZT' ? '₸' : (c === 'USD' ? '$' : c); }
+
+/* ================= БРОКЕР: ЕКІ ВАЛЮТА БӨЛЕК ================= */
+/* Ақша қозғалысы қай валютада болса, сол валютада сақталады.
+   Портфель құны да ₸ мен $ бөлек тұрады. Жалпы қосынды тек көрсету үшін теңгеге аударылады. */
+
+function bVals(a){
+  if(!a.vals){
+    a.vals = { KZT: 0, USD: 0 };
+    if(a.bal) a.vals[a.cur === 'USD' ? 'USD' : 'KZT'] = a.bal;   /* ескі деректі көшіру */
+  }
+  if(typeof a.vals.KZT !== 'number') a.vals.KZT = 0;
+  if(typeof a.vals.USD !== 'number') a.vals.USD = 0;
+  return a.vals;
+}
+
+/* салынған қаражат: салым − шығару, валюта бойынша */
+function bInv(id){
+  var m = { KZT: 0, USD: 0 };
+  (DB.btx || []).forEach(function(b){
+    if(b.acc !== id) return;
+    var c = (b.cur === 'USD') ? 'USD' : 'KZT';
+    if(b.t === 'dep') m[c] += b.amt;
+    else if(b.t === 'wd') m[c] -= b.amt;
+  });
+  (DB.tx || []).forEach(function(t){ if(t.type === 'tr' && t.to === id) m.KZT += t.amt; });
+  return m;
+}
+
+/* барлық ақша қозғалысы (дивиденд пен комиссияны қоса) — құн қолмен қойылмаған кездегі бағалау */
+function bFlow(id){
+  var m = { KZT: 0, USD: 0 };
+  (DB.btx || []).forEach(function(b){
+    if(b.acc !== id) return;
+    var c = (b.cur === 'USD') ? 'USD' : 'KZT';
+    if(b.t === 'dep' || b.t === 'div') m[c] += b.amt;
+    else m[c] -= b.amt;
+  });
+  (DB.tx || []).forEach(function(t){ if(t.type === 'tr' && t.to === id) m.KZT += t.amt; });
+  return m;
+}
+
+/* валюта бойынша дивиденд/комиссия */
+function bDivFee(id){
+  var m = { KZT: { div:0, fee:0 }, USD: { div:0, fee:0 } };
+  (DB.btx || []).forEach(function(b){
+    if(b.acc !== id) return;
+    var c = (b.cur === 'USD') ? 'USD' : 'KZT';
+    if(b.t === 'div') m[c].div += b.amt;
+    else if(b.t === 'fee') m[c].fee += b.amt;
+  });
+  return m;
+}
+
+function kztOf(m){ return (m.KZT || 0) + (m.USD || 0) * (rateV() || 0); }
+
+/* туынды өрістерді (bal, invested) қайта есептеу — қалған код солармен жұмыс істейді */
+function syncBroker(a){
+  if(!a || a.kind !== 'broker') return;
+  var v = bVals(a), inv = bInv(a.id);
+  a.cur = 'KZT';
+  if(!a.valSet){
+    var f = bFlow(a.id);
+    v.KZT = f.KZT; v.USD = f.USD;
+  }
+  a.invested = kztOf(inv);
+  a.bal = kztOf(v);
+}
+function syncBrokers(){ accsOf('broker').forEach(syncBroker); }
+
+/* екі валютаны бір жолға жазу: «1 507 $ · 184 ₸» */
+function curPair(m, skipZero){
+  var out = [];
+  if(m.USD || !skipZero) out.push(nf(m.USD) + ' $');
+  if(m.KZT || !skipZero) out.push(nf(m.KZT) + ' ₸');
+  return out.length ? out.join(' · ') : '0 ₸';
+}
 
 /* ================= БЮДЖЕТ ================= */
 function budgets(){ return DB.budgets || (DB.budgets = {}); }
