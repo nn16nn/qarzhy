@@ -2567,28 +2567,34 @@ function drawTrend(){
     s += '<line x1="' + pad + '" y1="' + y + '" x2="' + (W - pad) + '" y2="' + y +
          '" stroke="var(--line)" stroke-width="0.3"/>';
   });
-  s += '<path d="' + area('in') + '" fill="#00BE86" opacity="0.13"/>';
-  s += '<path class="line" d="' + path('in') + '" fill="none" stroke="#00BE86" stroke-width="1.4" ' +
+  s += '<path d="' + area('in') + '" fill="url(#gPosA)"/>';
+  s += '<path class="line" d="' + path('in') + '" fill="none" stroke="url(#gPosL)" stroke-width="1.7" ' +
        'stroke-linejoin="round" stroke-linecap="round"/>';
-  s += '<path class="line" d="' + path('out') + '" fill="none" stroke="#FF4D67" stroke-width="1.4" ' +
+  s += '<path class="line" d="' + path('out') + '" fill="none" stroke="url(#gNegL)" stroke-width="1.7" ' +
        'stroke-linejoin="round" stroke-linecap="round" style="animation-delay:.15s"/>';
   months.forEach(function(x, i){
     s += '<circle cx="' + px(i).toFixed(1) + '" cy="' + py(x.in).toFixed(1) +
          '" r="1.1" fill="#00BE86" style="animation-delay:' + (0.5 + i * 0.05).toFixed(2) + 's"/>';
   });
+  s += '</svg>';
+
+  /* ай атаулары SVG-де емес, HTML-де — созылып кетпес үшін */
+  var lab = '<div class="tr-x">';
   months.forEach(function(x, i){
     if((11 - i) % 2 !== 0) return;
     var isCur = (i === 11);
-    s += '<text class="' + (isCur ? 'cur' : '') + '" x="' + px(i).toFixed(1) + '" y="95.5" ' +
-         'text-anchor="middle" font-size="4.3" fill="' + (isCur ? 'var(--ink)' : 'var(--ink-2)') +
-         '" style="animation-delay:' + (0.35 + i * 0.045).toFixed(2) + 's">' +
-         MONTHS[x.m].slice(0, 3) + '</text>';
+    lab += '<span class="' + (isCur ? 'cur' : '') + '" style="left:' + px(i).toFixed(1) + '%;' +
+           'animation:fadein .5s backwards;animation-delay:' + (0.35 + i * 0.045).toFixed(2) + 's">' +
+           MONTHS[x.m].slice(0, 3) + '</span>';
   });
-  s += '</svg>';
+  s += lab + '</div>';
 
   var last = months[11];
-  s += '<div class="legend"><span><i style="background:#00BE86"></i>Кіріс ' + nf(last.in) + ' ₸</span>' +
-       '<span><i style="background:#FF4D67"></i>Шығын ' + nf(last.out) + ' ₸</span></div>';
+  s += '<div class="legend">' +
+       '<span><i style="background:linear-gradient(92deg,#7CF2CE,#00BE86)"></i>Кіріс' +
+       '<b class="gpos">' + nf(last.in) + ' ₸</b></span>' +
+       '<span><i style="background:linear-gradient(92deg,#FFA8B3,#FF4D67)"></i>Шығын' +
+       '<b class="gneg">' + nf(last.out) + ' ₸</b></span></div>';
 
   var best = months.slice().sort(function(a,b){ return (b.in-b.out) - (a.in-a.out); })[0];
   var avgIn = 0, avgOut = 0;

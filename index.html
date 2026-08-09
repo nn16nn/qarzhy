@@ -214,14 +214,26 @@
 
   svg.chart{width:100%;height:150px;display:block}
   svg.donut{width:100%;max-width:220px;height:auto;display:block;margin:2px auto 14px}
-  svg.trend{width:100%;height:170px;display:block}
+  svg.trend{width:100%;height:150px;display:block}
+  .tr-x{position:relative;height:20px;margin:4px 0 2px}
+  .tr-x span{position:absolute;transform:translateX(-50%);white-space:nowrap;
+    font-size:12px;font-weight:600;color:var(--ink-2);letter-spacing:0}
+  .tr-x span.cur{color:var(--ink);font-weight:800}
   .legend2{display:grid;grid-template-columns:1fr 1fr;gap:7px 14px}
   .legend2 .lg{display:flex;align-items:center;gap:7px;font-size:13px;min-width:0}
   .legend2 .lg i{width:10px;height:10px;border-radius:3px;flex:none}
   .legend2 .lg span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
   .legend2 .lg b{font-weight:700;color:var(--ink-2)}
-  .legend{display:flex;gap:16px;justify-content:center;font-size:12.5px;color:var(--ink-2);margin-top:8px}
-  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+  .legend{display:flex;gap:18px;justify-content:center;align-items:center;font-size:13px;
+    color:var(--ink-2);margin-top:10px;font-weight:600}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px}
+  .legend b{font-weight:800;margin-left:5px}
+  .gpos{background:linear-gradient(92deg,var(--pos-light),var(--pos));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .gneg{background:linear-gradient(92deg,var(--neg-light),var(--neg));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .gbrand{background:linear-gradient(92deg,var(--g-bright),var(--g-mid));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
 
   /* ---------- Tabbar ---------- */
   .tabbar{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));
@@ -499,8 +511,8 @@
   </div>
   <div class="wrap">
     <div class="stat3">
-      <div class="c"><div class="ico pos" style="margin:0 auto" data-i="biz"></div><div class="l">Кіріс</div><div class="v" id="s-in" style="color:var(--pos)">0 ₸</div></div>
-      <div class="c"><div class="ico red" style="margin:0 auto" data-i="down"></div><div class="l">Шығын</div><div class="v" id="s-out" style="color:var(--red)">0 ₸</div></div>
+      <div class="c"><div class="ico pos" style="margin:0 auto" data-i="biz"></div><div class="l">Кіріс</div><div class="v gpos" id="s-in">0 ₸</div></div>
+      <div class="c"><div class="ico red" style="margin:0 auto" data-i="down"></div><div class="l">Шығын</div><div class="v gneg" id="s-out">0 ₸</div></div>
       <div class="c"><div class="ico" style="margin:0 auto" data-i="stats"></div><div class="l">Нәтиже</div><div class="v" id="s-net">0 ₸</div></div>
     </div>
     <div class="card" id="s-card-donut">
@@ -514,7 +526,7 @@
     <div class="card">
       <h2>Кіріс / Шығын</h2>
       <div id="s-chart"></div>
-      <div class="legend"><span><i style="background:var(--pos)"></i>Кіріс</span><span><i style="background:var(--neg)"></i>Шығын</span></div>
+      <div class="legend"><span><i style="background:linear-gradient(92deg,#7CF2CE,#00BE86)"></i>Кіріс</span><span><i style="background:linear-gradient(92deg,#FFA8B3,#FF4D67)"></i>Шығын</span></div>
     </div>
     <button class="btn line" onclick="shareReport()">Есепті бөлісу</button>
     <div class="card" id="s-card-out"><h2>Шығын санаттары</h2><div id="s-cat-out"></div></div>
