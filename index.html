@@ -71,9 +71,9 @@
     border-radius:0 0 28px 28px;
   }
   .hero.flat{background:linear-gradient(160deg,#1E38FF,#021CF5);border-radius:0 0 22px 22px}
-  .hero h1{margin:0;font-size:28px;font-weight:800;letter-spacing:-.5px}
+  .hero h1{margin:0;font-size:27px;font-weight:800;letter-spacing:-.032em;line-height:1.15}
   .hero-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
-  .sub{font-size:13.5px;color:#C3CCFF;margin-top:2px}
+  .sub{font-size:13px;color:#C3CCFF;margin-top:3px;line-height:1.4;letter-spacing:0}
   .plus{width:50px;height:50px;border:0;border-radius:17px;background:#fff;color:var(--g-mid);
     font-size:27px;font-weight:700;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.18);flex:none}
   .back{width:44px;height:44px;border:0;border-radius:14px;background:rgba(255,255,255,.18);
@@ -99,18 +99,23 @@
   /* ---------- Cards ---------- */
   .wrap{padding:14px}
   .card{background:var(--surface);border-radius:22px;padding:16px;box-shadow:0 2px 14px var(--shadow);margin-bottom:12px}
-  .card h2{margin:0 0 12px;font-size:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+  .card h2{margin:0 0 12px;font-size:16.5px;font-weight:800;letter-spacing:-.022em;
+    display:flex;justify-content:space-between;align-items:center;gap:10px}
   .card h2 small{font-weight:600;font-size:12.5px;color:var(--ink-2)}
-  .muted{color:var(--ink-2);font-size:13px}
-  .empty{text-align:center;padding:24px 10px;color:var(--ink-2);font-size:14px;line-height:1.55}
+  .muted{color:var(--ink-2);font-size:13px;line-height:1.6}
+  .card > p.muted{font-size:12.7px;line-height:1.62;margin-top:-2px}
+  .about{font-size:12.7px;color:var(--ink-2);line-height:1.62}
+  .ver{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.04em;
+    background:var(--g-soft);color:var(--g-mid);border-radius:8px;padding:5px 10px;margin-bottom:9px}
+  .empty{text-align:center;padding:26px 12px;color:var(--ink-2);font-size:13.2px;line-height:1.65}
 
   .trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;background:var(--g-soft);border-radius:16px;padding:14px 8px;text-align:center}
-  .trio .l{font-size:12px;color:var(--ink-2)}
-  .trio .v{font-size:15px;font-weight:800;margin-top:4px}
+  .trio .l{font-size:11.5px;color:var(--ink-2);font-weight:600;line-height:1.35}
+  .trio .v{font-size:15.5px;font-weight:800;margin-top:5px;letter-spacing:-.02em}
   .stat3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
   .stat3 .c{background:var(--surface);border-radius:18px;padding:14px 8px;text-align:center;box-shadow:0 2px 14px var(--shadow)}
-  .stat3 .l{font-size:12px;color:var(--ink-2);margin-top:6px}
-  .stat3 .v{font-size:15px;font-weight:800;margin-top:3px}
+  .stat3 .l{font-size:11.5px;color:var(--ink-2);margin-top:7px;font-weight:600}
+  .stat3 .v{font-size:15.5px;font-weight:800;margin-top:3px;letter-spacing:-.02em}
 
   .row{display:flex;align-items:center;gap:12px;padding:11px 2px;cursor:pointer}
   .row+.row{border-top:1px solid var(--line)}
@@ -140,7 +145,7 @@
   .ico.pos{background:var(--pos-soft)}
   .ico.blue{background:var(--blue-bg)}
   .row .name{font-weight:600;font-size:15px}
-  .row .sub2{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+  .row .sub2{font-size:12.4px;color:var(--ink-2);margin-top:3px;line-height:1.4}
   .row .amt{margin-left:auto;font-weight:700;font-size:15px;white-space:nowrap;text-align:right}
   .amt.in{color:var(--pos)} .amt.out{color:var(--neg)}
   .dayhead{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);padding:12px 2px 4px;font-weight:600}
@@ -178,7 +183,8 @@
   .chip.on{background:var(--g-mid);border-color:var(--g-mid);color:#fff}
   .chips.glass .chip{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.2);color:#fff}
   .chips.glass .chip.on{background:#fff;color:var(--g-mid)}
-  label.f{display:block;font-size:13px;color:var(--ink-2);margin:0 0 6px 3px;font-weight:600}
+  label.f{display:block;font-size:11.5px;color:var(--ink-2);margin:0 0 7px 3px;
+    font-weight:700;letter-spacing:.055em;text-transform:uppercase}
   .inp{width:100%;border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--surface);margin-bottom:12px;color:var(--ink)}
   .inp.big{font-size:29px;font-weight:800;text-align:center}
   .inp.soft{background:var(--g-soft);border-color:transparent}
@@ -204,7 +210,9 @@
   .res{background:var(--g-soft);border-radius:18px;padding:16px;margin-bottom:12px}
   .res .big{font-size:28px;font-weight:800;color:var(--g-mid)}
   .res .lab{font-size:13px;color:var(--ink-2)}
-  .kv{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;border-top:1px solid rgba(0,0,0,.06)}
+  .kv{display:flex;justify-content:space-between;gap:12px;padding:9px 0;font-size:13.6px;
+    border-top:1px solid var(--line);line-height:1.45}
+  .kv span{color:var(--ink-2)}
   .kv:first-of-type{border-top:0}
   .kv b{font-weight:700}
   table.sched{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -529,7 +537,6 @@
       <div class="legend"><span><i style="background:linear-gradient(92deg,#7CF2CE,#00BE86)"></i>Кіріс</span><span><i style="background:linear-gradient(92deg,#FFA8B3,#FF4D67)"></i>Шығын</span></div>
     </div>
     <button class="btn" onclick="exportPdf()">PDF есеп жасау</button>
-    <button class="btn line" onclick="shareReport()">Мәтін ретінде бөлісу</button>
     <div class="card" id="s-card-out"><h2>Шығын санаттары</h2><div id="s-cat-out"></div></div>
     <div class="card" id="s-card-in"><h2>Кіріс көздері</h2><div id="s-cat-in"></div></div>
   </div>
@@ -750,7 +757,11 @@
     </div>
     <div class="card">
       <h2>Қосымша туралы</h2>
-      <p class="muted" style="margin:0">Қаржы · 3.0 · офлайн жұмыс істейді, ешқандай серверге дерек жіберілмейді.</p>
+      <div class="about">
+        <div class="ver">Қаржы · 3.0</div>
+        <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
+        ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
+      </div>
     </div>
   </div>
 </section>

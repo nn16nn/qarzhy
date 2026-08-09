@@ -2176,7 +2176,6 @@ var TR = [
 ["PDF сақталды","PDF сохранён","PDF saved"],
 ["PDF жасалмады — интернетті тексеріңіз","PDF не создан — проверьте интернет","Could not create the PDF — check your connection"],
 ["Жіберілді","Отправлено","Shared"],
-["Мәтін ретінде бөлісу","Поделиться текстом","Share as text"],
 
 /* --- қарыздар мен калькуляторлар --- */
 ["Қарыздар","Долги","Debts"],["Адамдарға берген және алған ақша","Деньги, данные и взятые в долг","Money lent and borrowed"],
@@ -2247,8 +2246,6 @@ var TR = [
 ["Айлық орташа кіріс","Средний доход в месяц","Average monthly income"],
 ["Айлық орташа шығын","Средний расход в месяц","Average monthly expense"],
 ["Ең табысты ай","Самый прибыльный месяц","Best month"],
-["Есепті бөлісу","Поделиться отчётом","Share report"],
-["Көшірілді","Скопировано","Copied"],["Бөлісу қолжетімсіз","Поделиться недоступно","Sharing unavailable"],
 
 /* --- қорғаныс пен автосақтау --- */
 ["Автоматты көшірмелер (соңғы 7 күн)","Автоматические копии (последние 7 дней)","Automatic snapshots (last 7 days)"],
@@ -2615,36 +2612,7 @@ function drawTrend(){
   box.innerHTML = s;
 }
 
-/* ================= БӨЛІСУ ================= */
-function shareReport(){
-  var list = DB.tx.filter(function(t){ return inRange(t.date) && t.type !== 'tr'; });
-  var sIn = 0, sOut = 0;
-  list.forEach(function(t){ if(t.type === 'in') sIn += t.amt; else sOut += t.amt; });
-  var sums = {};
-  list.filter(function(t){ return t.type === 'out'; })
-      .forEach(function(t){ sums[t.cat] = (sums[t.cat] || 0) + t.amt; });
-  var top = Object.keys(sums).sort(function(a,b){ return sums[b] - sums[a]; }).slice(0, 3);
 
-  var txt = 'Қаржы есебі\n' +
-    fullDate(range.from) + ' — ' + fullDate(range.to) + '\n\n' +
-    'Кіріс: ' + money(sIn) + '\n' +
-    'Шығын: ' + money(sOut) + '\n' +
-    'Нәтиже: ' + (sIn - sOut >= 0 ? '+' : '') + money(sIn - sOut) + '\n';
-  if(top.length){
-    txt += '\nЕң көп шығын:\n';
-    top.forEach(function(k, i){ txt += (i + 1) + '. ' + k + ' — ' + money(sums[k]) + '\n'; });
-  }
-
-  if(navigator.share){
-    navigator.share({ title: 'Қаржы есебі', text: txt })
-      .then(function(){})
-      .catch(function(){});
-  } else if(navigator.clipboard){
-    navigator.clipboard.writeText(txt).then(function(){ toast('Көшірілді'); });
-  } else {
-    toast('Бөлісу қолжетімсіз');
-  }
-}
 
 /* ================= ТАҚЫРЫП (ашық / қараңғы) ================= */
 function themeMode(){ return DB.theme || 'auto'; }
