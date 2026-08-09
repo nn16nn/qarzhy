@@ -615,11 +615,14 @@ function openAcc(kind, editId){
   document.getElementById('ac-pay').value = a&&a.pay?a.pay:'';
   document.getElementById('ac-inv').value = a&&a.invested?a.invested:'';
   document.getElementById('ac-loan-box').classList.toggle('hide', kind!=='debt');
-  document.getElementById('ac-inv-box').classList.toggle('hide', kind!=='broker');
+  document.getElementById('ac-inv-box').classList.add('hide');
+  document.getElementById('ac-bal-box').classList.toggle('hide', kind==='broker');
+  var bh=document.getElementById('ac-broker-hint');
+  if(bh) bh.classList.toggle('hide', kind!=='broker');
   document.getElementById('ac-bank-box').classList.toggle('hide', kind!=='asset');
   document.getElementById('ac-back').textContent = accEdit ? '‹ Артқа' : '‹ Жабу';
   accCur = a && a.cur ? a.cur : 'KZT';
-  document.getElementById('ac-cur-box').classList.toggle('hide', kind==='debt');
+  document.getElementById('ac-cur-box').classList.toggle('hide', kind!=='asset');
   drawCurChips(); drawBankChips(); drawAccIcons(); openSheet('sheet-acc');
 }
 var accCur='KZT';
@@ -679,15 +682,17 @@ function saveAcc(){
     a.pay=parseFloat(document.getElementById('ac-pay').value)||0;
   }
   if(accKind==='broker'){
-    a.invested=parseFloat(document.getElementById('ac-inv').value)||0;
+    a.vals = { KZT: 0, USD: 0 };
+    a.invested = 0; a.bal = 0; a.valSet = false; a.cur = 'KZT';
   }
-  if(accKind!=='debt') a.cur=accCur;
+  if(accKind==='asset') a.cur=accCur;
   if(accEdit){
     var old=acc(accEdit);
     if(old){
-      old.name=a.name; old.icon=a.icon; old.bal=a.bal; old.cur=a.cur;
+      old.name=a.name; old.icon=a.icon;
+      if(accKind!=='broker'){ old.bal=a.bal; old.cur=a.cur; }
       if(accKind==='debt'){ old.rate=a.rate; old.pay=a.pay; }
-      if(accKind==='broker'){ old.invested=a.invested; }
+      if(accKind==='broker'){ if(!old.vals) old.vals={KZT:0,USD:0}; }
     }
     accEdit=null;
     save(); closeSheets(); render(); toast('Сақталды'); return;
@@ -942,7 +947,9 @@ function quickSetup(){
     var exists=false;
     DB.accounts.forEach(function(a){ if(a.name.toLowerCase()===w.name.toLowerCase()) exists=true; });
     if(exists) return;
-    DB.accounts.push({id:newId(), name:w.name, kind:w.kind, icon:w.icon, bal:0, invested:w.kind==='broker'?0:undefined});
+    var na = { id:newId(), name:w.name, kind:w.kind, icon:w.icon, bal:0, cur:'KZT' };
+    if(w.kind==='broker'){ na.vals={KZT:0,USD:0}; na.invested=0; na.valSet=false; }
+    DB.accounts.push(na);
     added++;
   });
   save(); render();
@@ -1695,13 +1702,22 @@ function onImportFile(el){
       var frRows = parseFreedom(lines);
       if(frRows && frRows.length){
         var code = freedomClientCode(lines);
-        var target = IMP.brAcc;
+        var target = IMP.brAcc, auto = false, created = false;
         if(code){
           accsOf('broker').forEach(function(a){
             var c = brokerCode(a.name);
-            if(c && (c === code || code.indexOf(c) !== -1 || c.indexOf(code) !== -1)) target = a.id;
+            if(c && (c === code || code.indexOf(c) !== -1 || c.indexOf(code) !== -1)){ target = a.id; auto = true; }
           });
+          if(!auto){
+            /* мұндай шот жоқ — атын клиент кодымен қойып, өзіміз құрамыз */
+            var na = { id: newId(), name: '#' + code, kind: 'broker', icon: 'invest',
+                       bal: 0, cur: 'KZT', vals: { KZT: 0, USD: 0 }, invested: 0, valSet: false };
+            DB.accounts.push(na);
+            save();
+            target = na.id; auto = true; created = true;
+          }
         }
+        if(!target && accsOf('broker').length) target = accsOf('broker')[0].id;
         frRows.forEach(function(r){ r.bacc = target; });
         var have = {};
         DB.btx.forEach(function(b){ have[b.acc + '|' + b.date + '|' + b.amt.toFixed(2)] = 1; });
@@ -1710,7 +1726,8 @@ function onImportFile(el){
           r.on = !r.dup;
         });
         IMP.rows = frRows;
-        IMP.freedom = { code: code };
+        IMP.brAcc = target;
+        IMP.freedom = { code: code, auto: auto, created: created };
         impStatus('');
         renderImport();
         return;
@@ -1968,20 +1985,45 @@ function renderImport(){
     });
     var oneOnly = Object.keys(per).length === 1 && accsOf('broker').length > 1;
 
+    var pickBox = '';
+    if(accsOf('broker').length > 1){
+      pickBox = '<label class="f" style="margin-top:14px">Қай шотқа жазылсын</label><div class="chips" id="imp-bacc"></div>';
+    }
     var frNote2 = '';
     if(IMP.freedom){
+      var ta0 = acc(IMP.brAcc);
       frNote2 = '<p class="muted" style="margin:12px 0 0">Freedom есебі танылды' +
         (IMP.freedom.code ? ' · клиент коды <b>' + esc(IMP.freedom.code) + '</b>' : '') +
+        (IMP.freedom.auto && ta0
+          ? ' → <b>' + esc(ta0.name) + '</b> шотына жазылады' +
+            (IMP.freedom.created ? ' (шот автоматты құрылды)' : ' (автоматты таңдалды)')
+          : '') +
         '. Тек ақша қозғалысы алынды — сауда мәмілелері мен комиссия кестесі есептелмеді.' +
         ' Теңге мен доллар бөлек есептеледі, бір-біріне аударылмайды.' +
         '</p>';
     }
-    head.innerHTML = '<h2>Табылды: ' + IMP.rows.length + ' жазба</h2>' + rowsHtml + split + frNote2 +
+    head.innerHTML = '<h2>Табылды: ' + IMP.rows.length + ' жазба</h2>' + rowsHtml + split + pickBox + frNote2 +
       (oneOnly
         ? '<p class="muted" style="margin:12px 0 0">Файлдан екінші шоттың нөмірі табылмады — бәрі бір шотқа жазылды. Әр жолдың шотын төменнен өзгертуге болады.</p>'
         : '<p class="muted" style="margin:12px 0 0">Шот нөмірі бойынша автоматты бөлінді. Бұл жазбалар жалпы кіріс-шығынға қосылмайды.</p>');
     box.innerHTML = '';
     box.appendChild(head);
+
+    var pb = head.querySelector('#imp-bacc');
+    if(pb){
+      accsOf('broker').forEach(function(a){
+        var b = document.createElement('button');
+        b.className = 'chip' + (a.id === IMP.brAcc ? ' on' : '');
+        b.innerHTML = accIconHtml(a, 'chip-ic') + '<span>' + esc(a.name) + '</span>';
+        b.onclick = function(){
+          IMP.brAcc = a.id;
+          IMP.rows.forEach(function(r){ r.bacc = a.id; });
+          renderImport();
+        };
+        pb.appendChild(b);
+      });
+    }
+
     renderImportList(box);
     return;
   }
@@ -2311,6 +2353,10 @@ var TR = [
 /* --- брокер --- */
 ["Жеке есеп — жалпы ақшаға қосылмайды","Отдельный учёт — в общие деньги не входит","Separate — not counted in total money"],
 ["Құнын жаңарту","Обновить стоимость","Update value"],
+["Қай шотқа жазылсын","На какой счёт записать","Which account to use"],
+["(шот автоматты құрылды)","(счёт создан автоматически)","(account created automatically)"],
+["(автоматты таңдалды)","(выбран автоматически)","(selected automatically)"],
+["Брокерлік шот теңгені де, долларды да бірге ұстайды. Валютаны таңдаудың қажеті жоқ — файл жүктегенде әрқайсысы өз валютасында есептеледі. Портфель құнын кейін «Құнын жаңарту» арқылы қоясыз.","Брокерский счёт держит и тенге, и доллары одновременно. Валюту выбирать не нужно — при импорте каждая сумма считается в своей валюте. Стоимость портфеля задаётся позже через «Обновить стоимость».","A brokerage account holds both tenge and dollars. No currency choice needed — on import each amount stays in its own currency. Set the portfolio value later via Update value."],
 ["Доллармен, $","В долларах, $","In dollars, $"],["Теңгемен, ₸","В тенге, ₸","In tenge, ₸"],
 ["Доллар","Доллар","Dollars"],["Теңге","Тенге","Tenge"],
 ["Барлығы теңгемен","Итого в тенге","Total in tenge"],["Құн көзі","Источник стоимости","Value source"],
