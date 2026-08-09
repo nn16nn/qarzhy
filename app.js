@@ -6,14 +6,14 @@ var store = {
   get: function(k){ try{ return localStorage.getItem(k); }catch(e){ return k in mem ? mem[k] : null; } },
   set: function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; } }
 };
-var DB = { tx:[], goals:[], accounts:[], btx:[], budgets:{}, lastBackup:null, lang:'kk', theme:'auto', rate:null };
+var DB = { tx:[], goals:[], accounts:[], btx:[], debts:[], budgets:{}, lastBackup:null, lang:'kk', theme:'auto', rate:null };
 
 function load(){
   try{
     var raw = store.get('qarzhy_v1');
     if(raw){
       var d = JSON.parse(raw);
-      DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[];
+      DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[]; DB.debts = d.debts||[];
       DB.budgets = d.budgets||{}; DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto';
       DB.lastBackup = d.lastBackup||null; DB.rate = d.rate||null;
       if(!DB.accounts.length){
@@ -191,7 +191,10 @@ function totals(){
     else if(x.kind==='debt'){ d+=toKZT(x); }
     else { b+=toKZT(x); }
   });
-  return {banks:b, broker:br, invested:inv, assets:b, debts:d, net:b-d, brokerPL:br-inv};
+  var dt = (typeof debtTotals === 'function') ? debtTotals() : {lent:0, owed:0};
+  return {banks:b, broker:br, invested:inv, assets:b, debts:d,
+          lent:dt.lent, owed:dt.owed,
+          net:b - d + dt.lent - dt.owed, brokerPL:br-inv};
 }
 function accsOf(kind){ return DB.accounts.filter(function(a){ return a.kind===kind; }); }
 function spendable(){ return DB.accounts.filter(function(a){ return a.kind==='asset'||a.kind==='broker'; }); }
@@ -795,7 +798,7 @@ function importData(el){
     try{
       var d=JSON.parse(r.result);
       DB.tx=d.tx||[]; DB.goals=d.goals||[]; DB.accounts=d.accounts||[]; DB.btx=d.btx||[];
-      DB.budgets=d.budgets||{};
+      DB.debts=d.debts||[]; DB.budgets=d.budgets||{};
       if(!DB.accounts.length) DB.accounts=[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:d.start||0}];
       save(); render(); toast('Қалпына келтірілді');
     }catch(e){ toast('Файл оқылмады'); }
@@ -805,7 +808,7 @@ function importData(el){
 function wipe(){
   if(!confirm('Барлық дерек өшіріледі. Жалғастырасыз ба?')) return;
   DB={tx:[],goals:[],accounts:[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:0,cur:'KZT'}],
-      btx:[],budgets:{},lastBackup:DB.lastBackup,lang:DB.lang,rate:DB.rate};
+      btx:[],debts:[],budgets:{},lastBackup:DB.lastBackup,lang:DB.lang,rate:DB.rate};
   save(); render(); toast('Өшірілді');
 }
 
@@ -860,7 +863,7 @@ function render(){
   document.getElementById('h-banks').textContent=money(T.banks);
   document.getElementById('h-broker').textContent=money(T.broker);
   if(view==='broker') renderBroker();
-  document.getElementById('h-debts').textContent=money(T.debts);
+  document.getElementById('h-debts').textContent=money(T.debts + T.owed);
   document.getElementById('h-net2').textContent=money(T.net);
   document.getElementById('acc-count').textContent=
     accsOf('asset').length+' банк · '+accsOf('broker').length+' брокер';
@@ -991,6 +994,9 @@ function render(){
 
   /* --- жаңа бөлімдер --- */
   drawBudget();
+  drawDebts();
+  calcDep();
+  calcTax();
   drawWarnings();
   drawSnaps();
   var bk=document.getElementById('bk-info');
@@ -2157,6 +2163,52 @@ var TR = [
 ["Бірде-бір жазба белгіленбеген","Ничего не отмечено","Nothing selected"],
 ["жаңа ғана","только что","just now"],["бүгін","сегодня","today"],["(қолмен)","(вручную)","(manual)"],
 
+/* --- қарыздар мен калькуляторлар --- */
+["Қарыздар","Долги","Debts"],["Адамдарға берген және алған ақша","Деньги, данные и взятые в долг","Money lent and borrowed"],
+["Маған қарыз","Мне должны","Owed to me"],["Мен қарызбын","Я должен","I owe"],
+["Қарыз жазу","Новая запись","New record"],["Мен бердім","Я дал","I lent"],["Мен алдым","Я взял","I borrowed"],
+["Кімге / кімнен","Кому / от кого","To / from whom"],["Аты-жөні","Имя","Name"],
+["Қай шоттан бердім","С какого счёта дал","From which account"],["Қай шотқа түсті","На какой счёт","To which account"],
+["Қайтару мерзімі (міндетті емес)","Срок возврата (не обязательно)","Due date (optional)"],
+["Қайтарылған сома","Возвращённая сумма","Repaid amount"],
+["Маған қайтарған сома","Мне вернули","Repaid to me"],["Мен қайтарған сома","Я вернул","I repaid"],
+["Қай шот арқылы","Через какой счёт","Which account"],["Төлемді жазу","Записать платёж","Record payment"],
+["Төлем тарихы","История платежей","Payment history"],["Жазбаны өшіру","Удалить запись","Delete record"],
+["Қарызға берілді","Записано: дал в долг","Recorded: lent"],["Қарыз алынды","Записано: взял в долг","Recorded: borrowed"],
+["Толық жабылды","Полностью закрыт","Fully repaid"],["Төлем жазылды","Платёж записан","Payment recorded"],
+["Кімге екенін жазыңыз","Укажите имя","Enter a name"],
+["Ешкім қарыз емес.","Вам никто не должен.","Nobody owes you."],["Қарызыңыз жоқ.","У вас нет долгов.","You owe nothing."],
+["мерзімі өтті","просрочен","overdue"],["жабылды","закрыт","closed"],["дейін","до","by"],
+["Бердім","Дал","Lent"],["Алдым","Взял","Borrowed"],["Қайтарылды","Возвращено","Repaid"],
+["Қарыз мерзімі өтті","Просроченные долги","Overdue debts"],
+
+["Депозит калькуляторы","Депозитный калькулятор","Deposit calculator"],
+["Банк салымының табысы","Доход по вкладу","Deposit return"],
+["Капитализация · Толықтыру","Капитализация · Пополнение","Compounding · Top-ups"],
+["Салым сомасы, ₸","Сумма вклада, ₸","Deposit amount, ₸"],["Мерзімі, ай","Срок, мес.","Term, months"],
+["Ай сайынғы толықтыру, ₸","Ежемесячное пополнение, ₸","Monthly top-up, ₸"],
+["Капитализация","Капитализация","Compounding"],
+["Ай сайын капитализация — пайызға пайыз","Ежемесячная капитализация — процент на процент","Monthly compounding — interest on interest"],
+["Пайыз мерзім соңында бір рет төленеді","Проценты выплачиваются в конце срока","Interest paid at the end of the term"],
+["Тиімді жылдық өсім","Эффективная годовая доходность","Effective annual return"],
+["Айына орташа табыс","Средний доход в месяц","Average monthly return"],
+
+["Салық калькуляторы","Налоговый калькулятор","Tax calculator"],
+["ЖК · оңайлатылған декларация","ИП · упрощённая декларация","Sole trader · simplified"],
+["ЖК · оңайлатылған декларация (910-форма)","ИП · упрощённая декларация (форма 910)","Sole trader · simplified (form 910)"],
+["Кезеңдегі табыс, ₸","Доход за период, ₸","Income for the period, ₸"],
+["Кезең, ай","Период, мес.","Period, months"],
+["Салық мөлшерлемесі, %","Ставка налога, %","Tax rate, %"],
+["Өзіңізге жариялайтын айлық табыс, ₸","Заявляемый доход в месяц, ₸","Declared monthly income, ₸"],
+["Барлығы төлеу керек","Итого к уплате","Total due"],["Бөлшектеп","Детализация","Breakdown"],
+["Өз атыңызға аударымдар","Отчисления за себя","Contributions for yourself"],
+["Жарияланған табыс","Заявленный доход","Declared income"],
+["Пайдалы сандар","Полезные цифры","Useful figures"],
+["Салық жүктемесі","Налоговая нагрузка","Tax burden"],
+["Қолда қалады","Останется на руках","Left after tax"],
+["Айына бөлгенде","В пересчёте на месяц","Per month"],
+["Табысты жазыңыз.","Укажите доход.","Enter the income."],
+
 /* --- брокер импорты --- */
 ["Шоттар бойынша бөлінді","Разделено по счетам","Split by account"],
 ["Брокер есебін жүктеу (шоттарға бөледі)","Загрузить отчёт брокера (разделит по счетам)","Import broker report (splits by account)"],
@@ -2920,6 +2972,316 @@ function catBox(type, cat){
   return '<div class="ico ' + kind + '">' + catSvg(type, cat) + '</div>';
 }
 
+/* ================= ҚАРЫЗДАР (адамдарға берген / алған) ================= */
+/* dir: 'out' — мен бердім (маған қарыз), 'in' — мен алдым (мен қарызбын) */
+
+function debts(){ return DB.debts || (DB.debts = []); }
+function debtOf(id){ var r=null; debts().forEach(function(d){ if(d.id===id) r=d; }); return r; }
+function debtLeft(d){ return Math.max(0, d.amt - (d.paid || 0)); }
+
+function debtTotals(){
+  var lent = 0, owed = 0, overdue = 0;
+  var today = todayISO();
+  debts().forEach(function(d){
+    var left = debtLeft(d);
+    if(left <= 0) return;
+    if(d.dir === 'out') lent += left; else owed += left;
+    if(d.due && d.due < today) overdue++;
+  });
+  return { lent: lent, owed: owed, overdue: overdue };
+}
+
+var dDir = 'out', dAcc = null, dId = null, dPayAcc = null;
+
+function openDebt(){
+  dDir = 'out';
+  document.getElementById('de-who').value = '';
+  document.getElementById('de-amt').value = '';
+  document.getElementById('de-note').value = '';
+  document.getElementById('de-date').value = todayISO();
+  document.getElementById('de-due').value = '';
+  drawDebtDir(); drawDebtAccs();
+  openSheet('sheet-debt');
+}
+function drawDebtDir(){
+  document.getElementById('de-out').classList.toggle('on', dDir === 'out');
+  document.getElementById('de-in').classList.toggle('on', dDir === 'in');
+  document.getElementById('de-acc-lab').textContent =
+    dDir === 'out' ? 'Қай шоттан бердім' : 'Қай шотқа түсті';
+}
+function setDebtDir(x){ dDir = x; drawDebtDir(); }
+function drawDebtAccs(){
+  var box = document.getElementById('de-accs'); box.innerHTML = '';
+  var list = accsOf('asset');
+  var ok = false; list.forEach(function(a){ if(a.id === dAcc) ok = true; });
+  if(!ok) dAcc = list.length ? list[0].id : null;
+  list.forEach(function(a){
+    var b = document.createElement('button');
+    var br = brandOf(a.name);
+    b.className = 'chip' + (a.id === dAcc ? ' on' : '');
+    b.innerHTML = (br ? '<span class="brand sm" style="background:'+br[1]+(br[2]?';color:'+br[2]:'')+'">'+br[0]+'</span>'
+                      : accIconHtml(a,'chip-ic')) + '<span>' + esc(a.name) + '</span>';
+    b.onclick = function(){ dAcc = a.id; drawDebtAccs(); };
+    box.appendChild(b);
+  });
+}
+function saveDebt(){
+  var who = document.getElementById('de-who').value.trim();
+  var amt = parseFloat(document.getElementById('de-amt').value);
+  if(!who){ toast('Кімге екенін жазыңыз'); return; }
+  if(!amt || amt <= 0){ toast('Соманы жазыңыз'); return; }
+  var d = {
+    id: newId(), dir: dDir, who: who, amt: amt, paid: 0,
+    date: document.getElementById('de-date').value || todayISO(),
+    due: document.getElementById('de-due').value || null,
+    note: document.getElementById('de-note').value.trim(),
+    acc: dAcc, hist: []
+  };
+  var a = acc(dAcc);
+  if(a) a.bal += toAcc(a, dDir === 'out' ? -amt : amt);
+  debts().push(d);
+  save(); closeSheets(); render();
+  toast(dDir === 'out' ? 'Қарызға берілді' : 'Қарыз алынды');
+}
+
+function openDView(id){
+  var d = debtOf(id); if(!d) return;
+  dId = id;
+  var left = debtLeft(d);
+  document.getElementById('dv-title').textContent = d.who;
+  document.getElementById('dv-pay').value = '';
+  var pct = d.amt > 0 ? Math.round((d.paid || 0) / d.amt * 100) : 0;
+  var a0 = acc(d.acc);
+  document.getElementById('dv-sum').innerHTML =
+    '<div class="kv"><span>' + (d.dir === 'out' ? 'Бердім' : 'Алдым') + '</span><b>' + money(d.amt) + '</b></div>' +
+    '<div class="kv"><span>Қайтарылды</span><b>' + money(d.paid || 0) + ' · ' + pct + '%</b></div>' +
+    '<div class="kv"><span>Қалды</span><b style="color:' + (left > 0 ? 'var(--neg)' : 'var(--pos)') + '">' + money(left) + '</b></div>' +
+    '<div class="kv"><span>Күні</span><b>' + fullDate(d.date) + '</b></div>' +
+    (d.due ? '<div class="kv"><span>Қайтару мерзімі</span><b>' + fullDate(d.due) + '</b></div>' : '') +
+    (a0 ? '<div class="kv"><span>Шот</span><b>' + esc(a0.name) + '</b></div>' : '') +
+    (d.note ? '<div class="kv"><span>Түсініктеме</span><b>' + esc(d.note) + '</b></div>' : '');
+  document.getElementById('dv-pay-lab').textContent =
+    d.dir === 'out' ? 'Маған қайтарған сома' : 'Мен қайтарған сома';
+  drawDPayAccs(); drawDHist(d);
+  document.getElementById('dv-payrow').classList.toggle('hide', left <= 0);
+  openSheet('sheet-dview');
+}
+function drawDPayAccs(){
+  var box = document.getElementById('dv-accs'); box.innerHTML = '';
+  var list = accsOf('asset');
+  var ok = false; list.forEach(function(a){ if(a.id === dPayAcc) ok = true; });
+  if(!ok) dPayAcc = list.length ? list[0].id : null;
+  list.forEach(function(a){
+    var b = document.createElement('button');
+    b.className = 'chip' + (a.id === dPayAcc ? ' on' : '');
+    b.innerHTML = accIconHtml(a,'chip-ic') + '<span>' + esc(a.name) + '</span>';
+    b.onclick = function(){ dPayAcc = a.id; drawDPayAccs(); };
+    box.appendChild(b);
+  });
+}
+function drawDHist(d){
+  var box = document.getElementById('dv-hist'); box.innerHTML = '';
+  if(!d.hist || !d.hist.length) return;
+  var h = '<label class="f" style="margin-top:10px">Төлем тарихы</label>';
+  d.hist.slice().reverse().forEach(function(x){
+    var a = x.acc ? acc(x.acc) : null;
+    h += '<div class="kv"><span>' + fullDate(x.date) + (a ? ' · ' + esc(a.name) : '') +
+         '</span><b>' + nf(x.amt) + ' ₸</b></div>';
+  });
+  box.innerHTML = h;
+}
+function payDebt(){
+  var v = parseFloat(document.getElementById('dv-pay').value);
+  var d = debtOf(dId); if(!d) return;
+  if(!v || v <= 0){ toast('Соманы жазыңыз'); return; }
+  var left = debtLeft(d);
+  if(v > left) v = left;
+  var a = acc(dPayAcc);
+  if(a) a.bal += toAcc(a, d.dir === 'out' ? v : -v);
+  d.paid = (d.paid || 0) + v;
+  d.hist = d.hist || [];
+  d.hist.push({ date: todayISO(), amt: v, acc: dPayAcc });
+  save(); closeSheets(); render();
+  toast(debtLeft(d) <= 0 ? 'Толық жабылды' : 'Төлем жазылды');
+}
+function delDebt(){
+  var d = debtOf(dId); if(!d) return;
+  if(!confirm('Жазба өшіріледі, шот қалдықтары бастапқы күйге қайтарылады. Жалғастырасыз ба?')) return;
+  var a = acc(d.acc);
+  if(a) a.bal += toAcc(a, d.dir === 'out' ? d.amt : -d.amt);
+  (d.hist || []).forEach(function(x){
+    var pa = acc(x.acc);
+    if(pa) pa.bal += toAcc(pa, d.dir === 'out' ? -x.amt : x.amt);
+  });
+  DB.debts = debts().filter(function(x){ return x.id !== dId; });
+  save(); closeSheets(); render(); toast('Өшірілді');
+}
+
+function drawDebts(){
+  var T = debtTotals();
+  var le = document.getElementById('d-lent'), oe = document.getElementById('d-owed');
+  if(le) le.textContent = money(T.lent);
+  if(oe) oe.textContent = money(T.owed);
+  var s1 = document.getElementById('d-sum-lent'), s2 = document.getElementById('d-sum-owed');
+  if(s1) s1.textContent = money(T.lent);
+  if(s2) s2.textContent = money(T.owed);
+
+  ['out','in'].forEach(function(dir){
+    var box = document.getElementById(dir === 'out' ? 'd-list-lent' : 'd-list-owed');
+    if(!box) return;
+    box.innerHTML = '';
+    var list = debts().filter(function(d){ return d.dir === dir; })
+      .sort(function(a,b){
+        var la = debtLeft(a) > 0 ? 0 : 1, lb = debtLeft(b) > 0 ? 0 : 1;
+        if(la !== lb) return la - lb;
+        return a.date < b.date ? 1 : -1;
+      });
+    if(!list.length){
+      box.innerHTML = '<div class="empty">' +
+        (dir === 'out' ? 'Ешкім қарыз емес.' : 'Қарызыңыз жоқ.') + '</div>';
+      return;
+    }
+    list.forEach(function(d){
+      var left = debtLeft(d), done = left <= 0;
+      var pct = d.amt > 0 ? Math.round((d.paid || 0) / d.amt * 100) : 0;
+      var late = d.due && d.due < todayISO() && !done;
+      var el = document.createElement('div');
+      el.className = 'row';
+      el.style.display = 'block';
+      el.style.padding = '13px 2px';
+      el.onclick = function(){ openDView(d.id); };
+      el.innerHTML =
+        '<div style="display:flex;align-items:center;gap:11px">' +
+          '<div class="ico' + (done ? ' pos' : (dir === 'out' ? '' : ' red')) + '">' +
+            svgIcon(done ? 'target' : (dir === 'out' ? 'arrUp' : 'arrDown')) + '</div>' +
+          '<div style="flex:1;min-width:0">' +
+            '<div class="name">' + esc(d.who) + (late ? ' <span class="badge">мерзімі өтті</span>' : '') + '</div>' +
+            '<div class="sub2">' + fullDate(d.date) +
+              (d.due ? ' · ' + tr('дейін') + ' ' + fullDate(d.due) : '') +
+              (d.note ? ' · ' + esc(d.note) : '') + '</div>' +
+          '</div>' +
+          '<div class="amt" style="color:' + (done ? 'var(--pos)' : (dir === 'out' ? 'var(--ink)' : 'var(--neg)')) + '">' +
+            (done ? tr('жабылды') : money(left)) + '</div>' +
+        '</div>' +
+        (done ? '' :
+          '<div class="track" style="margin-top:10px"><div class="fill' + (dir === 'out' ? '' : ' neg') +
+          '" style="width:' + pct + '%"></div></div>' +
+          '<div class="bar-top" style="margin:6px 0 0"><span class="muted">' +
+          money(d.paid || 0) + ' / ' + money(d.amt) + '</span><b class="muted">' + pct + '%</b></div>');
+      box.appendChild(el);
+    });
+  });
+}
+
+/* ================= ДЕПОЗИТ КАЛЬКУЛЯТОРЫ ================= */
+var depCap = true;
+function toggleDepCap(){
+  depCap = !depCap;
+  document.getElementById('dp-sw').classList.toggle('on', depCap);
+  document.getElementById('dp-sw-txt').textContent = depCap
+    ? 'Ай сайын капитализация — пайызға пайыз'
+    : 'Пайыз мерзім соңында бір рет төленеді';
+  calcDep();
+}
+function calcDep(){
+  var P = num('dp-sum'), M = num('dp-add'), r = num('dp-rate') / 100, n = Math.round(num('dp-term'));
+  var box = document.getElementById('dp-res');
+  if(!box) return;
+  if(P <= 0 || n <= 0){ box.innerHTML = '<div class="empty">Мәндерді толтырыңыз.</div>'; return; }
+
+  var i = r / 12, bal, invested = P + M * n, interest;
+  if(depCap){
+    bal = P;
+    for(var k = 0; k < n; k++){ bal = bal * (1 + i) + M; }
+  } else {
+    var base = P, acc2 = 0;
+    for(var j = 0; j < n; j++){ acc2 += base * i; base += M; }
+    bal = base + acc2;
+  }
+  interest = bal - invested;
+  var years = n / 12;
+  var eff = invested > 0 && years > 0 ? (Math.pow(bal / invested, 1 / years) - 1) * 100 : 0;
+
+  var rows = '';
+  if(n >= 12){
+    var b2 = P, base2 = P, a2 = 0;
+    rows = '<div class="card"><h2>Жыл сайынғы өсім</h2><table class="sched">' +
+           '<tr><th>Жыл</th><th>Салынған</th><th>Сома</th></tr>';
+    for(var m = 1; m <= n; m++){
+      if(depCap) b2 = b2 * (1 + i) + M;
+      else { a2 += base2 * i; base2 += M; b2 = base2 + a2; }
+      if(m % 12 === 0 || m === n){
+        rows += '<tr><td>' + Math.ceil(m / 12) + '</td><td>' + nf(P + M * m) + '</td><td><b>' + nf(b2) + '</b></td></tr>';
+      }
+    }
+    rows += '</table></div>';
+  }
+
+  box.innerHTML =
+    '<div class="res"><div class="lab">Мерзім соңындағы сома</div><div class="big">' + money(bal) + '</div></div>' +
+    '<div class="card">' +
+      '<div class="kv"><span>Салынған қаражат</span><b>' + money(invested) + '</b></div>' +
+      '<div class="kv"><span>Пайыздық табыс</span><b style="color:var(--pos)">' + money(interest) + '</b></div>' +
+      '<div class="kv"><span>Мерзім</span><b>' + n + ' ай (' + years.toFixed(1) + ' жыл)</b></div>' +
+      '<div class="kv"><span>Тиімді жылдық өсім</span><b>' + eff.toFixed(2) + '%</b></div>' +
+      '<div class="kv"><span>Айына орташа табыс</span><b>' + money(interest / n) + '</b></div>' +
+    '</div>' + rows +
+    '<p class="muted" style="padding:0 4px">Есеп шамамен. Банктің нақты шарттарын (толықтыру шегі, мерзімінен бұрын алу кезінде пайыздың жоғалуы) тексеріңіз.</p>';
+}
+
+/* ================= САЛЫҚ КАЛЬКУЛЯТОРЫ (ЖК, оңайлатылған) ================= */
+function calcTax(){
+  var box = document.getElementById('tx-res');
+  if(!box) return;
+  var income = num('tx-income');
+  var rate = num('tx-rate');
+  var mrp = num('tx-mrp') || 4325;
+  var mzp = num('tx-mzp') || 85000;
+  var declared = num('tx-declared') || mzp;
+  var months = Math.round(num('tx-months')) || 6;
+
+  if(income <= 0){ box.innerHTML = '<div class="empty">Табысты жазыңыз.</div>'; return; }
+  if(declared < mzp) declared = mzp;
+
+  /* негізгі салық: жартысы ИПН, жартысы әлеуметтік салық */
+  var total = income * rate / 100;
+  var ipn = total / 2;
+  var sn = total / 2;
+
+  /* өз атына міндетті аударымдар */
+  var opv = declared * 0.10 * months;          // зейнетақы
+  var so  = declared * 0.035 * months;         // әлеуметтік аударым
+  var vosms = 1.4 * mzp * 0.05 * months;       // медициналық сақтандыру
+
+  /* әлеуметтік салық әлеуметтік аударымға азайтылады */
+  var snPay = Math.max(0, sn - so);
+
+  var sum = ipn + snPay + opv + so + vosms;
+
+  box.innerHTML =
+    '<div class="res"><div class="lab">Барлығы төлеу керек</div><div class="big">' + money(sum) + '</div></div>' +
+    '<div class="card"><h2>Бөлшектеп</h2>' +
+      '<div class="kv"><span>Табыс</span><b>' + money(income) + '</b></div>' +
+      '<div class="kv"><span>Салық (' + rate + '%)</span><b>' + money(total) + '</b></div>' +
+      '<div class="kv" style="padding-left:14px"><span>— ИПН</span><b>' + money(ipn) + '</b></div>' +
+      '<div class="kv" style="padding-left:14px"><span>— Әлеуметтік салық</span><b>' + money(sn) + '</b></div>' +
+      '<div class="kv" style="padding-left:14px"><span>— ӘС минус ӘА, төленеді</span><b>' + money(snPay) + '</b></div>' +
+    '</div>' +
+    '<div class="card"><h2>Өз атыңызға аударымдар</h2>' +
+      '<div class="kv"><span>ОПВ · 10%</span><b>' + money(opv) + '</b></div>' +
+      '<div class="kv"><span>ӘА · 3,5%</span><b>' + money(so) + '</b></div>' +
+      '<div class="kv"><span>ӘМСЖ · 1,4 МЗП × 5%</span><b>' + money(vosms) + '</b></div>' +
+      '<div class="kv"><span>Жарияланған табыс</span><b>' + money(declared) + ' × ' + months + ' ай</b></div>' +
+    '</div>' +
+    '<div class="card"><h2>Пайдалы сандар</h2>' +
+      '<div class="kv"><span>Салық жүктемесі</span><b>' + (sum / income * 100).toFixed(1) + '%</b></div>' +
+      '<div class="kv"><span>Қолда қалады</span><b style="color:var(--pos)">' + money(income - sum) + '</b></div>' +
+      '<div class="kv"><span>Айына бөлгенде</span><b>' + money(sum / months) + '</b></div>' +
+    '</div>' +
+    '<p class="muted" style="padding:0 4px">Бұл — шамамен есеп, ресми құжат емес. Мөлшерлемелер мен МРП/МЗП жыл сайын өзгереді, ' +
+    'жеңілдіктер мен ерекше жағдайлар ескерілмеген. Нақты сомасын salyk.kz немесе бухгалтерден растаңыз.</p>';
+}
+
 /* ================= БЮДЖЕТ ================= */
 function budgets(){ return DB.budgets || (DB.budgets = {}); }
 function setBudget(cat, v){
@@ -2999,6 +3361,11 @@ function drawWarnings(){
       'Баптау → Деректі сақтау арқылы сақтап қойыңыз.</div>';
   } else if(d!==null && d>=30){
     html+='<div class="warnbar"><b>Көшірме ескірді</b>Соңғы көшірмеден '+d+' күн өтті. Жаңартып қойыңыз.</div>';
+  }
+  var dt2 = debtTotals();
+  if(dt2.overdue){
+    html+='<div class="warnbar"><b>Қарыз мерзімі өтті</b>'+dt2.overdue+
+      ' жазбаның қайтару мерзімі өтіп кетті. Қарыздар бөлімінен қараңыз.</div>';
   }
   var al=budgetAlerts();
   al.forEach(function(a){

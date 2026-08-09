@@ -388,7 +388,8 @@
       <button onclick="go('ops')"><span class="qi" data-i="receipt"></span> Операциялар</button>
       <button onclick="go('goals')"><span class="qi" data-i="flag"></span> Мақсаттар</button>
       <button onclick="go('calc')"><span class="qi" data-i="calc"></span> Калькулятор</button>
-      <button onclick="go('budget')" style="grid-column:1/-1"><span class="qi" data-i="budget"></span> Бюджет — санат лимиттері</button>
+      <button onclick="go('debts')"><span class="qi" data-i="swap"></span> Қарыздар</button>
+      <button onclick="go('budget')"><span class="qi" data-i="budget"></span> Бюджет</button>
     </div>
     <div id="home-warn"></div>
 
@@ -554,6 +555,18 @@
       <div class="ico red" data-i="card"></div>
       <div><div style="font-weight:700;font-size:16px">Несие калькуляторы</div>
         <div class="muted">Ай төлем · Ерте өтеу · Кесте</div></div>
+      <div style="margin-left:auto;color:var(--ink-2)">›</div>
+    </div>
+    <div class="card" onclick="go('calc-dep')" style="display:flex;align-items:center;gap:13px">
+      <div class="ico pos" data-i="coin"></div>
+      <div><div style="font-weight:700;font-size:16px">Депозит калькуляторы</div>
+        <div class="muted">Капитализация · Толықтыру</div></div>
+      <div style="margin-left:auto;color:var(--ink-2)">›</div>
+    </div>
+    <div class="card" onclick="go('calc-tax')" style="display:flex;align-items:center;gap:13px">
+      <div class="ico" data-i="receipt"></div>
+      <div><div style="font-weight:700;font-size:16px">Салық калькуляторы</div>
+        <div class="muted">ЖК · оңайлатылған декларация</div></div>
       <div style="margin-left:auto;color:var(--ink-2)">›</div>
     </div>
   </div>
@@ -727,6 +740,26 @@
   </div>
 </section>
 
+<!-- ============ ҚАРЫЗДАР ============ -->
+<section class="page" id="p-debts">
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('home')">←</button>
+      <div style="flex:1"><h1 style="font-size:24px">Қарыздар</h1>
+        <div class="sub">Адамдарға берген және алған ақша</div></div>
+      <button class="plus" onclick="openDebt()">+</button>
+    </div>
+    <div class="two">
+      <div class="mini"><div class="t">Маған қарыз</div><div class="v" id="d-lent">0 ₸</div></div>
+      <div class="mini"><div class="t">Мен қарызбын</div><div class="v" id="d-owed">0 ₸</div></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="card"><h2>Маған қарыз <small id="d-sum-lent"></small></h2><div id="d-list-lent"></div></div>
+    <div class="card"><h2>Мен қарызбын <small id="d-sum-owed"></small></h2><div id="d-list-owed"></div></div>
+  </div>
+</section>
+
 <!-- ============ БЮДЖЕТ ============ -->
 <section class="page" id="p-budget">
   <div class="hero flat">
@@ -742,6 +775,57 @@
   <div class="wrap">
     <p class="muted" style="padding:0 4px 8px">Санатқа айлық шек қойыңыз. 80%-ға жеткенде ескертеміз. 0 деп қойсаңыз — шек жоқ.</p>
     <div class="card" id="bd-list"></div>
+  </div>
+</section>
+
+<!-- ============ ДЕПОЗИТ КАЛЬКУЛЯТОРЫ ============ -->
+<section class="page" id="p-calc-dep">
+  <div style="background:var(--surface);padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;gap:13px">
+    <button class="back dark" onclick="go('calc')">←</button>
+    <div><div style="font-weight:800;font-size:20px">Депозит калькуляторы</div>
+      <div class="muted">Банк салымының табысы</div></div>
+  </div>
+  <div class="wrap">
+    <label class="f">Салым сомасы, ₸</label>
+    <input class="inp soft" id="dp-sum" type="number" inputmode="decimal" placeholder="0" oninput="calcDep()">
+    <label class="f">Мерзімі, ай</label>
+    <input class="inp soft" id="dp-term" type="number" inputmode="decimal" placeholder="12" oninput="calcDep()">
+    <label class="f">Жылдық мөлшерлеме, %</label>
+    <input class="inp soft" id="dp-rate" type="number" inputmode="decimal" placeholder="0" oninput="calcDep()">
+    <label class="f">Ай сайынғы толықтыру, ₸</label>
+    <input class="inp soft" id="dp-add" type="number" inputmode="decimal" placeholder="0" oninput="calcDep()">
+    <div class="toggle" onclick="toggleDepCap()">
+      <div class="sw on" id="dp-sw"><i></i></div>
+      <div><div style="font-weight:700">Капитализация</div>
+        <div class="muted" id="dp-sw-txt">Ай сайын капитализация — пайызға пайыз</div></div>
+    </div>
+    <div id="dp-res" style="margin-top:6px"></div>
+  </div>
+</section>
+
+<!-- ============ САЛЫҚ КАЛЬКУЛЯТОРЫ ============ -->
+<section class="page" id="p-calc-tax">
+  <div style="background:var(--surface);padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;gap:13px">
+    <button class="back dark" onclick="go('calc')">←</button>
+    <div><div style="font-weight:800;font-size:20px">Салық калькуляторы</div>
+      <div class="muted">ЖК · оңайлатылған декларация (910-форма)</div></div>
+  </div>
+  <div class="wrap">
+    <label class="f">Кезеңдегі табыс, ₸</label>
+    <input class="inp soft" id="tx-income" type="number" inputmode="decimal" placeholder="0" oninput="calcTax()">
+    <label class="f">Кезең, ай</label>
+    <input class="inp soft" id="tx-months" type="number" inputmode="decimal" value="6" oninput="calcTax()">
+    <label class="f">Салық мөлшерлемесі, %</label>
+    <input class="inp soft" id="tx-rate" type="number" inputmode="decimal" value="3" oninput="calcTax()">
+    <label class="f">Өзіңізге жариялайтын айлық табыс, ₸</label>
+    <input class="inp soft" id="tx-declared" type="number" inputmode="decimal" placeholder="85000" oninput="calcTax()">
+    <div class="row2" style="margin-bottom:12px">
+      <div><label class="f">МРП</label>
+        <input class="inp soft" id="tx-mrp" type="number" inputmode="decimal" value="4325" oninput="calcTax()" style="margin:0"></div>
+      <div><label class="f">МЗП</label>
+        <input class="inp soft" id="tx-mzp" type="number" inputmode="decimal" value="85000" oninput="calcTax()" style="margin:0;width:150px"></div>
+    </div>
+    <div id="tx-res"></div>
   </div>
 </section>
 
@@ -885,6 +969,47 @@
   <input class="inp" id="bo-note" type="text" placeholder="Міндетті емес">
   <button class="btn" onclick="saveBOp()">Сақтау</button>
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
+</div>
+
+<!-- Sheet: debt -->
+<div class="sheet" id="sheet-debt">
+  <div class="grab"></div>
+  <h3>Қарыз жазу</h3>
+  <div class="seg">
+    <button id="de-out" class="on" onclick="setDebtDir('out')">Мен бердім</button>
+    <button id="de-in" onclick="setDebtDir('in')">Мен алдым</button>
+  </div>
+  <label class="f">Кімге / кімнен</label>
+  <input class="inp" id="de-who" type="text" placeholder="Аты-жөні">
+  <label class="f">Сома, ₸</label>
+  <input class="inp big" id="de-amt" type="number" inputmode="decimal" placeholder="0">
+  <label class="f" id="de-acc-lab">Қай шоттан бердім</label>
+  <div class="chips" id="de-accs"></div>
+  <label class="f">Күні</label>
+  <input class="inp" id="de-date" type="date">
+  <label class="f">Қайтару мерзімі (міндетті емес)</label>
+  <input class="inp" id="de-due" type="date">
+  <label class="f">Түсініктеме</label>
+  <input class="inp" id="de-note" type="text" placeholder="Міндетті емес">
+  <button class="btn" onclick="saveDebt()">Сақтау</button>
+  <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
+</div>
+
+<!-- Sheet: debt detail -->
+<div class="sheet" id="sheet-dview">
+  <div class="grab"></div>
+  <h3 id="dv-title">Қарыз</h3>
+  <div class="res" id="dv-sum" style="margin-bottom:14px"></div>
+  <div id="dv-payrow">
+    <label class="f" id="dv-pay-lab">Қайтарылған сома</label>
+    <input class="inp" id="dv-pay" type="number" inputmode="decimal" placeholder="0">
+    <label class="f">Қай шот арқылы</label>
+    <div class="chips" id="dv-accs"></div>
+    <button class="btn" onclick="payDebt()">Төлемді жазу</button>
+  </div>
+  <div id="dv-hist"></div>
+  <button class="btn danger" onclick="delDebt()">Жазбаны өшіру</button>
+  <button class="btn ghost" onclick="closeSheets()">Жабу</button>
 </div>
 
 <!-- Sheet: broker value -->
