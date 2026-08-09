@@ -108,6 +108,7 @@ function refreshStorage(){
     STO.usage = e.usage || 0;
     STO.quota = e.quota || 0;
     drawStorage();
+  drawSelBar();
   }).catch(function(){});
 }
 function fmtBytes(b){
@@ -143,6 +144,7 @@ function loadSnaps(){
     SNAPS = v || [];
     drawSnaps();
   drawStorage();
+  drawSelBar();
     return SNAPS;
   }).catch(function(){ SNAPS = []; });
 }
@@ -860,13 +862,27 @@ function renderBroker(){
   var st=brokerStats(brId);
   var info=document.getElementById('br-info');
   if(info){
+    var byCur = brokerByCur(brId), curs = Object.keys(byCur).filter(function(c){ return c!=='ACC'; });
+    var curBlock = '';
+    if(curs.length){
+      curs.sort();
+      curBlock = '<label class="f" style="margin-top:12px">Валюта бойынша</label>';
+      curs.forEach(function(c){
+        var x = byCur[c], sg = curSign(c);
+        curBlock +=
+          '<div class="kv"><span>' + sg + ' салым − шығару</span><b>' + nf(x.dep - x.wd) + ' ' + sg + '</b></div>' +
+          (x.div ? '<div class="kv"><span>' + sg + ' дивиденд</span><b style="color:var(--pos)">+' + nf(x.div) + ' ' + sg + '</b></div>' : '') +
+          (x.fee ? '<div class="kv"><span>' + sg + ' комиссия</span><b style="color:var(--neg)">−' + nf(x.fee) + ' ' + sg + '</b></div>' : '');
+      });
+    }
     info.innerHTML =
+      '<div class="kv"><span>Салынған қаражат</span><b>'+money(inv,sym)+'</b></div>' +
       (st.div||st.fee ?
         '<div class="kv"><span>Дивиденд · купон</span><b style="color:var(--pos)">+'+nf(st.div)+' '+sym+'</b></div>'+
         '<div class="kv"><span>Комиссия · салық</span><b style="color:var(--neg)">−'+nf(st.fee)+' '+sym+'</b></div>' : '') +
       '<div class="kv"><span>Портфель құны</span><b>'+
         (a.valSet ? tr('қолмен қойылған')+(a.valAt?' · '+fullDate(a.valAt):'') : tr('жазбалардан есептелген'))+
-      '</b></div>';
+      '</b></div>' + curBlock;
   }
 
   var ops=DB.btx.filter(function(b){ return b.acc===brId; });
@@ -882,8 +898,9 @@ function renderBroker(){
     var row=document.createElement('div'); row.className='row';
     if(it.kind==='b'){
       var b=it.o, plus=(b.t==='dep'||b.t==='div');
-      row.onclick=function(){ openBView(b.id); };
-      row.innerHTML='<div class="ico'+(plus?' pos':' red')+'">'+bopSvg(b.t)+'</div>'+
+      var pickB = selActive('btx');
+      row.onclick = pickB ? function(){ selTog(b.id); } : function(){ openBView(b.id); };
+      row.innerHTML=(pickB?selBox(b.id):'')+'<div class="ico'+(plus?' pos':' red')+'">'+bopSvg(b.t)+'</div>'+
         '<div style="min-width:0;flex:1"><div class="name">'+bopName(b.t)+'</div>'+
         '<div class="sub2">'+fullDate(b.date)+(b.note?' · '+esc(b.note):'')+'</div></div>'+
         '<div class="amt" style="color:'+(plus?'var(--pos)':'var(--neg)')+'">'+
@@ -891,7 +908,7 @@ function renderBroker(){
     } else {
       var t=it.o, from=acc(t.acc);
       row.onclick=function(){ openView(t.id); };
-      row.innerHTML='<div class="ico blue">'+svgIcon('swap')+'</div>'+
+      row.innerHTML=(pick?selBox(t.id):'')+'<div class="ico blue">'+svgIcon('swap')+'</div>'+
         '<div style="min-width:0;flex:1"><div class="name">Банктен аударым</div>'+
         '<div class="sub2">'+fullDate(t.date)+' · '+(from?esc(from.name):'—')+'</div></div>'+
         '<div class="amt" style="color:var(--blue)">+'+nf(toAcc(a,t.amt))+' '+sym+'</div>';
@@ -1168,6 +1185,7 @@ function render(){
     b.onclick=function(){ opsAcc=a.id; render(); };
     oab.appendChild(b);
   });
+  OPS_IDS = ops.map(function(t){ return t.id; });
   var ol=document.getElementById('ops-list'); ol.innerHTML='';
   if(!ops.length) ol.innerHTML='<div class="empty">Операция табылмады.</div>';
   else {
@@ -1245,6 +1263,7 @@ function render(){
   drawWarnings();
   drawSnaps();
   drawStorage();
+  drawSelBar();
   var bk=document.getElementById('bk-info');
   if(bk){
     var dd=daysSinceBackup();
@@ -1297,7 +1316,8 @@ function render(){
 
 function txRow(t){
   var row=document.createElement('div'); row.className='row';
-  row.onclick=function(){ openView(t.id); };
+  var pick = selActive('tx');
+  row.onclick = pick ? function(){ selTog(t.id); } : function(){ openView(t.id); };
   var a=acc(t.acc);
   if(t.type==='tr'){
     var to=acc(t.to);
@@ -1305,13 +1325,13 @@ function txRow(t){
       '<div><div class="name">Аударым</div><div class="sub2">'+
       (a?esc(a.name):'—')+' → '+(to?esc(to.name):'—')+'</div></div>'+
       '<div class="amt" style="color:var(--blue)">'+nf(t.amt)+' ₸</div>';
-    return swipeWrap(row, function(){ deleteTxWithUndo(t); }, function(){ openTx(t.id); });
+    return pick ? row : swipeWrap(row, function(){ deleteTxWithUndo(t); }, function(){ openTx(t.id); });
   }
-  row.innerHTML=catBox(t.type,t.cat)+
+  row.innerHTML=(pick?selBox(t.id):'')+catBox(t.type,t.cat)+
     '<div style="min-width:0;flex:1"><div class="name">'+esc(t.cat)+'</div><div class="sub2">'+
     (a?esc(a.name):'—')+(t.note?' · '+esc(t.note):'')+'</div></div>'+
     '<div class="amt '+t.type+'">'+(t.type==='in'?'+':'−')+nf(t.amt)+' ₸</div>';
-  return swipeWrap(row, function(){ deleteTxWithUndo(t); }, function(){ openTx(t.id); });
+  return pick ? row : swipeWrap(row, function(){ deleteTxWithUndo(t); }, function(){ openTx(t.id); });
 }
 function renderAccList(kind, elId, emptyTxt){
   var box=document.getElementById(elId); box.innerHTML='';
@@ -2165,7 +2185,8 @@ function importConfirm(){
   if(IMP.mode === 'broker'){
     sel.forEach(function(r){
       var b = { id: newId(), acc: r.bacc || IMP.brAcc, t: r.bt, amt: r.amt, date: r.date,
-                note: r.note === '—' ? '' : r.note };
+                note: r.note === '—' ? '' : r.note,
+                cur: r.origCur || null, orig: r.origAmt || null };
       DB.btx.push(b);
       applyBTx(b, 1);
     });
@@ -2308,6 +2329,11 @@ var TR = [
 /* --- брокер --- */
 ["Жеке есеп — жалпы ақшаға қосылмайды","Отдельный учёт — в общие деньги не входит","Separate — not counted in total money"],
 ["Құнын жаңарту","Обновить стоимость","Update value"],
+["Таңдау","Выбрать","Select"],["Кері","Инверсия","Invert"],
+["Белгіні алу","Снять все","Deselect"],["Ештеңе таңдалмаған","Ничего не выбрано","Nothing selected"],
+["жазба өшіріледі. Жалғастырасыз ба?","записей будет удалено. Продолжить?","records will be deleted. Continue?"],
+["жазба өшірілді","записей удалено","records deleted"],
+["Валюта бойынша","По валютам","By currency"],["Тізім","Список","List"],
 ["қолмен қойылған","задано вручную","set manually"],
 ["жазбалардан есептелген","рассчитано по записям","calculated from records"],
 ["Дивиденд · купон","Дивиденды · купоны","Dividends · coupons"],
@@ -3357,9 +3383,11 @@ function drawDebts(){
       el.className = 'row';
       el.style.display = 'block';
       el.style.padding = '13px 2px';
-      el.onclick = function(){ openDView(d.id); };
+      var pickD = selActive('debt');
+      el.onclick = pickD ? function(){ selTog(d.id); } : function(){ openDView(d.id); };
       el.innerHTML =
         '<div style="display:flex;align-items:center;gap:11px">' +
+          (pickD ? selBox(d.id) : '') +
           '<div class="ico' + (done ? ' pos' : (dir === 'out' ? '' : ' red')) + '">' +
             svgIcon(done ? 'target' : (dir === 'out' ? 'arrUp' : 'arrDown')) + '</div>' +
           '<div style="flex:1;min-width:0">' +
@@ -3981,8 +4009,9 @@ function drawRecur(){
     var row = document.createElement('div');
     row.className = 'row';
     row.style.opacity = r.active ? '1' : '.55';
-    row.onclick = function(){ openRecur(r.id); };
-    row.innerHTML = catBox(r.type, r.cat) +
+    var pickR = selActive('recur');
+    row.onclick = pickR ? function(){ selTog(r.id); } : function(){ openRecur(r.id); };
+    row.innerHTML = (pickR ? selBox(r.id) : '') + catBox(r.type, r.cat) +
       '<div style="flex:1;min-width:0">' +
         '<div class="name">' + esc(r.cat) + (r.note ? ' · ' + esc(r.note) : '') + '</div>' +
         '<div class="sub2">' + tr('ай сайын') + ' ' + r.day + '-күні' +
@@ -4011,6 +4040,95 @@ function handleShortcut(){
     setType(m[1]);
   }, 250);
 }
+
+/* ================= ТАҢДАП ӨШІРУ ================= */
+var SEL = { on: false, kind: '', ids: {} };
+
+function selStart(kind){ SEL.on = true; SEL.kind = kind; SEL.ids = {}; render(); }
+function selStop(){ SEL.on = false; SEL.kind = ''; SEL.ids = {}; render(); }
+function selActive(kind){ return SEL.on && SEL.kind === kind; }
+function selHas(id){ return !!SEL.ids[id]; }
+function selTog(id){ if(SEL.ids[id]) delete SEL.ids[id]; else SEL.ids[id] = 1; render(); }
+function selCount(){ var n = 0; for(var k in SEL.ids) n++; return n; }
+
+function selBox(id){
+  return '<div class="cb' + (selHas(id) ? ' on' : '') + '">' + (selHas(id) ? '✓' : '') + '</div>';
+}
+function selIdsOf(kind){
+  if(kind === 'tx') return currentOpsIds();
+  if(kind === 'btx') return (DB.btx || []).filter(function(b){ return b.acc === brId; }).map(function(b){ return b.id; });
+  if(kind === 'debt') return (DB.debts || []).map(function(d){ return d.id; });
+  if(kind === 'recur') return (DB.recur || []).map(function(r){ return r.id; });
+  return [];
+}
+var OPS_IDS = [];
+function currentOpsIds(){ return OPS_IDS.slice(); }
+
+function selAll(){
+  var ids = selIdsOf(SEL.kind);
+  if(selCount() >= ids.length){ SEL.ids = {}; }
+  else { SEL.ids = {}; ids.forEach(function(i){ SEL.ids[i] = 1; }); }
+  render();
+}
+function selInvert(){
+  var ids = selIdsOf(SEL.kind), next = {};
+  ids.forEach(function(i){ if(!SEL.ids[i]) next[i] = 1; });
+  SEL.ids = next; render();
+}
+function selDelete(){
+  var n = selCount();
+  if(!n){ toast('Ештеңе таңдалмаған'); return; }
+  if(!confirm(n + ' ' + tr('жазба өшіріледі. Жалғастырасыз ба?'))) return;
+
+  if(SEL.kind === 'tx'){
+    DB.tx.forEach(function(t){ if(SEL.ids[t.id]) applyTx(t, -1); });
+    DB.tx = DB.tx.filter(function(t){ return !SEL.ids[t.id]; });
+  } else if(SEL.kind === 'btx'){
+    (DB.btx || []).forEach(function(b){ if(SEL.ids[b.id]) applyBTx(b, -1); });
+    DB.btx = (DB.btx || []).filter(function(b){ return !SEL.ids[b.id]; });
+  } else if(SEL.kind === 'debt'){
+    (DB.debts || []).forEach(function(d){
+      if(!SEL.ids[d.id]) return;
+      var a = acc(d.acc);
+      if(a) a.bal += toAcc(a, d.dir === 'out' ? d.amt : -d.amt);
+      (d.hist || []).forEach(function(x){
+        var pa = acc(x.acc);
+        if(pa) pa.bal += toAcc(pa, d.dir === 'out' ? -x.amt : x.amt);
+      });
+    });
+    DB.debts = (DB.debts || []).filter(function(d){ return !SEL.ids[d.id]; });
+  } else if(SEL.kind === 'recur'){
+    DB.recur = (DB.recur || []).filter(function(r){ return !SEL.ids[r.id]; });
+  }
+  save();
+  SEL.on = false; SEL.ids = {};
+  render();
+  toast(n + ' ' + tr('жазба өшірілді'));
+}
+function drawSelBar(){
+  var bar = document.getElementById('selbar');
+  if(!bar) return;
+  bar.classList.toggle('on', SEL.on);
+  if(!SEL.on) return;
+  var total = selIdsOf(SEL.kind).length;
+  document.getElementById('sel-n').textContent = selCount() + ' / ' + total;
+  document.getElementById('sel-all-btn').textContent =
+    selCount() >= total && total > 0 ? tr('Белгіні алу') : tr('Барлығы');
+}
+
+/* ================= БРОКЕР: ВАЛЮТА БОЙЫНША ================= */
+function brokerByCur(id){
+  var out = {};
+  (DB.btx || []).forEach(function(b){
+    if(b.acc !== id) return;
+    var c = b.cur || 'ACC';
+    var v = (b.cur && b.orig) ? b.orig : b.amt;
+    if(!out[c]) out[c] = { dep:0, wd:0, div:0, fee:0 };
+    out[c][b.t] += v;
+  });
+  return out;
+}
+function curSign(c){ return c === 'KZT' ? '₸' : (c === 'USD' ? '$' : c); }
 
 /* ================= БЮДЖЕТ ================= */
 function budgets(){ return DB.budgets || (DB.budgets = {}); }
