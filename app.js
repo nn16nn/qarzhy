@@ -2170,6 +2170,14 @@ var TR = [
 ["Бірде-бір жазба белгіленбеген","Ничего не отмечено","Nothing selected"],
 ["жаңа ғана","только что","just now"],["бүгін","сегодня","today"],["(қолмен)","(вручную)","(manual)"],
 
+/* --- PDF есеп --- */
+["PDF есеп жасау","Сформировать PDF-отчёт","Generate PDF report"],
+["PDF дайындалуда…","Готовим PDF…","Preparing PDF…"],
+["PDF сақталды","PDF сохранён","PDF saved"],
+["PDF жасалмады — интернетті тексеріңіз","PDF не создан — проверьте интернет","Could not create the PDF — check your connection"],
+["Жіберілді","Отправлено","Shared"],
+["Мәтін ретінде бөлісу","Поделиться текстом","Share as text"],
+
 /* --- қарыздар мен калькуляторлар --- */
 ["Қарыздар","Долги","Debts"],["Адамдарға берген және алған ақша","Деньги, данные и взятые в долг","Money lent and borrowed"],
 ["Маған қарыз","Мне должны","Owed to me"],["Мен қарызбын","Я должен","I owe"],
@@ -3298,6 +3306,224 @@ function calcTax(){
     '</div>' +
     '<p class="muted" style="padding:0 4px">Бұл — шамамен есеп, ресми құжат емес. Мөлшерлемелер мен МРП/МЗП жыл сайын өзгереді, ' +
     'жеңілдіктер мен ерекше жағдайлар ескерілмеген. Нақты сомасын salyk.kz немесе бухгалтерден растаңыз.</p>';
+}
+
+/* ================= PDF ЕСЕП ================= */
+var CDN_H2C = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+var CDN_JSPDF = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+
+function rpRow(label, value, color){
+  return '<tr><td style="padding:9px 0;border-bottom:1px solid #E4E8F7;color:#5D6480">' + label +
+         '</td><td style="padding:9px 0;border-bottom:1px solid #E4E8F7;text-align:right;' +
+         'font-weight:700;color:' + (color || '#0D1226') + '">' + value + '</td></tr>';
+}
+function rpBar(label, sum, pct, color){
+  return '<div style="margin-bottom:12px">' +
+    '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">' +
+      '<span style="color:#0D1226">' + esc(label) + '</span>' +
+      '<b style="color:#0D1226">' + sum + ' · ' + pct + '%</b></div>' +
+    '<div style="height:8px;background:#E9ECFF;border-radius:99px;overflow:hidden">' +
+      '<div style="height:8px;width:' + pct + '%;background:' + color + ';border-radius:99px"></div></div></div>';
+}
+
+function buildReport(){
+  var list = DB.tx.filter(function(t){ return inRange(t.date) && t.type !== 'tr'; });
+  var sIn = 0, sOut = 0;
+  list.forEach(function(t){ if(t.type === 'in') sIn += t.amt; else sOut += t.amt; });
+  var T = totals();
+
+  /* санаттар */
+  function cats(type, total, color){
+    var sums = {};
+    list.filter(function(t){ return t.type === type; })
+        .forEach(function(t){ sums[t.cat] = (sums[t.cat] || 0) + t.amt; });
+    var keys = Object.keys(sums).sort(function(a, b){ return sums[b] - sums[a]; });
+    if(!keys.length) return '<div style="color:#5D6480;font-size:13px">Дерек жоқ</div>';
+    var h = '';
+    keys.forEach(function(k){
+      h += rpBar(k, money(sums[k]), Math.round(sums[k] / total * 100), color);
+    });
+    return h;
+  }
+
+  /* шоттар */
+  var accRows = '';
+  accsOf('asset').forEach(function(a){
+    accRows += rpRow(esc(a.name), money(a.bal, accCurSym(a)));
+  });
+  accsOf('broker').forEach(function(a){
+    accRows += rpRow(esc(a.name) + ' · брокер', money(a.bal, accCurSym(a)), '#6D3FE8');
+  });
+  accsOf('debt').forEach(function(a){
+    accRows += rpRow(esc(a.name) + ' · несие', money(a.bal), '#FF4D67');
+  });
+
+  /* қарыздар */
+  var debtRows = '';
+  (DB.debts || []).forEach(function(d){
+    var left = debtLeft(d);
+    if(left <= 0) return;
+    debtRows += rpRow(esc(d.who) + (d.dir === 'out' ? ' · маған қарыз' : ' · мен қарызбын'),
+      money(left), d.dir === 'out' ? '#00BE86' : '#FF4D67');
+  });
+
+  /* соңғы операциялар */
+  var ops = list.slice().sort(function(a, b){ return a.date < b.date ? 1 : -1; }).slice(0, 20);
+  var opRows = '';
+  ops.forEach(function(t){
+    var a = acc(t.acc);
+    opRows += '<tr>' +
+      '<td style="padding:7px 0;border-bottom:1px solid #E4E8F7;color:#5D6480;font-size:12px;white-space:nowrap">' +
+        fullDate(t.date) + '</td>' +
+      '<td style="padding:7px 8px;border-bottom:1px solid #E4E8F7;font-size:13px">' +
+        esc(t.cat) + (t.note ? ' <span style="color:#5D6480">· ' + esc(t.note).slice(0, 28) + '</span>' : '') + '</td>' +
+      '<td style="padding:7px 0;border-bottom:1px solid #E4E8F7;font-size:12px;color:#5D6480;white-space:nowrap">' +
+        (a ? esc(a.name) : '—') + '</td>' +
+      '<td style="padding:7px 0;border-bottom:1px solid #E4E8F7;text-align:right;font-weight:700;white-space:nowrap;' +
+        'color:' + (t.type === 'in' ? '#00BE86' : '#FF4D67') + '">' +
+        (t.type === 'in' ? '+' : '−') + nf(t.amt) + ' ₸</td></tr>';
+  });
+
+  var net = sIn - sOut;
+  var rate = sIn > 0 ? Math.round(net / sIn * 100) : 0;
+
+  return '' +
+  '<div style="width:794px;padding:44px 46px;background:#fff;color:#0D1226;' +
+       'font-family:Inter,-apple-system,Roboto,Arial,sans-serif;box-sizing:border-box">' +
+
+    /* тақырып */
+    '<div style="display:flex;align-items:center;gap:16px;padding-bottom:22px;border-bottom:3px solid #021CF5">' +
+      '<div style="width:54px;height:54px;border-radius:16px;background:#021CF5;color:#fff;' +
+           'display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800">Q</div>' +
+      '<div style="flex:1">' +
+        '<div style="font-size:26px;font-weight:800;letter-spacing:-.5px">Қаржы есебі</div>' +
+        '<div style="color:#5D6480;font-size:14px;margin-top:2px">' +
+          fullDate(range.from) + ' — ' + fullDate(range.to) + '</div>' +
+      '</div>' +
+      '<div style="text-align:right;color:#5D6480;font-size:12px">Жасалған күні<br>' +
+        '<b style="color:#0D1226">' + fullDate(todayISO()) + '</b></div>' +
+    '</div>' +
+
+    /* қорытынды */
+    '<div style="display:flex;gap:14px;margin:26px 0 8px">' +
+      '<div style="flex:1;background:#EAFBF4;border-radius:16px;padding:18px">' +
+        '<div style="color:#5D6480;font-size:13px">Кіріс</div>' +
+        '<div style="font-size:23px;font-weight:800;color:#00BE86;margin-top:4px">' + money(sIn) + '</div></div>' +
+      '<div style="flex:1;background:#FFEFF1;border-radius:16px;padding:18px">' +
+        '<div style="color:#5D6480;font-size:13px">Шығын</div>' +
+        '<div style="font-size:23px;font-weight:800;color:#FF4D67;margin-top:4px">' + money(sOut) + '</div></div>' +
+      '<div style="flex:1;background:#E9ECFF;border-radius:16px;padding:18px">' +
+        '<div style="color:#5D6480;font-size:13px">Нәтиже</div>' +
+        '<div style="font-size:23px;font-weight:800;color:#021CF5;margin-top:4px">' +
+          (net >= 0 ? '+' : '') + money(net) + '</div></div>' +
+    '</div>' +
+    '<div style="color:#5D6480;font-size:13px;margin-bottom:26px">' +
+      'Жинақ үлесі: <b style="color:#0D1226">' + (sIn > 0 ? rate + '%' : '—') + '</b> · ' +
+      'операция саны: <b style="color:#0D1226">' + list.length + '</b></div>' +
+
+    /* капитал */
+    '<div style="font-size:17px;font-weight:800;margin:0 0 10px">Қаржылық жағдай</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:26px">' +
+      rpRow('Банктердегі ақша', money(T.banks), '#00BE86') +
+      rpRow('Міндеттемелер · несиелер', money(T.debts), '#FF4D67') +
+      (T.lent ? rpRow('Маған қарыз', money(T.lent), '#00BE86') : '') +
+      (T.owed ? rpRow('Мен қарызбын', money(T.owed), '#FF4D67') : '') +
+      rpRow('<b style="color:#0D1226">Таза капитал</b>', '<span style="font-size:15px">' + money(T.net) + '</span>') +
+      rpRow('Инвестиция портфелі (бөлек)', money(T.broker), '#6D3FE8') +
+      (T.invested ? rpRow('Портфель табысы',
+        (T.brokerPL >= 0 ? '+' : '') + money(T.brokerPL), T.brokerPL >= 0 ? '#00BE86' : '#FF4D67') : '') +
+    '</table>' +
+
+    /* санаттар */
+    '<div style="display:flex;gap:30px;margin-bottom:26px">' +
+      '<div style="flex:1">' +
+        '<div style="font-size:17px;font-weight:800;margin:0 0 12px">Шығын санаттары</div>' +
+        cats('out', sOut, 'linear-gradient(90deg,#FFA8B3,#FF4D67)') + '</div>' +
+      '<div style="flex:1">' +
+        '<div style="font-size:17px;font-weight:800;margin:0 0 12px">Кіріс көздері</div>' +
+        cats('in', sIn, 'linear-gradient(90deg,#7CF2CE,#00BE86)') + '</div>' +
+    '</div>' +
+
+    /* шоттар */
+    '<div style="font-size:17px;font-weight:800;margin:0 0 10px">Шоттар</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:26px">' +
+      accRows + debtRows + '</table>' +
+
+    /* операциялар */
+    (opRows ?
+      '<div style="font-size:17px;font-weight:800;margin:0 0 10px">Соңғы операциялар</div>' +
+      '<table style="width:100%;border-collapse:collapse">' + opRows + '</table>' : '') +
+
+    /* төменгі жол */
+    '<div style="margin-top:30px;padding-top:16px;border-top:1px solid #E4E8F7;' +
+         'color:#5D6480;font-size:11.5px;display:flex;justify-content:space-between">' +
+      '<span>Qarzhy · жеке қаржы есебі</span>' +
+      '<span>Дерек тек құрылғыда сақталады</span></div>' +
+  '</div>';
+}
+
+function exportPdf(){
+  var wrap = document.getElementById('pdf-stage');
+  if(!wrap){
+    wrap = document.createElement('div');
+    wrap.id = 'pdf-stage';
+    wrap.style.cssText = 'position:fixed;left:-20000px;top:0;background:#fff;z-index:-1';
+    document.body.appendChild(wrap);
+  }
+  wrap.innerHTML = buildReport();
+
+  toast('PDF дайындалуда…');
+
+  loadScript(CDN_H2C)
+    .then(function(){ return loadScript(CDN_JSPDF); })
+    .then(function(){
+      return window.html2canvas(wrap.firstChild, {
+        scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false
+      });
+    })
+    .then(function(canvas){
+      var jsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+      var pdf = new jsPDF('p', 'mm', 'a4');
+      var img = canvas.toDataURL('image/jpeg', 0.94);
+      var pageH = 297, w = 210;
+      var h = w * canvas.height / canvas.width;
+      var left = h, pos = 0;
+      pdf.addImage(img, 'JPEG', 0, pos, w, h);
+      left -= pageH;
+      while(left > 0){
+        pos -= pageH;
+        pdf.addPage();
+        pdf.addImage(img, 'JPEG', 0, pos, w, h);
+        left -= pageH;
+      }
+      var name = 'qarzhy-' + range.from + '_' + range.to + '.pdf';
+      var blob = pdf.output('blob');
+      wrap.innerHTML = '';
+
+      var file = null;
+      try { file = new File([blob], name, { type: 'application/pdf' }); } catch(e){}
+
+      if(file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share){
+        navigator.share({ files: [file], title: 'Қаржы есебі' })
+          .then(function(){ toast('Жіберілді'); })
+          .catch(function(){ pdfDownload(blob, name); });
+      } else {
+        pdfDownload(blob, name);
+      }
+    })
+    .catch(function(){
+      wrap.innerHTML = '';
+      toast('PDF жасалмады — интернетті тексеріңіз');
+    });
+}
+
+function pdfDownload(blob, name){
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  toast('PDF сақталды');
 }
 
 /* ================= БЮДЖЕТ ================= */
