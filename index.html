@@ -412,6 +412,7 @@
       <button onclick="go('calc')"><span class="qi" data-i="calc"></span> Калькулятор</button>
       <button onclick="go('debts')"><span class="qi" data-i="swap"></span> Қарыздар</button>
       <button onclick="go('budget')"><span class="qi" data-i="budget"></span> Бюджет</button>
+      <button onclick="go('recur')" style="grid-column:1/-1"><span class="qi" data-i="clock"></span> Тұрақты операциялар</button>
     </div>
     <div id="home-warn"></div>
 
@@ -770,6 +771,28 @@
   </div>
 </section>
 
+<!-- ============ ТҰРАҚТЫ ОПЕРАЦИЯЛАР ============ -->
+<section class="page" id="p-recur">
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('home')">←</button>
+      <div style="flex:1"><h1 style="font-size:24px">Тұрақты</h1>
+        <div class="sub" id="rc-count">0 жазба</div></div>
+      <button class="plus" onclick="openRecur()">+</button>
+    </div>
+    <div class="two">
+      <div class="mini"><div class="t">Ай сайынғы кіріс</div><div class="v" id="rc-in-sum">0 ₸</div></div>
+      <div class="mini"><div class="t">Ай сайынғы шығын</div><div class="v" id="rc-out-sum">0 ₸</div></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="muted" style="padding:0 6px 8px">Бір рет жазсаңыз, ай сайын белгіленген күні өзі қосылады.
+    Қосымшаны ашқанда өтіп кеткен айлар да толтырылады.</p>
+    <div class="card"><div id="rc-list"></div></div>
+    <button class="btn dashed" onclick="openRecur()">+ Тұрақты операция қосу</button>
+  </div>
+</section>
+
 <!-- ============ ҚАРЫЗДАР ============ -->
 <section class="page" id="p-debts">
   <div class="hero flat">
@@ -1006,6 +1029,29 @@
   <label class="f">Түсініктеме</label>
   <input class="inp" id="bo-note" type="text" placeholder="Міндетті емес">
   <button class="btn" onclick="saveBOp()">Сақтау</button>
+  <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
+</div>
+
+<!-- Sheet: recurring -->
+<div class="sheet" id="sheet-recur">
+  <div class="grab"></div>
+  <h3 id="rc-title">Тұрақты операция</h3>
+  <div class="seg">
+    <button id="rc-out" class="on" onclick="setRType('out')">Шығын</button>
+    <button id="rc-in" onclick="setRType('in')">Кіріс</button>
+  </div>
+  <label class="f">Сома, ₸</label>
+  <input class="inp big" id="rc-amt" type="number" inputmode="decimal" placeholder="0">
+  <label class="f">Санат</label>
+  <div class="chips" id="rc-cats"></div>
+  <label class="f">Қай шот</label>
+  <div class="chips" id="rc-accs"></div>
+  <label class="f">Айдың қай күні</label>
+  <input class="inp" id="rc-day" type="number" inputmode="numeric" min="1" max="31" value="1">
+  <label class="f">Түсініктеме</label>
+  <input class="inp" id="rc-note" type="text" placeholder="Мысалы: пәтер жалдау">
+  <button class="btn" onclick="saveRecur()">Сақтау</button>
+  <button class="btn danger hide" id="rc-del" onclick="delRecur()">Өшіру</button>
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
 </div>
 

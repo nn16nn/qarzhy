@@ -6,14 +6,14 @@ var store = {
   get: function(k){ try{ return localStorage.getItem(k); }catch(e){ return k in mem ? mem[k] : null; } },
   set: function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; } }
 };
-var DB = { tx:[], goals:[], accounts:[], btx:[], debts:[], budgets:{}, lastBackup:null, lang:'kk', theme:'auto', rate:null };
+var DB = { tx:[], goals:[], accounts:[], btx:[], debts:[], recur:[], budgets:{}, lastBackup:null, lang:'kk', theme:'auto', rate:null };
 
 function load(){
   try{
     var raw = store.get('qarzhy_v1');
     if(raw){
       var d = JSON.parse(raw);
-      DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[]; DB.debts = d.debts||[];
+      DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[]; DB.debts = d.debts||[]; DB.recur = d.recur||[];
       DB.budgets = d.budgets||{}; DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto';
       DB.lastBackup = d.lastBackup||null; DB.rate = d.rate||null;
       if(!DB.accounts.length){
@@ -81,7 +81,7 @@ function idbDel(k){
 function applyDB(d){
   if(!d) return;
   DB.tx = d.tx || []; DB.goals = d.goals || []; DB.accounts = d.accounts || [];
-  DB.btx = d.btx || []; DB.debts = d.debts || []; DB.budgets = d.budgets || {};
+  DB.btx = d.btx || []; DB.debts = d.debts || []; DB.recur = d.recur || []; DB.budgets = d.budgets || {};
   DB.lastBackup = d.lastBackup || null; DB.lang = d.lang || 'kk';
   DB.theme = d.theme || 'auto'; DB.rate = d.rate || null;
   DB.updated = d.updated || null;
@@ -989,7 +989,7 @@ function importData(el){
     try{
       var d=JSON.parse(r.result);
       DB.tx=d.tx||[]; DB.goals=d.goals||[]; DB.accounts=d.accounts||[]; DB.btx=d.btx||[];
-      DB.debts=d.debts||[]; DB.budgets=d.budgets||{};
+      DB.debts=d.debts||[]; DB.recur=d.recur||[]; DB.budgets=d.budgets||{};
       if(!DB.accounts.length) DB.accounts=[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:d.start||0}];
       save(); render(); toast('Қалпына келтірілді');
     }catch(e){ toast('Файл оқылмады'); }
@@ -999,7 +999,7 @@ function importData(el){
 function wipe(){
   if(!confirm('Барлық дерек өшіріледі. Жалғастырасыз ба?')) return;
   DB={tx:[],goals:[],accounts:[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:0,cur:'KZT'}],
-      btx:[],debts:[],budgets:{},lastBackup:DB.lastBackup,lang:DB.lang,rate:DB.rate};
+      btx:[],debts:[],recur:[],budgets:{},lastBackup:DB.lastBackup,lang:DB.lang,rate:DB.rate};
   SNAPS.forEach(function(x){ idbDel('snap:'+x.day); });
   SNAPS=[]; idbSet('snaps',[]).catch(function(){});
   save(); render(); toast('Өшірілді');
@@ -1195,6 +1195,7 @@ function render(){
   /* --- жаңа бөлімдер --- */
   drawBudget();
   drawDebts();
+  drawRecur();
   calcDep();
   calcTax();
   drawWarnings();
@@ -2363,6 +2364,20 @@ var TR = [
 ["Бұл шоттар бар","Такие счета уже есть","These accounts already exist"],
 ["Бірде-бір жазба белгіленбеген","Ничего не отмечено","Nothing selected"],
 ["жаңа ғана","только что","just now"],["бүгін","сегодня","today"],["(қолмен)","(вручную)","(manual)"],
+
+/* --- тұрақты операциялар --- */
+["Тұрақты","Регулярные","Recurring"],["Тұрақты операциялар","Регулярные операции","Recurring transactions"],
+["Тұрақты операция","Регулярная операция","Recurring transaction"],
+["Тұрақты операцияны түзету","Изменить регулярную операцию","Edit recurring transaction"],
+["+ Тұрақты операция қосу","+ Добавить регулярную операцию","+ Add a recurring transaction"],
+["Ай сайынғы кіріс","Доход в месяц","Monthly income"],["Ай сайынғы шығын","Расход в месяц","Monthly expense"],
+["Айдың қай күні","В какой день месяца","Day of month"],["Қай шот","Какой счёт","Account"],
+["Мысалы: пәтер жалдау","Например: аренда квартиры","E.g. rent"],
+["ай сайын","ежемесячно","monthly"],["келесі","следующая","next"],["тоқтатылған","остановлено","paused"],
+["Тұрақты операция жоқ.<br>Жалақы, жалдау ақысы, жазылымдар — бір рет жазсаңыз, ай сайын өзі қосылады.","Регулярных операций нет.<br>Зарплата, аренда, подписки — запишите один раз, дальше добавятся сами.","No recurring transactions.<br>Salary, rent, subscriptions — add once, they repeat automatically."],
+["Бір рет жазсаңыз, ай сайын белгіленген күні өзі қосылады. Қосымшаны ашқанда өтіп кеткен айлар да толтырылады.","Записывается один раз и добавляется каждый месяц в указанный день. Пропущенные месяцы заполняются при открытии.","Added once, repeats every month on the chosen day. Missed months are filled in when you open the app."],
+["Тұрақты операция өшіріледі. Бұрын қосылған жазбалар қалады.","Регулярная операция будет удалена. Уже добавленные записи останутся.","The recurring rule will be deleted. Transactions already added stay."],
+["Тоқтатылды","Остановлено","Paused"],["Қосылды","Включено","Enabled"],
 
 /* --- PDF есеп --- */
 ["PDF есеп жасау","Сформировать PDF-отчёт","Generate PDF report"],
@@ -3634,6 +3649,191 @@ function pdfDownload(blob, name){
   toast('PDF сақталды');
 }
 
+/* ================= ТҰРАҚТЫ ОПЕРАЦИЯЛАР ================= */
+/* {id, type:'in'|'out', cat, amt, acc, day:1..31, note, active, start:'YYYY-MM-DD', last:'YYYY-MM'} */
+
+function recurs(){ return DB.recur || (DB.recur = []); }
+function recurOf(id){ var r=null; recurs().forEach(function(x){ if(x.id===id) r=x; }); return r; }
+
+function ymOf(d){ return d.slice(0, 7); }
+function ymNext(ym){
+  var y = +ym.slice(0, 4), m = +ym.slice(5, 7);
+  m++; if(m > 12){ m = 1; y++; }
+  return y + '-' + String(m).padStart(2, '0');
+}
+function daysInYM(ym){
+  return new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate();
+}
+function recurNext(r){
+  var today = todayISO();
+  var ym = r.last ? ymNext(r.last) : ymOf(r.start || today);
+  for(var i = 0; i < 36; i++){
+    var day = Math.min(r.day, daysInYM(ym));
+    var date = ym + '-' + String(day).padStart(2, '0');
+    if(date >= today) return date;
+    ym = ymNext(ym);
+  }
+  return null;
+}
+
+/* қосымша ашылғанда өтіп кеткен айларды толтыру */
+function runRecurring(){
+  var today = todayISO(), added = 0;
+  recurs().forEach(function(r){
+    if(!r.active) return;
+    var ym = r.last ? ymNext(r.last) : ymOf(r.start || today);
+    for(var i = 0; i < 36; i++){
+      var day = Math.min(r.day, daysInYM(ym));
+      var date = ym + '-' + String(day).padStart(2, '0');
+      if(date > today) break;
+      if(!r.start || date >= r.start){
+        var t = { id: newId(), type: r.type, cat: r.cat, amt: r.amt, date: date,
+                  note: r.note || '', acc: r.acc, loan: null, to: null, rec: r.id };
+        DB.tx.push(t);
+        applyTx(t, 1);
+        added++;
+      }
+      r.last = ym;
+      ym = ymNext(ym);
+    }
+  });
+  if(added){ save(); }
+  return added;
+}
+
+var rType = 'out', rCat = 'Тамақ', rAcc = null, rId = null;
+
+function openRecur(id){
+  rId = id || null;
+  var r = id ? recurOf(id) : null;
+  document.getElementById('rc-title').textContent = r ? 'Тұрақты операцияны түзету' : 'Тұрақты операция';
+  rType = r ? r.type : 'out';
+  rCat = r ? r.cat : CATS[rType][0][0];
+  rAcc = r ? r.acc : rAcc;
+  document.getElementById('rc-amt').value = r ? r.amt : '';
+  document.getElementById('rc-day').value = r ? r.day : 1;
+  document.getElementById('rc-note').value = r ? (r.note || '') : '';
+  document.getElementById('rc-del').classList.toggle('hide', !r);
+  drawRType(); drawRCats(); drawRAccs();
+  openSheet('sheet-recur');
+}
+function setRType(t){ rType = t; rCat = CATS[t][0][0]; drawRType(); drawRCats(); }
+function drawRType(){
+  document.getElementById('rc-out').classList.toggle('on', rType === 'out');
+  document.getElementById('rc-in').classList.toggle('on', rType === 'in');
+}
+function drawRCats(){
+  var box = document.getElementById('rc-cats'); box.innerHTML = '';
+  CATS[rType].forEach(function(c){
+    var b = document.createElement('button');
+    b.className = 'chip' + (c[0] === rCat ? ' on' : '');
+    b.innerHTML = catSvg(rType, c[0], 'chip-ic') + '<span>' + c[0] + '</span>';
+    b.onclick = function(){ rCat = c[0]; drawRCats(); };
+    box.appendChild(b);
+  });
+}
+function drawRAccs(){
+  var box = document.getElementById('rc-accs'); box.innerHTML = '';
+  var list = accsOf('asset');
+  var ok = false; list.forEach(function(a){ if(a.id === rAcc) ok = true; });
+  if(!ok) rAcc = list.length ? list[0].id : null;
+  list.forEach(function(a){
+    var br = brandOf(a.name);
+    var b = document.createElement('button');
+    b.className = 'chip' + (a.id === rAcc ? ' on' : '');
+    b.innerHTML = (br ? '<span class="brand sm" style="background:'+br[1]+(br[2]?';color:'+br[2]:'')+'">'+br[0]+'</span>'
+                      : accIconHtml(a, 'chip-ic')) + '<span>' + esc(a.name) + '</span>';
+    b.onclick = function(){ rAcc = a.id; drawRAccs(); };
+    box.appendChild(b);
+  });
+}
+function saveRecur(){
+  var amt = parseFloat(document.getElementById('rc-amt').value);
+  var day = Math.round(parseFloat(document.getElementById('rc-day').value));
+  if(!amt || amt <= 0){ toast('Соманы жазыңыз'); return; }
+  if(!day || day < 1) day = 1;
+  if(day > 31) day = 31;
+  var note = document.getElementById('rc-note').value.trim();
+  if(rId){
+    var r = recurOf(rId);
+    if(r){ r.type = rType; r.cat = rCat; r.amt = amt; r.day = day; r.note = note; r.acc = rAcc; }
+  } else {
+    recurs().push({ id: newId(), type: rType, cat: rCat, amt: amt, day: day,
+      note: note, acc: rAcc, active: true, start: todayISO(), last: null });
+  }
+  save(); closeSheets();
+  var n = runRecurring();
+  render();
+  toast(n ? n + ' операция қосылды' : 'Сақталды');
+}
+function toggleRecur(id){
+  var r = recurOf(id); if(!r) return;
+  r.active = !r.active;
+  if(r.active) r.last = ymOf(todayISO());
+  save(); render();
+  toast(r.active ? 'Қосылды' : 'Тоқтатылды');
+}
+function delRecur(){
+  if(!rId) return;
+  if(!confirm(tr('Тұрақты операция өшіріледі. Бұрын қосылған жазбалар қалады.'))) return;
+  DB.recur = recurs().filter(function(x){ return x.id !== rId; });
+  save(); closeSheets(); render(); toast('Өшірілді');
+}
+
+function drawRecur(){
+  var box = document.getElementById('rc-list');
+  if(!box) return;
+  var list = recurs();
+  var mIn = 0, mOut = 0;
+  list.forEach(function(r){ if(!r.active) return; if(r.type === 'in') mIn += r.amt; else mOut += r.amt; });
+  var e1 = document.getElementById('rc-in-sum'), e2 = document.getElementById('rc-out-sum'),
+      e3 = document.getElementById('rc-count');
+  if(e1) e1.textContent = money(mIn);
+  if(e2) e2.textContent = money(mOut);
+  if(e3) e3.textContent = list.length + ' жазба';
+
+  box.innerHTML = '';
+  if(!list.length){
+    box.innerHTML = '<div class="empty">Тұрақты операция жоқ.<br>' +
+      'Жалақы, жалдау ақысы, жазылымдар — бір рет жазсаңыз, ай сайын өзі қосылады.</div>';
+    return;
+  }
+  list.slice().sort(function(a, b){ return a.day - b.day; }).forEach(function(r){
+    var a = acc(r.acc), nx = recurNext(r);
+    var row = document.createElement('div');
+    row.className = 'row';
+    row.style.opacity = r.active ? '1' : '.55';
+    row.onclick = function(){ openRecur(r.id); };
+    row.innerHTML = catBox(r.type, r.cat) +
+      '<div style="flex:1;min-width:0">' +
+        '<div class="name">' + esc(r.cat) + (r.note ? ' · ' + esc(r.note) : '') + '</div>' +
+        '<div class="sub2">' + tr('ай сайын') + ' ' + r.day + '-күні' +
+          (a ? ' · ' + esc(a.name) : '') +
+          (r.active && nx ? ' · ' + tr('келесі') + ' ' + fullDate(nx) : ' · ' + tr('тоқтатылған')) +
+        '</div>' +
+      '</div>' +
+      '<div class="amt ' + r.type + '">' + (r.type === 'in' ? '+' : '−') + nf(r.amt) + ' ₸</div>';
+    var sw = document.createElement('button');
+    sw.className = 'btn sm ghost';
+    sw.style.cssText = 'width:auto;padding:8px 12px;margin-left:10px';
+    sw.textContent = r.active ? '❚❚' : '▶';
+    sw.onclick = function(ev){ ev.stopPropagation(); toggleRecur(r.id); };
+    row.appendChild(sw);
+    box.appendChild(row);
+  });
+}
+
+/* ================= ЖЫЛДАМ ЖАРЛЫҚ ================= */
+function handleShortcut(){
+  var m = location.search.match(/[?&]add=(in|out|tr)/);
+  if(!m) return;
+  try { history.replaceState({ v: 'home' }, '', location.pathname + '#home'); } catch(e){}
+  setTimeout(function(){
+    openTx();
+    setType(m[1]);
+  }, 250);
+}
+
 /* ================= БЮДЖЕТ ================= */
 function budgets(){ return DB.budgets || (DB.budgets = {}); }
 function setBudget(cat, v){
@@ -3757,6 +3957,7 @@ if('serviceWorker' in navigator){
 }
 function boot(){
   initHistory();
+  var recAdded = runRecurring();
   autoSnapshot();
   loadSnaps();
   askPersist();
@@ -3776,6 +3977,8 @@ function boot(){
   setInvMode('income');
   setLoanMode('pay');
   render();
+  if(recAdded) setTimeout(function(){ toast(recAdded + ' тұрақты операция қосылды'); }, 900);
+  handleShortcut();
 }
 
 /* алдымен IndexedDB, ол бос болса — ескі localStorage деректі көшіріп аламыз */
