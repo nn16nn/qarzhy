@@ -2381,6 +2381,11 @@ var TR = [
 
 /* --- PDF есеп --- */
 ["PDF есеп жасау","Сформировать PDF-отчёт","Generate PDF report"],
+["Кестені PDF-ке шығару","Выгрузить график в PDF","Export schedule to PDF"],
+["Несие төлем кестесі","График платежей по кредиту","Loan payment schedule"],
+["Несиелер","Кредиты","Loans"],["Айлық төлем","Ежемесячный платёж","Monthly payment"],
+["Қалған мерзім","Осталось","Time left"],["Барлығы айына","Итого в месяц","Total per month"],
+["Негізгі қарыз","Основной долг","Principal"],
 ["PDF дайындалуда…","Готовим PDF…","Preparing PDF…"],
 ["PDF сақталды","PDF сохранён","PDF saved"],
 ["PDF жасалмады — интернетті тексеріңіз","PDF не создан — проверьте интернет","Could not create the PDF — check your connection"],
@@ -3378,6 +3383,82 @@ function calcDep(){
     '<p class="muted" style="padding:0 4px">Есеп шамамен. Банктің нақты шарттарын (толықтыру шегі, мерзімінен бұрын алу кезінде пайыздың жоғалуы) тексеріңіз.</p>';
 }
 
+/* --- несие кестесін PDF ретінде --- */
+function exportLoanPdf(){
+  var S = num('l-sum');
+  var n = loanUnit === 'year' ? Math.round(num('l-term') * 12) : Math.round(num('l-term'));
+  var rate = num('l-rate'), i = rate / 12 / 100;
+  if(S <= 0 || n <= 0){ toast('Мәндерді толтырыңыз.'); return; }
+
+  var early = num('l-early'), earlyM = Math.round(num('l-early-m'));
+  var basePay = loanType === 'ann' ? annuity(S, i, n) : 0;
+  var principalPart = S / n;
+  var bal = S, total = 0, interest = 0, months = 0, first = 0, rows = '';
+
+  for(var m = 1; m <= n * 2 && bal > 0.5; m++){
+    var int_ = bal * i, pr, pay;
+    if(loanType === 'ann'){ pay = Math.min(basePay, bal + int_); pr = pay - int_; }
+    else { pr = Math.min(principalPart, bal); pay = pr + int_; }
+    bal -= pr;
+    if(early > 0 && earlyM === m){ var e = Math.min(early, bal); bal -= e; pay += e; }
+    total += pay; interest += int_; months = m;
+    if(m === 1) first = pay;
+    rows += '<tr>' +
+      '<td style="padding:6px 0;border-bottom:1px solid #EEF1FA;color:#5D6480">' + m + '</td>' +
+      '<td style="padding:6px 0;border-bottom:1px solid #EEF1FA;text-align:right;font-weight:600">' + nf(pay) + '</td>' +
+      '<td style="padding:6px 0;border-bottom:1px solid #EEF1FA;text-align:right;color:#FF4D67">' + nf(int_) + '</td>' +
+      '<td style="padding:6px 0;border-bottom:1px solid #EEF1FA;text-align:right;color:#00BE86">' + nf(pr) + '</td>' +
+      '<td style="padding:6px 0;border-bottom:1px solid #EEF1FA;text-align:right">' + nf(Math.max(0, bal)) + '</td></tr>';
+  }
+
+  var html =
+  '<div style="width:794px;padding:44px 46px;background:#fff;color:#0D1226;' +
+       'font-family:Inter,-apple-system,Roboto,Arial,sans-serif;box-sizing:border-box">' +
+    '<div style="display:flex;align-items:center;gap:16px;padding-bottom:22px;border-bottom:3px solid #021CF5">' +
+      '<div style="width:54px;height:54px;border-radius:16px;background:#021CF5;color:#fff;' +
+           'display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800">Q</div>' +
+      '<div style="flex:1"><div style="font-size:26px;font-weight:800">Несие төлем кестесі</div>' +
+        '<div style="color:#5D6480;font-size:14px;margin-top:2px">' +
+          (loanType === 'ann' ? 'Аннуитетті' : 'Дифференциалды') + ' · ' + rate + '% жылдық</div></div>' +
+      '<div style="text-align:right;color:#5D6480;font-size:12px">' + fullDate(todayISO()) + '</div>' +
+    '</div>' +
+
+    '<div style="display:flex;gap:14px;margin:26px 0">' +
+      '<div style="flex:1;background:#E9ECFF;border-radius:16px;padding:18px">' +
+        '<div style="color:#5D6480;font-size:13px">Ай сайынғы төлем</div>' +
+        '<div style="font-size:23px;font-weight:800;color:#021CF5;margin-top:4px">' + money(first, loanCur) + '</div></div>' +
+      '<div style="flex:1;background:#FFEFF1;border-radius:16px;padding:18px">' +
+        '<div style="color:#5D6480;font-size:13px">Артық төлем</div>' +
+        '<div style="font-size:23px;font-weight:800;color:#FF4D67;margin-top:4px">' + money(interest, loanCur) + '</div></div>' +
+      '<div style="flex:1;background:#EAFBF4;border-radius:16px;padding:18px">' +
+        '<div style="color:#5D6480;font-size:13px">Барлық төлем</div>' +
+        '<div style="font-size:23px;font-weight:800;color:#00BE86;margin-top:4px">' + money(total, loanCur) + '</div></div>' +
+    '</div>' +
+
+    '<table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:24px">' +
+      rpRow('Несие сомасы', money(S, loanCur)) +
+      rpRow('Мерзімі', months + ' ай' + (months !== n ? ' (' + (n - months) + ' ай қысқарды)' : '')) +
+      rpRow('Жылдық мөлшерлеме', rate + '%') +
+      (early > 0 ? rpRow('Ерте өтеу', money(early, loanCur) + ' · ' + earlyM + '-ай') : '') +
+    '</table>' +
+
+    '<div style="font-size:17px;font-weight:800;margin:0 0 10px">Кесте</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:12px">' +
+      '<tr style="color:#5D6480;font-size:11.5px">' +
+        '<th style="text-align:left;padding-bottom:6px">Ай</th>' +
+        '<th style="text-align:right;padding-bottom:6px">Төлем</th>' +
+        '<th style="text-align:right;padding-bottom:6px">Пайыз</th>' +
+        '<th style="text-align:right;padding-bottom:6px">Негізгі қарыз</th>' +
+        '<th style="text-align:right;padding-bottom:6px">Қалдық</th></tr>' + rows +
+    '</table>' +
+
+    '<div style="margin-top:26px;padding-top:16px;border-top:1px solid #E4E8F7;' +
+         'color:#5D6480;font-size:11.5px">Qarzhy · есеп шамамен, банктің нақты шарттарын тексеріңіз</div>' +
+  '</div>';
+
+  exportPdf(html, 'qarzhy-nesie-' + todayISO() + '.pdf');
+}
+
 /* ================= САЛЫҚ КАЛЬКУЛЯТОРЫ (ЖК, оңайлатылған) ================= */
 function calcTax(){
   var box = document.getElementById('tx-res');
@@ -3481,6 +3562,46 @@ function buildReport(){
     accRows += rpRow(esc(a.name) + ' · несие', money(a.bal), '#FF4D67');
   });
 
+  /* несиелер */
+  var loans = accsOf('debt');
+  var loanBlock = '';
+  if(loans.length){
+    var payTotal = 0, rows = '';
+    loans.forEach(function(a){
+      payTotal += (a.pay || 0);
+      var left = (a.pay > 0 && a.bal > 0) ? monthsLeft(a.bal, a.rate || 0, a.pay) : 0;
+      rows += '<tr>' +
+        '<td style="padding:9px 0;border-bottom:1px solid #E4E8F7">' + esc(a.name) + '</td>' +
+        '<td style="padding:9px 0;border-bottom:1px solid #E4E8F7;text-align:right;color:#5D6480">' +
+          (a.rate || 0) + '%</td>' +
+        '<td style="padding:9px 0;border-bottom:1px solid #E4E8F7;text-align:right;color:#5D6480">' +
+          (left > 0 ? left + ' ай' : '—') + '</td>' +
+        '<td style="padding:9px 0;border-bottom:1px solid #E4E8F7;text-align:right;font-weight:700">' +
+          money(a.pay || 0) + '</td>' +
+        '<td style="padding:9px 0;border-bottom:1px solid #E4E8F7;text-align:right;font-weight:700;color:#FF4D67">' +
+          money(a.bal) + '</td></tr>';
+    });
+    loanBlock =
+      '<div style="font-size:17px;font-weight:800;margin:0 0 10px">Несиелер</div>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px">' +
+        '<tr style="color:#5D6480;font-size:12px">' +
+          '<th style="text-align:left;padding-bottom:6px">Несие</th>' +
+          '<th style="text-align:right;padding-bottom:6px">Мөлшерлеме</th>' +
+          '<th style="text-align:right;padding-bottom:6px">Қалған мерзім</th>' +
+          '<th style="text-align:right;padding-bottom:6px">Айлық төлем</th>' +
+          '<th style="text-align:right;padding-bottom:6px">Қалдық</th></tr>' +
+        rows +
+        '<tr><td colspan="3" style="padding:11px 0;font-weight:800">Барлығы айына</td>' +
+        '<td style="padding:11px 0;text-align:right;font-weight:800;font-size:15px">' + money(payTotal) + '</td>' +
+        '<td style="padding:11px 0;text-align:right;font-weight:800;font-size:15px;color:#FF4D67">' +
+          money(T.debts) + '</td></tr>' +
+      '</table>' +
+      '<div style="color:#5D6480;font-size:12.5px;margin-bottom:26px">' +
+        'Айлық төлем кірістің ' +
+        (sIn > 0 ? '<b style="color:#0D1226">' + Math.round(payTotal / sIn * 100) + '%</b>' : '—') +
+        ' мөлшерін алады</div>';
+  }
+
   /* қарыздар */
   var debtRows = '';
   (DB.debts || []).forEach(function(d){
@@ -3567,6 +3688,8 @@ function buildReport(){
         cats('in', sIn, 'linear-gradient(90deg,#7CF2CE,#00BE86)') + '</div>' +
     '</div>' +
 
+    loanBlock +
+
     /* шоттар */
     '<div style="font-size:17px;font-weight:800;margin:0 0 10px">Шоттар</div>' +
     '<table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:26px">' +
@@ -3585,7 +3708,7 @@ function buildReport(){
   '</div>';
 }
 
-function exportPdf(){
+function exportPdf(html, fname){
   var wrap = document.getElementById('pdf-stage');
   if(!wrap){
     wrap = document.createElement('div');
@@ -3593,7 +3716,7 @@ function exportPdf(){
     wrap.style.cssText = 'position:fixed;left:-20000px;top:0;background:#fff;z-index:-1';
     document.body.appendChild(wrap);
   }
-  wrap.innerHTML = buildReport();
+  wrap.innerHTML = (typeof html === 'string' && html) ? html : buildReport();
 
   toast('PDF дайындалуда…');
 
@@ -3619,7 +3742,8 @@ function exportPdf(){
         pdf.addImage(img, 'JPEG', 0, pos, w, h);
         left -= pageH;
       }
-      var name = 'qarzhy-' + range.from + '_' + range.to + '.pdf';
+      var name = (typeof fname === 'string' && fname) ? fname
+                 : ('qarzhy-' + range.from + '_' + range.to + '.pdf');
       var blob = pdf.output('blob');
       wrap.innerHTML = '';
 
