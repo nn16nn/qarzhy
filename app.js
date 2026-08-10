@@ -387,6 +387,7 @@ function go(v, silent){
   window.scrollTo(0,0);
   render();
 
+  saveView();
   /* Android-тың «артқа» түймесі қосымшадан шығармай, алдыңғы бетке қайтсын */
   if(!silent && history && history.pushState){
     var st = history.state || {};
@@ -781,7 +782,7 @@ function recalcInvested(){
 
 var brId=null, boType='dep', boViewId=null;
 function openBroker(id){
-  brId=id; go('broker');
+  brId=id; go('broker'); saveView();
 }
 function openBOp(){
   boType='dep';
@@ -1396,10 +1397,8 @@ function renderStats(){
   drawCatBars('s-cat-out','out',list,sOut);
   drawCatBars('s-cat-in','in',list,sIn);
   drawChart(list);
-  var dType = statFilter==='in' ? 'in' : 'out';
-  document.getElementById('s-card-donut').querySelector('h2').textContent =
-    dType==='in' ? 'Кіріс көздерінің үлесі' : 'Шығын санаттарының үлесі';
-  drawDonut('s-donut', catItems(list, dType), dType==='in' ? 'Барлық кіріс' : 'Барлық шығын');
+  drawDonut('s-donut-out', catItems(list, 'out'), 'Барлық шығын');
+  drawDonut('s-donut-in', catItems(list, 'in'), 'Барлық кіріс');
   drawTrend();
 }
 function drawCatBars(elId,type,list,total){
@@ -2732,9 +2731,14 @@ function askPersist(){
 /* қосымшадан шыққанда / фонға кеткенде бірден сақтау */
 function bindExitSave(){
   document.addEventListener('visibilitychange', function(){
-    if(document.visibilityState === 'hidden'){ save(); autoSnapshot(); }
+    if(document.visibilityState === 'hidden'){ saveView(); save(); autoSnapshot(); }
   });
-  window.addEventListener('pagehide', function(){ save(); });
+  window.addEventListener('pagehide', function(){ saveView(); save(); });
+  var scrollTimer = null;
+  window.addEventListener('scroll', function(){
+    if(scrollTimer) clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(saveView, 400);
+  }, { passive: true });
   window.addEventListener('beforeunload', function(){ save(); });
 }
 
@@ -4357,6 +4361,35 @@ function cleanDups(){
 }
 
 /* ================= АРТҚА ҚАЙТУ ================= */
+/* қай бетте тұрғанымызды есте сақтау — жаңартқанда сол жерде қаламыз */
+function saveView(){
+  try{
+    localStorage.setItem('qarzhy_view', JSON.stringify({
+      v: view, br: (typeof brId !== 'undefined' ? brId : null),
+      y: Math.round(window.scrollY || 0)
+    }));
+  }catch(e){}
+}
+function restoreView(){
+  var st = null;
+  try{ st = JSON.parse(localStorage.getItem('qarzhy_view') || 'null'); }catch(e){}
+  var h = (location.hash || '').replace('#','');
+  var v = h || (st && st.v) || 'home';
+
+  if(v === 'broker'){
+    var id = (st && st.br) || null;
+    if(id && acc(id)) brId = id; else v = 'accounts';
+  }
+  if(!document.getElementById('p-' + v)) v = 'home';
+
+  if(v !== 'home') go(v, true);
+  try{ history.replaceState({ v: v }, '', '#' + v); }catch(e){}
+
+  if(st && st.y && st.v === v){
+    setTimeout(function(){ window.scrollTo(0, st.y); }, 60);
+  }
+}
+
 function initHistory(){
   if(!(history && history.replaceState)) return;
   history.replaceState({ v: 'home' }, '', '#home');
@@ -4393,6 +4426,7 @@ function boot(){
   setInvMode('income');
   setLoanMode('pay');
   render();
+  restoreView();
   if(recAdded) setTimeout(function(){ toast(recAdded + ' тұрақты операция қосылды'); }, 900);
   handleShortcut();
 }

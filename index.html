@@ -234,6 +234,7 @@
   .legend2 .lg span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;color:var(--ink-2)}
   .legend2 .lg b{font-weight:800;color:var(--ink)}
 
+  .cat-sep{height:1px;background:var(--line);margin:16px 0 18px}
   .cat-row{margin-bottom:16px}
   .cat-row:last-child{margin-bottom:2px}
   .cat-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
@@ -548,10 +549,6 @@
       <div class="c"><div class="ico red" style="margin:0 auto" data-i="down"></div><div class="l">Шығын</div><div class="v gneg" id="s-out">0 ₸</div></div>
       <div class="c"><div class="ico" style="margin:0 auto" data-i="stats"></div><div class="l">Нәтиже</div><div class="v" id="s-net">0 ₸</div></div>
     </div>
-    <div class="card" id="s-card-donut">
-      <h2>Санаттар үлесі</h2>
-      <div id="s-donut"></div>
-    </div>
     <div class="card">
       <h2>12 айлық тенденция</h2>
       <div id="trend-chart"></div>
@@ -562,8 +559,18 @@
       <div class="legend"><span><i style="background:linear-gradient(92deg,#7CF2CE,#00BE86)"></i>Кіріс</span><span><i style="background:linear-gradient(92deg,#FFA8B3,#FF4D67)"></i>Шығын</span></div>
     </div>
     <button class="btn" onclick="exportPdf()">PDF есеп жасау</button>
-    <div class="card" id="s-card-out"><h2>Шығын санаттары</h2><div id="s-cat-out"></div></div>
-    <div class="card" id="s-card-in"><h2>Кіріс көздері</h2><div id="s-cat-in"></div></div>
+    <div class="card" id="s-card-out">
+      <h2>Шығын санаттары</h2>
+      <div id="s-donut-out"></div>
+      <div class="cat-sep"></div>
+      <div id="s-cat-out"></div>
+    </div>
+    <div class="card" id="s-card-in">
+      <h2>Кіріс көздері</h2>
+      <div id="s-donut-in"></div>
+      <div class="cat-sep"></div>
+      <div id="s-cat-in"></div>
+    </div>
   </div>
 </section>
 
