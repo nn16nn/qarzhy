@@ -221,17 +221,27 @@
   table.sched td{text-align:right;padding:7px 4px;border-bottom:1px solid var(--line)}
 
   svg.chart{width:100%;height:150px;display:block}
-  svg.donut{width:100%;max-width:220px;height:auto;display:block;margin:2px auto 14px}
+  .donut-wrap{display:flex;align-items:center;gap:14px}
+  svg.donut{width:44%;max-width:170px;height:auto;display:block;flex:none;margin:0}
   svg.trend{width:100%;height:150px;display:block}
   .tr-x{position:relative;height:20px;margin:4px 0 2px}
   .tr-x span{position:absolute;transform:translateX(-50%);white-space:nowrap;
     font-size:12px;font-weight:600;color:var(--ink-2);letter-spacing:0}
   .tr-x span.cur{color:var(--ink);font-weight:800}
-  .legend2{display:grid;grid-template-columns:1fr 1fr;gap:7px 14px}
-  .legend2 .lg{display:flex;align-items:center;gap:7px;font-size:13px;min-width:0}
-  .legend2 .lg i{width:10px;height:10px;border-radius:3px;flex:none}
-  .legend2 .lg span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
-  .legend2 .lg b{font-weight:700;color:var(--ink-2)}
+  .legend2{flex:1;min-width:0;display:flex;flex-direction:column;gap:9px}
+  .legend2 .lg{display:flex;align-items:center;gap:9px;font-size:13.5px;min-width:0}
+  .legend2 .lg i{width:10px;height:10px;border-radius:99px;flex:none}
+  .legend2 .lg span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;color:var(--ink-2)}
+  .legend2 .lg b{font-weight:800;color:var(--ink)}
+
+  .cat-row{margin-bottom:16px}
+  .cat-row:last-child{margin-bottom:2px}
+  .cat-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+  .cat-top span{display:flex;align-items:center;gap:9px;min-width:0;font-size:14.5px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cat-top b{font-weight:800;font-size:14.5px;white-space:nowrap}
+  .dotc{width:10px;height:10px;border-radius:99px;flex:none;display:inline-block}
+  .cat-row .track{height:9px}
   .legend{display:flex;gap:18px;justify-content:center;align-items:center;font-size:13px;
     color:var(--ink-2);margin-top:10px;font-weight:600}
   .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px}

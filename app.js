@@ -1253,9 +1253,18 @@ function render(){
   mTx.filter(function(t){return t.type==='out';}).forEach(function(t){ sums[t.cat]=(sums[t.cat]||0)+t.amt; });
   var keys=Object.keys(sums).sort(function(a,b){return sums[b]-sums[a];}).slice(0,5);
   if(!keys.length) topBox.innerHTML='<div class="empty">Бұл айда шығын жоқ.</div>';
-  else keys.forEach(function(k){
-    topBox.appendChild(barRow(catSvg('out',k,'bar-ic')+'<span>'+k+'</span>', money(sums[k])+' · '+Math.round(sums[k]/mOut*100)+'%', sums[k]/mOut, true));
-  });
+  else {
+    var mx=sums[keys[0]]||1;
+    keys.forEach(function(k,i){
+      var col=PIE_COLORS[i%PIE_COLORS.length];
+      var pct=Math.max(2,Math.round(sums[k]/mx*100));
+      var el=document.createElement('div'); el.className='cat-row';
+      el.innerHTML='<div class="cat-top"><span><i class="dotc" style="background:'+col+'"></i>'+esc(k)+'</span>'+
+        '<b>'+money(sums[k])+'</b></div>'+
+        '<div class="track"><div class="fill" style="width:'+pct+'%;background:'+col+'"></div></div>';
+      topBox.appendChild(el);
+    });
+  }
 
   /* --- жаңа бөлімдер --- */
   drawBudget();
@@ -2762,7 +2771,7 @@ function drawDonut(elId, items, centerLabel){
       '<span>' + esc(it.label) + '</span><b>' + Math.round(it.value / total * 100) + '%</b></div>';
   });
   leg += '</div>';
-  box.innerHTML = svg + leg;
+  box.innerHTML = '<div class="donut-wrap">' + svg + leg + '</div>';
   animateDonut(box, C);
 }
 
