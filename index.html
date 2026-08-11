@@ -2,7 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#021cf5">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -46,7 +46,8 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
   body{
-    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-family:"Inter","Inter Fallback",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans",
+    "Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji",sans-serif;
     background:var(--bg);color:var(--ink);
     font-variant-numeric:tabular-nums;
     font-feature-settings:"cv11","ss01";
@@ -479,6 +480,22 @@
     </div>
     </div>
 
+    <div class="w" data-w="forecast">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div class="ico blue" data-i="target"></div>
+        <div><div style="font-weight:700;font-size:16px">Ай соңына болжам</div>
+          <div class="muted" id="w-fc-sub">—</div></div>
+        <div style="margin-left:auto;text-align:right">
+          <div class="muted" style="font-size:11.5px">Қалады</div>
+          <div style="font-weight:800;font-size:17px" id="w-fc-end">0 ₸</div>
+        </div>
+      </div>
+      <div id="w-fc-box"></div>
+      <p class="muted" style="margin:10px 0 0;font-size:12.4px">Осы айдағы қарқын мен әлі келмеген тұрақты төлемдер бойынша шамалау.</p>
+    </div>
+    </div>
+
     <div class="w" data-w="budget">
     <div class="card">
       <h2>Бюджет <small class="act" onclick="go('budget')">Барлығы →</small></h2>
@@ -886,9 +903,11 @@
         <label class="f">Автоматты көшірмелер (соңғы 7 күн)</label>
         <div id="snap-list"></div>
       </div>
-      <button class="btn line" onclick="exportData()">Деректі сақтау</button>
+      <button class="btn line" onclick="shareBackup()">Көшірмені жіберу (Telegram · Drive · пошта)</button>
+      <button class="btn line" onclick="exportData()">Деректі файлға сақтау</button>
       <input type="file" id="imp" accept="application/json" class="hide" onchange="importData(this)">
       <button class="btn line" onclick="document.getElementById('imp').click()">Деректі ашу</button>
+      <button class="btn line" onclick="exportCSV()">Операцияларды Excel-ге (CSV)</button>
     </div>
     <div class="card">
       <h2>Жад</h2>
@@ -938,7 +957,7 @@
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Қаржы · 3.2</div>
+        <div class="ver">Қаржы · 3.3</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
