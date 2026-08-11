@@ -375,6 +375,24 @@
   .badge{font-size:11px;background:var(--warn-bg);color:var(--warn-fg);border-radius:8px;padding:3px 7px;font-weight:600}
   .spin{width:34px;height:34px;border:3px solid var(--g-soft);border-top-color:var(--g-bright);border-radius:50%;animation:sp 1s linear infinite;margin:22px auto}
   @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* ---------- Басты бетті реттеу ---------- */
+  .lnk{color:var(--g-mid);font-weight:700;cursor:pointer;white-space:nowrap}
+  .hs-row{display:flex;align-items:center;gap:9px;padding:9px 0}
+  .hs-row+.hs-row{border-top:1px solid var(--line)}
+  .hs-row .nm{flex:1;min-width:0;font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hs-row.off .nm{color:var(--ink-2);font-weight:500}
+  .hs-row .ic{width:34px;height:34px;border-radius:11px;background:var(--g-soft);display:grid;place-items:center;flex:none;color:var(--g-mid)}
+  .hs-row.off .ic{background:var(--bg);color:var(--ink-2)}
+  .hs-btn{width:36px;height:36px;border:1px solid var(--line);background:var(--surface);border-radius:12px;
+    color:var(--ink);font-size:16px;line-height:1;flex:none;display:grid;place-items:center;padding:0}
+  .hs-btn:disabled{opacity:.32}
+  .hs-btn.eye.on{background:var(--g-soft);border-color:transparent;color:var(--g-mid)}
+  .hs-btn .svi{width:17px;height:17px}
+  #w-inv-trio .v{font-size:13.4px}
+  #w-inv-list .row{padding:9px 2px}
+  .iv-share{height:6px;background:var(--g-soft);border-radius:99px;overflow:hidden;margin-top:7px}
+  .iv-share i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--g-bright),var(--g-mid))}
 </style>
 </head>
 <body>
@@ -410,6 +428,10 @@
   </div>
 
   <div class="wrap">
+    <div id="home-warn"></div>
+    <div id="home-widgets">
+
+    <div class="w" data-w="finance">
     <div class="card" onclick="go('accounts')">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
         <div class="ico" data-i="brief"></div>
@@ -426,7 +448,9 @@
         <div><div class="l">Инвестиция · бөлек</div><div class="v" id="h-broker" style="color:var(--blue)">0 ₸</div></div>
       </div>
     </div>
+    </div>
 
+    <div class="w" data-w="quick">
     <div class="quad">
       <button onclick="go('overview')"><span class="qi" data-i="chart"></span> Шолу</button>
       <button onclick="go('ops')"><span class="qi" data-i="receipt"></span> Операциялар</button>
@@ -436,14 +460,122 @@
       <button onclick="go('budget')"><span class="qi" data-i="budget"></span> Бюджет</button>
       <button onclick="go('recur')" style="grid-column:1/-1"><span class="qi" data-i="clock"></span> Тұрақты операциялар</button>
     </div>
-    <div id="home-warn"></div>
+    </div>
 
+    <div class="w" data-w="invest">
+    <div class="card" onclick="go('invest')">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div class="ico blue" data-i="invest"></div>
+        <div><div style="font-weight:700;font-size:16px">Инвестиция</div>
+          <div class="muted" id="w-inv-count">0 брокер</div></div>
+        <div style="margin-left:auto;color:var(--ink-2)">→</div>
+      </div>
+      <div class="trio" id="w-inv-trio">
+        <div><div class="l">Портфель</div><div class="v" id="w-inv-val">0 ₸</div></div>
+        <div><div class="l">Салынған</div><div class="v" id="w-inv-inv">0 ₸</div></div>
+        <div><div class="l">Табыс</div><div class="v" id="w-inv-pl">0 ₸</div></div>
+      </div>
+      <div id="w-inv-list" style="margin-top:6px"></div>
+    </div>
+    </div>
+
+    <div class="w" data-w="budget">
+    <div class="card">
+      <h2>Бюджет <small class="act" onclick="go('budget')">Барлығы →</small></h2>
+      <div id="w-budget-box"></div>
+    </div>
+    </div>
+
+    <div class="w" data-w="goals">
+    <div class="card">
+      <h2>Мақсаттар <small class="act" onclick="go('goals')">Барлығы →</small></h2>
+      <div id="w-goals-box"></div>
+    </div>
+    </div>
+
+    <div class="w" data-w="debts">
+    <div class="card" onclick="go('debts')">
+      <h2>Қарыздар <small class="act">Барлығы →</small></h2>
+      <div id="w-debts-box"></div>
+    </div>
+    </div>
+
+    <div class="w" data-w="cats">
+    <div class="card">
+      <h2>Айдағы шығын <small class="act" onclick="go('stat')">Статистика →</small></h2>
+      <div id="w-cats-box"></div>
+    </div>
+    </div>
+
+    <div class="w" data-w="import">
     <button class="btn dashed" onclick="startBankImport()" style="margin-bottom:12px"><span class="qi" data-i="inbox" style="display:inline-flex;vertical-align:-6px;margin-right:8px"></span>Банк үзіндісін жүктеу (PDF · Excel)</button>
+    </div>
 
+    <div class="w" data-w="recent">
     <div class="card">
       <h2>Соңғы операциялар <small onclick="go('ops')">Барлығы →</small></h2>
       <div id="home-tx"></div>
     </div>
+    </div>
+
+    </div>
+    <button class="btn line sm" onclick="go('homeset')" style="margin-bottom:12px">Басты бетті реттеу</button>
+  </div>
+</section>
+
+<!-- ============ БАСТЫ БЕТТІ РЕТТЕУ ============ -->
+<section class="page" id="p-homeset">
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('home')">←</button>
+      <div style="flex:1"><h1 style="font-size:24px">Басты бет</h1>
+        <div class="sub">Қай карта көрінеді және қандай ретпен</div></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="card">
+      <h2>Карталар</h2>
+      <p class="muted" style="margin:0 0 6px">Көзді басып жасырыңыз, көрсеткішпен ретін ауыстырыңыз.</p>
+      <div id="hs-list"></div>
+    </div>
+    <button class="btn line" onclick="resetHome()">Әдепкі қалпына қайтару</button>
+  </div>
+</section>
+
+<!-- ============ ИНВЕСТИЦИЯ ============ -->
+<section class="page" id="p-invest">
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('accounts')">←</button>
+      <div style="flex:1"><h1 style="font-size:24px">Инвестиция</h1>
+        <div class="sub" id="iv-count">0 брокер</div></div>
+    </div>
+    <div class="cap-label">Портфель құны</div>
+    <div class="cap-row">
+      <div class="cap" id="iv-val">0 ₸</div>
+      <div class="pill" id="iv-pill">—</div>
+    </div>
+    <div class="two">
+      <div class="mini"><div class="t">Салынған</div><div class="v" id="iv-inv">0 ₸</div></div>
+      <div class="mini"><div class="t">Табыс</div><div class="v" id="iv-pl">0 ₸</div></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="card">
+      <h2>Брокерлер</h2>
+      <p class="muted" style="margin:-6px 0 10px">Жеке есептеледі — таза капиталға қосылмайды.</p>
+      <div id="iv-list"></div>
+    </div>
+    <div class="card">
+      <h2>Валюта бойынша</h2>
+      <div id="iv-cur"></div>
+    </div>
+    <div class="card">
+      <h2>Есеп</h2>
+      <div id="iv-info"></div>
+    </div>
+    <button class="btn dashed" onclick="openAcc('broker')">+ Брокерлік шот қосу</button>
+    <button class="btn line" onclick="startBrokerImportAll()"><span class="qi" data-i="inbox" style="display:inline-flex;vertical-align:-6px;margin-right:8px"></span>Брокер есебін жүктеу (шоттарға бөледі)</button>
   </div>
 </section>
 
@@ -465,7 +597,8 @@
   <div class="wrap">
     <div class="card"><h2>Банк шоттары <small id="a-sum-bank"></small></h2><div id="a-list-asset"></div></div>
     <div class="card"><h2>Брокерлік шоттар <small id="a-sum-broker"></small></h2>
-      <p class="muted" style="margin:-6px 0 10px">Жеке есептеледі — таза капиталға қосылмайды.</p>
+      <p class="muted" style="margin:-6px 0 10px">Жеке есептеледі — таза капиталға қосылмайды.
+        <a class="lnk" onclick="go('invest')">Барлығын салыстыру →</a></p>
       <div id="a-list-broker"></div></div>
     <div class="card"><h2>Несиелер <small id="a-sum-debt"></small></h2><div id="a-list-debt"></div></div>
     <button class="btn dashed" onclick="openAcc('asset')">+ Банк шотын қосу</button>
@@ -762,6 +895,11 @@
       <div id="sto-box"></div>
     </div>
     <div class="card">
+      <h2>Басты бет</h2>
+      <p class="muted" style="margin:0 0 12px">Басты беттегі карталардың ретін өзгертіп, керексізін жасыруға болады.</p>
+      <button class="btn line" onclick="go('homeset')">Басты бетті реттеу</button>
+    </div>
+    <div class="card">
       <h2>Тақырып</h2>
       <div class="chips" id="theme-chips" style="margin-bottom:0"></div>
     </div>
@@ -795,7 +933,7 @@
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Қаржы · 3.0</div>
+        <div class="ver">Қаржы · 3.1</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
