@@ -469,7 +469,9 @@ function go(v, silent){
   for(var j=0;j<btns.length;j++) btns[j].classList.toggle('on', btns[j].dataset.tab===v);
   window.scrollTo(0,0);
   syncTopbar();
-  if(same) render();
+  /* Бастапқы жүктеуде бірден сызамыз (әйтпесе бір кадр бос тұрады).
+     Бет ауысқанда ғана ауыр рендерді келесі кадрға шығарамыз. */
+  if(same || !BOOTED) render();
   else requestAnimationFrame(function(){ render(); syncTopbar(); });
 
   saveView();
@@ -4920,7 +4922,7 @@ function cleanDups(){
 
 /* ================= АРТҚА ҚАЙТУ ================= */
 /* қай бетте тұрғанымызды есте сақтау — жаңартқанда сол жерде қаламыз */
-var BOOT_HASH = '';
+var BOOT_HASH = '', BOOTED = false;
 function saveView(){
   try{
     localStorage.setItem('qarzhy_view', JSON.stringify({
@@ -5394,6 +5396,7 @@ function boot(){
   setLoanMode('pay');
   render();
   restoreView();
+  BOOTED = true;
   handleShortcut();
 }
 

@@ -61,7 +61,7 @@
   h1,h2,h3,.cap,.amt,.v{letter-spacing:-0.024em}
   .muted,.sub,.sub2,.l,.f{letter-spacing:0}
   button,input,select{font-family:inherit;font-size:16px}
-  .page{display:none}
+  .page{display:none;background:var(--bg);min-height:100svh}
   .page.on{display:block}
   .hide{display:none !important}
 
@@ -71,6 +71,9 @@
       linear-gradient(160deg,var(--g-mid) 0%, var(--g-deep) 100%);
     color:#fff;padding:calc(16px + env(safe-area-inset-top)) 18px 24px;
     border-radius:0 0 28px 28px;
+    /* градиент бүтін сызылсын: бөлек қабатқа шықпайды, анимацияға ілеспейді */
+    animation:none !important;transform:none !important;
+    isolation:isolate;
   }
   .hero.flat{background:linear-gradient(160deg,#1E38FF,#021CF5);border-radius:0 0 22px 22px}
   .hero h1{margin:0;font-size:27px;font-weight:800;letter-spacing:-.032em;line-height:1.15}
@@ -283,10 +286,11 @@
   /* Төмен түскенде беттің аты төбеде қалады — қай жерде тұрғаныңыз жоғалмайды */
   .topbar{position:fixed;top:0;left:0;right:0;z-index:45;
     padding:calc(env(safe-area-inset-top)) 10px 0;
-    background:var(--tabbar);backdrop-filter:blur(14px);
+    background:var(--tabbar);
     border-bottom:1px solid var(--line);
-    transform:translateY(-102%);transition:transform .22s ease;}
-  .topbar.on{transform:none}
+    transform:translateY(-102%);transition:transform .22s ease;
+    visibility:hidden;}
+  .topbar.on{transform:none;visibility:visible;backdrop-filter:blur(14px)}
   .topbar .in{display:flex;align-items:center;gap:8px;height:52px}
   .topbar .tt{flex:1;min-width:0;display:flex;align-items:center;gap:7px;
     font-weight:750;font-size:16px;letter-spacing:-.02em;
@@ -343,7 +347,6 @@
   @keyframes fadein{from{opacity:0}}
   @keyframes grow{from{width:0}}
   @keyframes pop{from{opacity:0;transform:scale(.94)}}
-  .page.on>.hero{animation:fadein .26s ease}
   @keyframes rise{from{opacity:0;transform:translate3d(0,12px,0)}}
   @keyframes riseIn{from{opacity:0;transform:translate3d(20px,6px,0)}}
   @keyframes riseBack{from{opacity:0;transform:translate3d(-16px,6px,0)}}
@@ -1053,7 +1056,7 @@
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Қаржы · 4.3</div>
+        <div class="ver">Қаржы · 4.4</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
