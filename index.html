@@ -44,8 +44,7 @@
     --shadow-2:rgba(0,0,0,.5);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  :focus-visible{outline:2.5px solid var(--g-bright);outline-offset:2px;border-radius:10px}
-  html,body{margin:0;padding:0;overflow-x:hidden}
+  html,body{margin:0;padding:0}
   body{
     font-family:"Inter","Inter Fallback",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans",
     "Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji",sans-serif;
@@ -61,7 +60,7 @@
   h1,h2,h3,.cap,.amt,.v{letter-spacing:-0.024em}
   .muted,.sub,.sub2,.l,.f{letter-spacing:0}
   button,input,select{font-family:inherit;font-size:16px}
-  .page{display:none;background:var(--bg);min-height:100svh}
+  .page{display:none}
   .page.on{display:block}
   .hide{display:none !important}
 
@@ -71,9 +70,6 @@
       linear-gradient(160deg,var(--g-mid) 0%, var(--g-deep) 100%);
     color:#fff;padding:calc(16px + env(safe-area-inset-top)) 18px 24px;
     border-radius:0 0 28px 28px;
-    /* градиент бүтін сызылсын: бөлек қабатқа шықпайды, анимацияға ілеспейді */
-    animation:none !important;transform:none !important;
-    isolation:isolate;
   }
   .hero.flat{background:linear-gradient(160deg,#1E38FF,#021CF5);border-radius:0 0 22px 22px}
   .hero h1{margin:0;font-size:27px;font-weight:800;letter-spacing:-.032em;line-height:1.15}
@@ -94,8 +90,7 @@
   .mini .t{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#DDE3FF}
   .dot{width:26px;height:26px;border-radius:9px;display:grid;place-items:center;font-size:13px}
   .dot.in{background:rgba(0,190,134,.5)} .dot.out{background:rgba(255,77,103,.45)}
-  .mini .v{font-size:19px;font-weight:800;margin-top:7px;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mini .v{font-size:19px;font-weight:800;margin-top:7px}
   .wide{display:flex;align-items:center;gap:13px;background:rgba(255,255,255,.13);
     border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:14px;margin-top:12px}
   .wide .ic{width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:19px}
@@ -118,11 +113,6 @@
   .trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;background:var(--g-soft);border-radius:16px;padding:14px 8px;text-align:center}
   .trio .l{font-size:11.5px;color:var(--ink-2);font-weight:600;line-height:1.35}
   .trio .v{font-size:15.5px;font-weight:800;margin-top:5px;letter-spacing:-.02em}
-  @media (max-width:390px){
-    .mini .v{font-size:16.5px}
-    .trio .v{font-size:14px}
-    .trio{padding:14px 6px}
-  }
   .stat3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
   .stat3 .c{background:var(--surface);border-radius:18px;padding:14px 8px;text-align:center;box-shadow:0 2px 14px var(--shadow)}
   .stat3 .l{font-size:11.5px;color:var(--ink-2);margin-top:7px;font-weight:600}
@@ -184,13 +174,6 @@
   .seg.glass button{color:#DDE3FF}
   .seg.glass button.on{background:#fff;color:var(--g-mid)}
   .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-  /* Шот тізімі көп болса, hero-ны созбай, бір жолда сырғысын */
-  .chips.rail{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
-    -webkit-overflow-scrolling:touch;margin-left:-16px;margin-right:-16px;
-    padding:2px 16px 4px;scroll-padding-left:16px}
-  .chips.rail::-webkit-scrollbar{display:none}
-  .chips.rail .chip{flex:none;max-width:190px}
-  .chips.rail .chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .chip{border:1px solid var(--line);background:var(--surface);border-radius:14px;
     padding:8px 13px;font-size:14px;color:var(--ink);font-weight:500;
     display:inline-flex;align-items:center;gap:8px;line-height:1.15}
@@ -241,7 +224,7 @@
   svg.chart{width:100%;height:150px;display:block}
   .donut-wrap{display:flex;align-items:center;gap:14px}
   svg.donut{width:44%;max-width:170px;height:auto;display:block;flex:none;margin:0}
-  svg.trend{width:100%;height:auto;display:block;overflow:visible}
+  svg.trend{width:100%;height:150px;display:block}
   .tr-x{position:relative;height:20px;margin:4px 0 2px}
   .tr-x span{position:absolute;transform:translateX(-50%);white-space:nowrap;
     font-size:12px;font-weight:600;color:var(--ink-2);letter-spacing:0}
@@ -274,36 +257,26 @@
 
   /* ---------- Тенденция белгісі ---------- */
   .tr-hit{fill:transparent;cursor:pointer}
-  .tr-sel{stroke:var(--ink-2);stroke-width:.25;stroke-dasharray:1 1}
+  .tr-sel{stroke:var(--ink-2);stroke-width:.4;stroke-dasharray:1.5 1.5}
   #trend-info{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:none}
   #trend-info.on{display:block}
   #trend-info .m{font-weight:750;font-size:14.5px;margin-bottom:6px}
-  .tr-sum{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
-  .tr-sum .ttl{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-    color:var(--ink-2);margin-bottom:6px}
 
   /* ---------- Жабысқақ тақырып ---------- */
   /* Төмен түскенде беттің аты төбеде қалады — қай жерде тұрғаныңыз жоғалмайды */
   .topbar{position:fixed;top:0;left:0;right:0;z-index:45;
     padding:calc(env(safe-area-inset-top)) 10px 0;
-    background:var(--tabbar);
+    background:var(--tabbar);backdrop-filter:blur(14px);
     border-bottom:1px solid var(--line);
-    transform:translateY(-102%);transition:transform .22s ease;
-    visibility:hidden;}
-  .topbar.on{transform:none;visibility:visible;backdrop-filter:blur(14px)}
+    transform:translateY(-102%);transition:transform .22s ease;}
+  .topbar.on{transform:none}
   .topbar .in{display:flex;align-items:center;gap:8px;height:52px}
-  .topbar .tt{flex:1;min-width:0;display:flex;align-items:center;gap:7px;
-    font-weight:750;font-size:16px;letter-spacing:-.02em;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    background:0;border:0;padding:0 0 0 2px;color:var(--ink);text-align:left;height:38px}
-  .topbar .tt .ar{width:26px;height:26px;border-radius:9px;background:var(--g-soft);
-    color:var(--g-mid);font-size:14px;font-weight:700;flex:none;
-    display:inline-flex;align-items:center;justify-content:center}
-  .topbar .tt:active{opacity:.6}
-  .topbar .up{width:38px;height:38px;border:0;border-radius:12px;
-    background:var(--g-soft);color:var(--g-mid);font-size:17px;font-weight:700;
-    line-height:1;flex:none;padding:0}
-  .topbar .up:disabled{opacity:.32}
+  .topbar .tt{flex:1;min-width:0;font-weight:750;font-size:16px;letter-spacing:-.02em;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topbar .bk{width:38px;height:38px;border:0;border-radius:12px;background:var(--g-soft);
+    color:var(--g-mid);font-size:18px;line-height:1;flex:none;padding:0}
+  .topbar .up{width:38px;height:38px;border:1px solid var(--line);border-radius:12px;
+    background:var(--surface);color:var(--ink-2);font-size:15px;line-height:1;flex:none;padding:0}
 
   /* ---------- Тізімге секіру ---------- */
   .jump{position:sticky;top:calc(env(safe-area-inset-top) + 58px);z-index:20}
@@ -316,43 +289,26 @@
   .tabbar button{flex:1;background:0;border:0;padding:6px 0;color:var(--ink-2);font-size:10.5px;font-weight:600;border-radius:15px}
   .tabbar button .g{display:flex;justify-content:center;margin-bottom:3px}
   .tabbar button .g .svi{width:23px;height:23px}
-  .tabbar button{transition:color .18s,background .18s}
   .tabbar button.on{background:var(--g-soft);color:var(--g-mid)}
-  .tabbar button .g{transition:transform .28s cubic-bezier(.2,1.2,.35,1)}
-  .tabbar button.on .g{transform:translateY(-1px) scale(1.08)}
-  .tabbar button:active .g{transform:scale(.86)}
 
   /* ---------- Sheets ---------- */
   .scrim{position:fixed;inset:0;background:rgba(4,10,50,.55);opacity:0;pointer-events:none;transition:.22s;z-index:50}
   .scrim.on{opacity:1;pointer-events:auto}
-  .sheet{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-radius:28px 28px 0 0;
+  .sheet{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-radius:26px 26px 0 0;
     padding:10px 16px calc(34px + env(safe-area-inset-bottom));transform:translateY(102%);
-    transition:transform .34s cubic-bezier(.16,.9,.28,1);z-index:60;max-height:92vh;overflow:auto;
-    box-shadow:0 -10px 40px var(--shadow-2);overscroll-behavior:contain}
+    transition:transform .26s cubic-bezier(.3,.8,.4,1);z-index:60;max-height:92vh;overflow:auto}
   .sheet.on{transform:none}
-  .sheet.drag{transition:none}
   body.locked{overflow:hidden}
   .sheet-back{background:none;border:0;color:var(--ink-2);font-size:14px;font-weight:600;padding:0 0 10px;display:block}
-  /* тұтқа — жай сызық емес, саусақпен сүйрейтін нақты аймақ */
-  .grab-zone{margin:-10px -16px 4px;padding:12px 16px 8px;cursor:grab;touch-action:none}
-  .grab{width:40px;height:4.5px;background:var(--line);border-radius:9px;margin:0 auto;
-    transition:width .18s,background .18s}
-  .grab-zone:active .grab{width:56px;background:var(--ink-2)}
+  .grab{width:42px;height:4px;background:var(--line);border-radius:9px;margin:6px auto 14px}
   .sheet h3{margin:0 0 14px;font-size:19px}
-  @media (prefers-reduced-motion:reduce){
-    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
-      transition-duration:.01ms !important}
-  }
   /* ---------- Анимациялар ---------- */
+  @keyframes rise{from{opacity:0;transform:translateY(12px)}}
   @keyframes fadein{from{opacity:0}}
   @keyframes grow{from{width:0}}
   @keyframes pop{from{opacity:0;transform:scale(.94)}}
-  @keyframes rise{from{opacity:0;transform:translate3d(0,12px,0)}}
-  @keyframes riseIn{from{opacity:0;transform:translate3d(20px,6px,0)}}
-  @keyframes riseBack{from{opacity:0;transform:translate3d(-16px,6px,0)}}
+  .page.on{animation:fadein .2s ease}
   .wrap>*{animation:rise .34s cubic-bezier(.2,.8,.3,1) backwards}
-  .page.on>.wrap>*{animation-name:riseIn}
-  .page.on.back>.wrap>*{animation-name:riseBack}
   .wrap>*:nth-child(1){animation-delay:.02s}
   .wrap>*:nth-child(2){animation-delay:.06s}
   .wrap>*:nth-child(3){animation-delay:.10s}
@@ -362,15 +318,9 @@
   .wrap>*:nth-child(n+7){animation-delay:.26s}
   .fill{animation:grow .65s cubic-bezier(.2,.85,.3,1)}
   svg.donut{transform-origin:50% 50%}
-  /* Басқанда затты «басып тұрғандай» сезілуі керек — бұрынғы .995 көрінбейтін */
-  .row,.quad button,.chip,.btn,.plus,.back,.topbar .up,.topbar .tt{
-    transition:transform .13s cubic-bezier(.3,.8,.4,1),opacity .13s,background .15s,color .15s,border-color .15s}
-  .row:active{opacity:.62}
-  .quad button:active{transform:scale(.955)}
-  .card[onclick]:active{transform:scale(.985)}
-  .btn:active{transform:scale(.975)}
-  .chip:active{transform:scale(.93)}
-  .plus:active,.back:active,.topbar .up:active,.topbar .tt:active{transform:scale(.9);opacity:.85}
+  .row:active{opacity:.7}
+  .quad button:active,.card:active{transform:scale(.995)}
+  .chip{transition:background .15s,color .15s,border-color .15s}
   /* --- қозғалатын белгішелер --- */
   @keyframes bobDown{0%,100%{transform:translateY(-1.5px)}50%{transform:translateY(2px)}}
   @keyframes bobUp{0%,100%{transform:translateY(1.5px)}50%{transform:translateY(-2px)}}
@@ -393,7 +343,7 @@
   .brand::after{content:"";position:absolute;inset:0;
     background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.45) 50%,transparent 65%);
     background-size:220% 100%;animation:shine 5.5s ease-in-out infinite}
-  svg.trend path.line{stroke-dasharray:200;stroke-dashoffset:200;animation:draw 1.2s cubic-bezier(.3,.9,.4,1) forwards}
+  svg.trend path.line{stroke-dasharray:420;stroke-dashoffset:420;animation:draw 1.2s cubic-bezier(.3,.9,.4,1) forwards}
   svg.trend circle{animation:popIn .4s backwards}
   svg.trend text{animation:fadein .5s backwards}
   svg.trend text.cur{font-weight:700}
@@ -423,12 +373,9 @@
   .sel-off{background:transparent;color:var(--ink-2)}
   h2 small.act{color:var(--g-mid);font-weight:700}
 
-  .toast{position:fixed;left:50%;transform:translate(-50%,14px) scale(.94);bottom:100px;
-    background:var(--ink);color:var(--surface);
-    padding:12px 20px;border-radius:16px;font-size:14px;font-weight:600;opacity:0;
-    transition:transform .34s cubic-bezier(.16,1.1,.3,1),opacity .2s;
-    z-index:80;pointer-events:none;box-shadow:0 10px 30px var(--shadow-2);max-width:88vw;text-align:center}
-  .toast.on{opacity:1;transform:translate(-50%,0) scale(1)}
+  .toast{position:fixed;left:50%;transform:translate(-50%,20px);bottom:100px;background:var(--ink);color:#fff;
+    padding:11px 18px;border-radius:14px;font-size:14px;opacity:0;transition:.25s;z-index:80;pointer-events:none}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
 
   .search{width:100%;border:0;border-radius:14px;padding:12px 14px;background:rgba(255,255,255,.16);
     color:#fff;font-size:15px;margin-top:12px}
@@ -537,7 +484,9 @@
       <button onclick="go('ops')"><span class="qi" data-i="receipt"></span> Операциялар</button>
       <button onclick="go('goals')"><span class="qi" data-i="flag"></span> Мақсаттар</button>
       <button onclick="go('calc')"><span class="qi" data-i="calc"></span> Калькулятор</button>
-      <button onclick="go('debts')" style="grid-column:1/-1"><span class="qi" data-i="swap"></span> Қарыздар</button>
+      <button onclick="go('debts')"><span class="qi" data-i="swap"></span> Қарыздар</button>
+      <button onclick="go('budget')"><span class="qi" data-i="budget"></span> Бюджет</button>
+      <button onclick="go('recur')" style="grid-column:1/-1"><span class="qi" data-i="clock"></span> Тұрақты операциялар</button>
     </div>
     </div>
 
@@ -571,6 +520,13 @@
       </div>
       <div id="w-fc-box"></div>
       <p class="muted" style="margin:10px 0 0;font-size:12.4px">Осы айдағы қарқын мен әлі келмеген тұрақты төлемдер бойынша шамалау.</p>
+    </div>
+    </div>
+
+    <div class="w" data-w="budget">
+    <div class="card">
+      <h2>Бюджет <small class="act" onclick="go('budget')">Барлығы →</small></h2>
+      <div id="w-budget-box"></div>
     </div>
     </div>
 
@@ -683,10 +639,7 @@
     </div>
   </div>
   <div class="wrap">
-    <div class="card"><h2>Банк шоттары <small id="a-sum-bank"></small></h2>
-      <p class="muted" style="margin:-6px 0 10px">Сандар банктегімен сәйкес пе?
-        <a class="lnk" onclick="go('sync')">Салыстыру →</a></p>
-      <div id="a-list-asset"></div></div>
+    <div class="card"><h2>Банк шоттары <small id="a-sum-bank"></small></h2><div id="a-list-asset"></div></div>
     <div class="card"><h2>Брокерлік шоттар <small id="a-sum-broker"></small></h2>
       <p class="muted" style="margin:-6px 0 10px">Жеке есептеледі — таза капиталға қосылмайды.
         <a class="lnk" onclick="go('invest')">Барлығын салыстыру →</a></p>
@@ -713,8 +666,8 @@
       <button data-of="out" onclick="setOpsFilter('out')">Шығын</button>
       <button data-of="tr" onclick="setOpsFilter('tr')">Аударым</button>
     </div>
-    <input class="search" id="ops-q" placeholder="Іздеу: атау, санат, сома…" oninput="opsSearch()">
-    <div class="chips glass rail" id="ops-accs" style="margin-top:10px;margin-bottom:0"></div>
+    <input class="search" id="ops-q" placeholder="Іздеу: атау, санат, сома…" oninput="render()">
+    <div class="chips glass" id="ops-accs" style="margin-top:10px;margin-bottom:0"></div>
   </div>
   <div class="wrap">
     <p class="muted" style="padding:0 6px 8px">Операцияны солға сырғытсаңыз — өшіріледі, оңға сырғытсаңыз — түзетіледі.</p>
@@ -777,7 +730,6 @@
       <h2>12 айлық тенденция <small class="muted" style="font-weight:500">нүктені басыңыз</small></h2>
       <div id="trend-chart"></div>
       <div id="trend-info"></div>
-      <div class="tr-sum"><div class="ttl">12 айдың жиынтығы</div><div id="trend-sum"></div></div>
     </div>
     <div class="card">
       <h2>Кіріс / Шығын</h2>
@@ -966,27 +918,6 @@
 </section>
 
 <!-- ============ БАПТАУ ============ -->
-<!-- ============ ШОТТЫ САЛЫСТЫРУ ============ -->
-<section class="page" id="p-sync">
-  <div class="hero flat">
-    <div class="hero-top">
-      <button class="back" onclick="go('accounts')">←</button>
-      <div style="flex:1"><h1 style="font-size:24px">Шотты салыстыру</h1>
-        <div class="sub">Банктегі нақты сан мен қосымшадағы санды сәйкестендіру</div></div>
-    </div>
-  </div>
-  <div class="wrap">
-    <p class="muted" style="padding:0 6px 10px">Банк қосымшасын ашып, әр шоттың нақты қалдығын жазыңыз. Айырма шықса, қосымша оны түзете алады — операциялар тарихы бұзылмайды.</p>
-    <div id="sync-list"></div>
-    <div class="card" id="sync-sum" style="display:none">
-      <h2>Қорытынды</h2>
-      <div id="sync-sum-box"></div>
-    </div>
-    <button class="btn" id="sync-apply" onclick="applySync()" style="display:none">Айырманы түзету</button>
-    <p class="muted" style="padding:8px 6px">Түзету «Түзету операциясы» деген жазба ретінде қосылады, сондықтан кейін қайдан шыққанын көресіз.</p>
-  </div>
-</section>
-
 <section class="page" id="p-set">
   <div class="hero flat">
     <div class="hero-top">
@@ -1056,7 +987,7 @@
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Қаржы · 4.4</div>
+        <div class="ver">Қаржы · 3.6</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
@@ -1065,6 +996,29 @@
 </section>
 
 <!-- ============ ТҰРАҚТЫ ОПЕРАЦИЯЛАР ============ -->
+<section class="page" id="p-recur">
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('home')">←</button>
+      <div style="flex:1"><h1 style="font-size:24px">Тұрақты</h1>
+        <div class="sub" id="rc-count">0 жазба</div></div>
+      <button class="plus" onclick="openRecur()">+</button>
+    </div>
+    <div class="two">
+      <div class="mini"><div class="t">Ай сайынғы кіріс</div><div class="v" id="rc-in-sum">0 ₸</div></div>
+      <div class="mini"><div class="t">Ай сайынғы шығын</div><div class="v" id="rc-out-sum">0 ₸</div></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="muted" style="padding:0 6px 8px">Бір рет жазсаңыз, ай сайын белгіленген күні өзі қосылады.
+    Қосымшаны ашқанда өтіп кеткен айлар да толтырылады.</p>
+    <div class="card">
+      <h2>Тізім <small class="act" onclick="selStart('recur')">Таңдау</small></h2>
+      <div id="rc-list"></div></div>
+    <button class="btn dashed" onclick="openRecur()">+ Тұрақты операция қосу</button>
+  </div>
+</section>
+
 <!-- ============ ҚАРЫЗДАР ============ -->
 <section class="page" id="p-debts">
   <div class="hero flat">
@@ -1095,6 +1049,24 @@
 </section>
 
 <!-- ============ БЮДЖЕТ ============ -->
+<section class="page" id="p-budget">
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('home')">←</button>
+      <div style="flex:1"><h1 style="font-size:24px">Бюджет</h1><div class="sub" id="bd-sub">Айлық шығын шектеуі</div></div>
+    </div>
+    <div class="two">
+      <div class="mini"><div class="t">Шектелген</div><div class="v" id="bd-limit">0 ₸</div></div>
+      <div class="mini"><div class="t">Жұмсалды</div><div class="v" id="bd-spent">0 ₸</div></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="muted" style="padding:0 4px 8px">Санатқа айлық шек қойыңыз. 80%-ға жеткенде ескертеміз. 0 деп қойсаңыз — шек жоқ.</p>
+    <div class="card" id="bd-list"></div>
+  </div>
+</section>
+
+
 <section class="page" id="p-calc-dep">
   <div style="background:var(--surface);padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;gap:13px">
     <button class="back dark" onclick="go('calc')">←</button>
@@ -1204,8 +1176,9 @@
 <!-- ============ TABBAR ============ -->
 <div class="topbar" id="topbar">
   <div class="in">
-    <button class="tt" id="tb-title" onclick="scrollTop()" aria-label="Беттің басына">Қаржы</button>
-    <button class="up" id="tb-down" onclick="scrollBottom()" aria-label="Астыға">↓</button>
+    <button class="bk" id="tb-back" onclick="topBack()">←</button>
+    <div class="tt" id="tb-title">Қаржы</div>
+    <button class="up" onclick="scrollTop()">↑</button>
   </div>
 </div>
 
@@ -1221,7 +1194,7 @@
 
 <!-- Sheet: transaction -->
 <div class="sheet" id="sheet-tx">
-  <div class="grab-zone"><div class="grab"></div></div>
+  <div class="grab"></div>
   <h3 id="tx-title">Операция қосу</h3>
   <div class="seg tight">
     <button id="seg-out" class="on danger" onclick="setType('out')">Шығын</button>
@@ -1255,7 +1228,7 @@
 
 <!-- Sheet: account -->
 <div class="sheet" id="sheet-acc">
-  <div class="grab-zone"><div class="grab"></div></div>
+  <div class="grab"></div>
   <button class="sheet-back" id="ac-back" onclick="backToAcc()">‹ Артқа</button>
   <h3 id="acc-title">Шот қосу</h3>
   <div id="ac-bank-box" class="hide">
@@ -1292,7 +1265,7 @@
 
 <!-- Sheet: broker operation -->
 <div class="sheet" id="sheet-bop">
-  <div class="grab-zone"><div class="grab"></div></div>
+  <div class="grab"></div>
   <h3>Брокерлік операция</h3>
   <label class="f">Түрі</label>
   <div class="chips" id="bo-types"></div>
@@ -1308,9 +1281,32 @@
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
 </div>
 
+<!-- Sheet: recurring -->
+<div class="sheet" id="sheet-recur">
+  <div class="grab"></div>
+  <h3 id="rc-title">Тұрақты операция</h3>
+  <div class="seg">
+    <button id="rc-out" class="on" onclick="setRType('out')">Шығын</button>
+    <button id="rc-in" onclick="setRType('in')">Кіріс</button>
+  </div>
+  <label class="f">Сома, ₸</label>
+  <input class="inp big" id="rc-amt" type="number" inputmode="decimal" placeholder="0">
+  <label class="f">Санат</label>
+  <div class="chips" id="rc-cats"></div>
+  <label class="f">Қай шот</label>
+  <div class="chips" id="rc-accs"></div>
+  <label class="f">Айдың қай күні</label>
+  <input class="inp" id="rc-day" type="number" inputmode="numeric" min="1" max="31" value="1">
+  <label class="f">Түсініктеме</label>
+  <input class="inp" id="rc-note" type="text" placeholder="Мысалы: пәтер жалдау">
+  <button class="btn" onclick="saveRecur()">Сақтау</button>
+  <button class="btn danger hide" id="rc-del" onclick="delRecur()">Өшіру</button>
+  <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
+</div>
+
 <!-- Sheet: debt -->
 <div class="sheet" id="sheet-debt">
-  <div class="grab-zone"><div class="grab"></div></div>
+  <div class="grab"></div>
   <h3>Қарыз жазу</h3>
   <div class="seg">
     <button id="de-out" class="on" onclick="setDebtDir('out')">Мен бердім</button>
@@ -1334,7 +1330,7 @@
 
 <!-- Sheet: debt detail -->
 <div class="sheet" id="sheet-dview">
-  <div class="grab-zone"><div class="grab"></div></div>
+  <div class="grab"></div>
   <h3 id="dv-title">Қарыз</h3>
   <div class="res" id="dv-sum" style="margin-bottom:14px"></div>
   <div id="dv-payrow">
@@ -1351,7 +1347,7 @@
 
 <!-- Sheet: broker value -->
 <div class="sheet" id="sheet-bval">
-  <div class="grab-zone"><div class="grab"></div></div>
+  <div class="grab"></div>
   <h3 id="bv-title">Шот құнын жаңарту</h3>
   <p class="muted" style="margin:0 0 14px">Брокерлік қосымшада қазір көрініп тұрған жалпы портфель құнын жазыңыз. Табыс автоматты есептеледі.</p>
   <label class="f">Доллармен, $</label>
@@ -1364,7 +1360,7 @@
 
 <!-- Sheet: goal -->
 <div class="sheet" id="sheet-goal">
-  <div class="grab-zone"><div class="grab"></div></div>
+  <div class="grab"></div>
   <h3>Мақсат қосу</h3>
   <label class="f">Атауы</label>
   <input class="inp" id="g-name" type="text" placeholder="Мысалы: 100 мың доллар жинау">
@@ -1378,7 +1374,7 @@
 
 <!-- Sheet: есеп пішімі -->
 <div class="sheet" id="fmt-sheet">
-  <div class="grab-zone"><div class="grab"></div></div>
+  <div class="grab"></div>
   <h3>Есепті қалай жіберейін?</h3>
   <p class="muted" style="margin:0 0 14px">Экранда тұрған нәтиже сол күйінде файлға айналады.</p>
   <button class="btn" id="fmt-pdf">PDF — оқуға және басып шығаруға</button>
@@ -1388,7 +1384,7 @@
 
 <!-- Sheet: detail -->
 <div class="sheet" id="sheet-view">
-  <div class="grab-zone"><div class="grab"></div></div>
+  <div class="grab"></div>
   <h3 id="v-title">Операция</h3>
   <div class="res" id="v-body"></div>
   <div id="v-extra"></div>
@@ -1398,7 +1394,7 @@
 
 <!-- Sheet: goal detail -->
 <div class="sheet" id="sheet-gview">
-  <div class="grab-zone"><div class="grab"></div></div>
+  <div class="grab"></div>
   <h3 id="gv-title">Мақсат</h3>
   <div class="res" id="gv-sum" style="margin-bottom:14px"></div>
   <label class="f">Салым қосу, ₸</label>
