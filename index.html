@@ -2,7 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#021cf5">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -46,8 +46,7 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
   body{
-    font-family:"Inter","Inter Fallback",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans",
-    "Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji",sans-serif;
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
     background:var(--bg);color:var(--ink);
     font-variant-numeric:tabular-nums;
     font-feature-settings:"cv11","ss01";
@@ -255,33 +254,6 @@
   .gbrand{background:linear-gradient(92deg,var(--g-bright),var(--g-mid));
     -webkit-background-clip:text;background-clip:text;color:transparent}
 
-  /* ---------- Тенденция белгісі ---------- */
-  .tr-hit{fill:transparent;cursor:pointer}
-  .tr-sel{stroke:var(--ink-2);stroke-width:.4;stroke-dasharray:1.5 1.5}
-  #trend-info{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:none}
-  #trend-info.on{display:block}
-  #trend-info .m{font-weight:750;font-size:14.5px;margin-bottom:6px}
-
-  /* ---------- Жабысқақ тақырып ---------- */
-  /* Төмен түскенде беттің аты төбеде қалады — қай жерде тұрғаныңыз жоғалмайды */
-  .topbar{position:fixed;top:0;left:0;right:0;z-index:45;
-    padding:calc(env(safe-area-inset-top)) 10px 0;
-    background:var(--tabbar);backdrop-filter:blur(14px);
-    border-bottom:1px solid var(--line);
-    transform:translateY(-102%);transition:transform .22s ease;}
-  .topbar.on{transform:none}
-  .topbar .in{display:flex;align-items:center;gap:8px;height:52px}
-  .topbar .tt{flex:1;min-width:0;font-weight:750;font-size:16px;letter-spacing:-.02em;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .topbar .bk{width:38px;height:38px;border:0;border-radius:12px;background:var(--g-soft);
-    color:var(--g-mid);font-size:18px;line-height:1;flex:none;padding:0}
-  .topbar .up{width:38px;height:38px;border:1px solid var(--line);border-radius:12px;
-    background:var(--surface);color:var(--ink-2);font-size:15px;line-height:1;flex:none;padding:0}
-
-  /* ---------- Тізімге секіру ---------- */
-  .jump{position:sticky;top:calc(env(safe-area-inset-top) + 58px);z-index:20}
-  .anchor{scroll-margin-top:calc(env(safe-area-inset-top) + 66px)}
-
   /* ---------- Tabbar ---------- */
   .tabbar{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));
     background:var(--tabbar);backdrop-filter:blur(14px);border:1px solid var(--line);
@@ -403,24 +375,6 @@
   .badge{font-size:11px;background:var(--warn-bg);color:var(--warn-fg);border-radius:8px;padding:3px 7px;font-weight:600}
   .spin{width:34px;height:34px;border:3px solid var(--g-soft);border-top-color:var(--g-bright);border-radius:50%;animation:sp 1s linear infinite;margin:22px auto}
   @keyframes sp{to{transform:rotate(360deg)}}
-
-  /* ---------- Басты бетті реттеу ---------- */
-  .lnk{color:var(--g-mid);font-weight:700;cursor:pointer;white-space:nowrap}
-  .hs-row{display:flex;align-items:center;gap:9px;padding:9px 0}
-  .hs-row+.hs-row{border-top:1px solid var(--line)}
-  .hs-row .nm{flex:1;min-width:0;font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .hs-row.off .nm{color:var(--ink-2);font-weight:500}
-  .hs-row .ic{width:34px;height:34px;border-radius:11px;background:var(--g-soft);display:grid;place-items:center;flex:none;color:var(--g-mid)}
-  .hs-row.off .ic{background:var(--bg);color:var(--ink-2)}
-  .hs-btn{width:36px;height:36px;border:1px solid var(--line);background:var(--surface);border-radius:12px;
-    color:var(--ink);font-size:16px;line-height:1;flex:none;display:grid;place-items:center;padding:0}
-  .hs-btn:disabled{opacity:.32}
-  .hs-btn.eye.on{background:var(--g-soft);border-color:transparent;color:var(--g-mid)}
-  .hs-btn .svi{width:17px;height:17px}
-  #w-inv-trio .v{font-size:13.4px}
-  #w-inv-list .row{padding:9px 2px}
-  .iv-share{height:6px;background:var(--g-soft);border-radius:99px;overflow:hidden;margin-top:7px}
-  .iv-share i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--g-bright),var(--g-mid))}
 </style>
 </head>
 <body>
@@ -456,10 +410,6 @@
   </div>
 
   <div class="wrap">
-    <div id="home-warn"></div>
-    <div id="home-widgets">
-
-    <div class="w" data-w="finance">
     <div class="card" onclick="go('accounts')">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
         <div class="ico" data-i="brief"></div>
@@ -476,9 +426,7 @@
         <div><div class="l">Инвестиция · бөлек</div><div class="v" id="h-broker" style="color:var(--blue)">0 ₸</div></div>
       </div>
     </div>
-    </div>
 
-    <div class="w" data-w="quick">
     <div class="quad">
       <button onclick="go('overview')"><span class="qi" data-i="chart"></span> Шолу</button>
       <button onclick="go('ops')"><span class="qi" data-i="receipt"></span> Операциялар</button>
@@ -488,138 +436,14 @@
       <button onclick="go('budget')"><span class="qi" data-i="budget"></span> Бюджет</button>
       <button onclick="go('recur')" style="grid-column:1/-1"><span class="qi" data-i="clock"></span> Тұрақты операциялар</button>
     </div>
-    </div>
+    <div id="home-warn"></div>
 
-    <div class="w" data-w="invest">
-    <div class="card" onclick="go('invest')">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-        <div class="ico blue" data-i="invest"></div>
-        <div><div style="font-weight:700;font-size:16px">Инвестиция</div>
-          <div class="muted" id="w-inv-count">0 брокер</div></div>
-        <div style="margin-left:auto;color:var(--ink-2)">→</div>
-      </div>
-      <div class="trio" id="w-inv-trio">
-        <div><div class="l">Портфель</div><div class="v" id="w-inv-val">0 ₸</div></div>
-        <div><div class="l">Салынған</div><div class="v" id="w-inv-inv">0 ₸</div></div>
-        <div><div class="l">Табыс</div><div class="v" id="w-inv-pl">0 ₸</div></div>
-      </div>
-      <div id="w-inv-list" style="margin-top:6px"></div>
-    </div>
-    </div>
-
-    <div class="w" data-w="forecast">
-    <div class="card">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-        <div class="ico blue" data-i="target"></div>
-        <div><div style="font-weight:700;font-size:16px">Ай соңына болжам</div>
-          <div class="muted" id="w-fc-sub">—</div></div>
-        <div style="margin-left:auto;text-align:right">
-          <div class="muted" style="font-size:11.5px">Қалады</div>
-          <div style="font-weight:800;font-size:17px" id="w-fc-end">0 ₸</div>
-        </div>
-      </div>
-      <div id="w-fc-box"></div>
-      <p class="muted" style="margin:10px 0 0;font-size:12.4px">Осы айдағы қарқын мен әлі келмеген тұрақты төлемдер бойынша шамалау.</p>
-    </div>
-    </div>
-
-    <div class="w" data-w="budget">
-    <div class="card">
-      <h2>Бюджет <small class="act" onclick="go('budget')">Барлығы →</small></h2>
-      <div id="w-budget-box"></div>
-    </div>
-    </div>
-
-    <div class="w" data-w="goals">
-    <div class="card">
-      <h2>Мақсаттар <small class="act" onclick="go('goals')">Барлығы →</small></h2>
-      <div id="w-goals-box"></div>
-    </div>
-    </div>
-
-    <div class="w" data-w="debts">
-    <div class="card" onclick="go('debts')">
-      <h2>Қарыздар <small class="act">Барлығы →</small></h2>
-      <div id="w-debts-box"></div>
-    </div>
-    </div>
-
-    <div class="w" data-w="cats">
-    <div class="card">
-      <h2>Айдағы шығын <small class="act" onclick="go('stat')">Статистика →</small></h2>
-      <div id="w-cats-box"></div>
-    </div>
-    </div>
-
-    <div class="w" data-w="import">
     <button class="btn dashed" onclick="startBankImport()" style="margin-bottom:12px"><span class="qi" data-i="inbox" style="display:inline-flex;vertical-align:-6px;margin-right:8px"></span>Банк үзіндісін жүктеу (PDF · Excel)</button>
-    </div>
 
-    <div class="w" data-w="recent">
     <div class="card">
       <h2>Соңғы операциялар <small onclick="go('ops')">Барлығы →</small></h2>
       <div id="home-tx"></div>
     </div>
-    </div>
-
-    </div>
-    <button class="btn line sm" onclick="go('homeset')" style="margin-bottom:12px">Басты бетті реттеу</button>
-  </div>
-</section>
-
-<!-- ============ БАСТЫ БЕТТІ РЕТТЕУ ============ -->
-<section class="page" id="p-homeset">
-  <div class="hero flat">
-    <div class="hero-top">
-      <button class="back" onclick="go('home')">←</button>
-      <div style="flex:1"><h1 style="font-size:24px">Басты бет</h1>
-        <div class="sub">Қай карта көрінеді және қандай ретпен</div></div>
-    </div>
-  </div>
-  <div class="wrap">
-    <div class="card">
-      <h2>Карталар</h2>
-      <p class="muted" style="margin:0 0 6px">Көзді басып жасырыңыз, көрсеткішпен ретін ауыстырыңыз.</p>
-      <div id="hs-list"></div>
-    </div>
-    <button class="btn line" onclick="resetHome()">Әдепкі қалпына қайтару</button>
-  </div>
-</section>
-
-<!-- ============ ИНВЕСТИЦИЯ ============ -->
-<section class="page" id="p-invest">
-  <div class="hero flat">
-    <div class="hero-top">
-      <button class="back" onclick="go('accounts')">←</button>
-      <div style="flex:1"><h1 style="font-size:24px">Инвестиция</h1>
-        <div class="sub" id="iv-count">0 брокер</div></div>
-    </div>
-    <div class="cap-label">Портфель құны</div>
-    <div class="cap-row">
-      <div class="cap" id="iv-val">0 ₸</div>
-      <div class="pill" id="iv-pill">—</div>
-    </div>
-    <div class="two">
-      <div class="mini"><div class="t">Салынған</div><div class="v" id="iv-inv">0 ₸</div></div>
-      <div class="mini"><div class="t">Табыс</div><div class="v" id="iv-pl">0 ₸</div></div>
-    </div>
-  </div>
-  <div class="wrap">
-    <div class="card">
-      <h2>Брокерлер</h2>
-      <p class="muted" style="margin:-6px 0 10px">Жеке есептеледі — таза капиталға қосылмайды.</p>
-      <div id="iv-list"></div>
-    </div>
-    <div class="card">
-      <h2>Валюта бойынша</h2>
-      <div id="iv-cur"></div>
-    </div>
-    <div class="card">
-      <h2>Есеп</h2>
-      <div id="iv-info"></div>
-    </div>
-    <button class="btn dashed" onclick="openAcc('broker')">+ Брокерлік шот қосу</button>
-    <button class="btn line" onclick="startBrokerImportAll()"><span class="qi" data-i="inbox" style="display:inline-flex;vertical-align:-6px;margin-right:8px"></span>Брокер есебін жүктеу (шоттарға бөледі)</button>
   </div>
 </section>
 
@@ -641,14 +465,14 @@
   <div class="wrap">
     <div class="card"><h2>Банк шоттары <small id="a-sum-bank"></small></h2><div id="a-list-asset"></div></div>
     <div class="card"><h2>Брокерлік шоттар <small id="a-sum-broker"></small></h2>
-      <p class="muted" style="margin:-6px 0 10px">Жеке есептеледі — таза капиталға қосылмайды.
-        <a class="lnk" onclick="go('invest')">Барлығын салыстыру →</a></p>
+      <p class="muted" style="margin:-6px 0 10px">Жеке есептеледі — таза капиталға қосылмайды.</p>
       <div id="a-list-broker"></div></div>
     <div class="card"><h2>Несиелер <small id="a-sum-debt"></small></h2><div id="a-list-debt"></div></div>
     <button class="btn dashed" onclick="openAcc('asset')">+ Банк шотын қосу</button>
     <button class="btn dashed" onclick="openAcc('broker')">+ Брокерлік шот қосу</button>
     <button class="btn dashed" onclick="openAcc('debt')">+ Несие қосу</button>
     <button class="btn line" onclick="startBrokerImportAll()"><span class="qi" data-i="inbox" style="display:inline-flex;vertical-align:-6px;margin-right:8px"></span>Брокер есебін жүктеу (шоттарға бөледі)</button>
+    <button class="btn line" onclick="quickSetup()">Дайын үлгі: Kaspi + Freedom + брокерлік шоттар</button>
   </div>
 </section>
 
@@ -671,8 +495,7 @@
   </div>
   <div class="wrap">
     <p class="muted" style="padding:0 6px 8px">Операцияны солға сырғытсаңыз — өшіріледі, оңға сырғытсаңыз — түзетіледі.</p>
-    <button class="btn line sm hide" id="ops-clear" onclick="opsClear()" style="margin-bottom:10px">✕ Сүзгіні алу — барлық операция</button>
-    <div class="card anchor" id="ops-card">
+    <div class="card">
       <h2>Тізім <small class="act" onclick="selStart('tx')">Таңдау</small></h2>
       <div id="ops-list"></div>
     </div>
@@ -727,16 +550,15 @@
       <div class="c"><div class="ico" style="margin:0 auto" data-i="stats"></div><div class="l">Нәтиже</div><div class="v" id="s-net">0 ₸</div></div>
     </div>
     <div class="card">
-      <h2>12 айлық тенденция <small class="muted" style="font-weight:500">нүктені басыңыз</small></h2>
+      <h2>12 айлық тенденция</h2>
       <div id="trend-chart"></div>
-      <div id="trend-info"></div>
     </div>
     <div class="card">
       <h2>Кіріс / Шығын</h2>
       <div id="s-chart"></div>
       <div class="legend"><span><i style="background:linear-gradient(92deg,#7CF2CE,#00BE86)"></i>Кіріс</span><span><i style="background:linear-gradient(92deg,#FFA8B3,#FF4D67)"></i>Шығын</span></div>
     </div>
-    <button class="btn line" onclick="shareStat()">Есепті жіберу (PDF · Excel)</button>
+    <button class="btn" onclick="exportPdf()">PDF есеп жасау</button>
     <div class="card" id="s-card-out">
       <h2>Шығын санаттары</h2>
       <div id="s-donut-out"></div>
@@ -855,7 +677,6 @@
     </div>
 
     <div id="i-res" style="margin-top:16px"></div>
-    <button class="btn line" onclick="shareCalc('inv')">Есепті жіберу (PDF · Excel)</button>
   </div>
 </section>
 
@@ -912,7 +733,6 @@
     </div>
 
     <div id="l-res"></div>
-    <button class="btn line" onclick="shareCalc('loan')">Есепті жіберу (PDF · Excel)</button>
     <button class="btn line" onclick="exportLoanPdf()" style="margin-top:10px">Кестені PDF-ке шығару</button>
   </div>
 </section>
@@ -933,20 +753,13 @@
         <label class="f">Автоматты көшірмелер (соңғы 7 күн)</label>
         <div id="snap-list"></div>
       </div>
-      <button class="btn line" onclick="shareBackup()">Көшірмені жіберу (Telegram · Drive · пошта)</button>
-      <button class="btn line" onclick="exportData()">Деректі файлға сақтау</button>
+      <button class="btn line" onclick="exportData()">Деректі сақтау</button>
       <input type="file" id="imp" accept="application/json" class="hide" onchange="importData(this)">
       <button class="btn line" onclick="document.getElementById('imp').click()">Деректі ашу</button>
-      <button class="btn line" onclick="exportCSV()">Операцияларды Excel-ге (CSV)</button>
     </div>
     <div class="card">
       <h2>Жад</h2>
       <div id="sto-box"></div>
-    </div>
-    <div class="card">
-      <h2>Басты бет</h2>
-      <p class="muted" style="margin:0 0 12px">Басты беттегі карталардың ретін өзгертіп, керексізін жасыруға болады.</p>
-      <button class="btn line" onclick="go('homeset')">Басты бетті реттеу</button>
     </div>
     <div class="card">
       <h2>Тақырып</h2>
@@ -955,11 +768,6 @@
     <div class="card">
       <h2>Тіл</h2>
       <div class="chips" id="lang-chips" style="margin-bottom:0"></div>
-    </div>
-    <div class="card">
-      <h2>Шот қалдығы</h2>
-      <p class="muted" style="margin:0 0 12px">Қалдық жазбалар бойынша есептеледі. Бір жерде сан күмәнді көрінсе, қайта есептеп көріңіз — дерек өзгермейді.</p>
-      <button class="btn line" onclick="forceRecalc()">Қалдықты қайта есептеу</button>
     </div>
     <div class="card">
       <h2>Қайталанған операциялар</h2>
@@ -987,7 +795,7 @@
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Қаржы · 3.6</div>
+        <div class="ver">Қаржы · 3.0</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
@@ -1066,7 +874,7 @@
   </div>
 </section>
 
-
+<!-- ============ ДЕПОЗИТ КАЛЬКУЛЯТОРЫ ============ -->
 <section class="page" id="p-calc-dep">
   <div style="background:var(--surface);padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;gap:13px">
     <button class="back dark" onclick="go('calc')">←</button>
@@ -1088,7 +896,6 @@
         <div class="muted" id="dp-sw-txt">Ай сайын капитализация — пайызға пайыз</div></div>
     </div>
     <div id="dp-res" style="margin-top:6px"></div>
-    <button class="btn line" onclick="shareCalc('dep')">Есепті жіберу (PDF · Excel)</button>
   </div>
 </section>
 
@@ -1115,7 +922,6 @@
         <input class="inp soft" id="tx-mzp" type="number" inputmode="decimal" value="85000" oninput="calcTax()" style="margin:0;width:150px"></div>
     </div>
     <div id="tx-res"></div>
-    <button class="btn line" onclick="shareCalc('tax')">Есепті жіберу (PDF · Excel)</button>
   </div>
 </section>
 
@@ -1141,9 +947,8 @@
       <button onclick="startBrokerImport()"><span class="qi" data-i="inbox"></span> Файл жүктеу</button>
       <button onclick="openAcc('broker', brId)"><span class="qi" data-i="gear"></span> Түзету</button>
     </div>
-    <button class="btn line sm" onclick="jumpTo('br-ops')" style="margin-bottom:12px">↓ Операциялар тізіміне</button>
     <div class="card"><h2>Есеп</h2><div id="br-info"></div></div>
-    <div class="card anchor" id="br-ops">
+    <div class="card">
       <h2>Операциялар <span><small id="br-count"></small>
         <small class="act" style="margin-left:10px" onclick="selStart('btx')">Таңдау</small></span></h2>
       <div id="br-list"></div></div>
@@ -1174,14 +979,6 @@
 </section>
 
 <!-- ============ TABBAR ============ -->
-<div class="topbar" id="topbar">
-  <div class="in">
-    <button class="bk" id="tb-back" onclick="topBack()">←</button>
-    <div class="tt" id="tb-title">Қаржы</div>
-    <button class="up" onclick="scrollTop()">↑</button>
-  </div>
-</div>
-
 <nav class="tabbar">
   <button class="on" data-tab="home" onclick="go('home')"><span class="g" data-i="home"></span>Басты</button>
   <button data-tab="accounts" onclick="go('accounts')"><span class="g" data-i="wallet"></span>Қаржы</button>
@@ -1246,7 +1043,6 @@
   <div id="ac-bal-box">
     <label class="f" id="ac-bal-lab">Қалдық, ₸</label>
     <input class="inp" id="ac-bal" type="number" inputmode="decimal" placeholder="0">
-    <p class="muted" style="margin:6px 0 0;font-size:12.6px">Қазіргі нақты қалдықты жазыңыз — айырма бастапқы қалдыққа жазылады, операциялар тарихы бұзылмайды.</p>
   </div>
   <p class="muted hide" id="ac-broker-hint" style="margin:-4px 0 14px">Брокерлік шот теңгені де, долларды да бірге ұстайды. Валютаны таңдаудың қажеті жоқ — файл жүктегенде әрқайсысы өз валютасында есептеледі. Портфель құнын кейін «Құнын жаңарту» арқылы қоясыз.</p>
   <div id="ac-inv-box" class="hide">
@@ -1369,16 +1165,6 @@
   <label class="f">Қазір жиналған, ₸</label>
   <input class="inp" id="g-saved" type="number" inputmode="decimal" placeholder="0">
   <button class="btn" onclick="saveGoal()">Сақтау</button>
-  <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
-</div>
-
-<!-- Sheet: есеп пішімі -->
-<div class="sheet" id="fmt-sheet">
-  <div class="grab"></div>
-  <h3>Есепті қалай жіберейін?</h3>
-  <p class="muted" style="margin:0 0 14px">Экранда тұрған нәтиже сол күйінде файлға айналады.</p>
-  <button class="btn" id="fmt-pdf">PDF — оқуға және басып шығаруға</button>
-  <button class="btn line" id="fmt-csv">Excel (CSV) — сандармен жұмыс істеуге</button>
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
 </div>
 

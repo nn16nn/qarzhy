@@ -6,7 +6,7 @@ var store = {
   get: function(k){ try{ return localStorage.getItem(k); }catch(e){ return k in mem ? mem[k] : null; } },
   set: function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; } }
 };
-var DB = { tx:[], goals:[], accounts:[], btx:[], debts:[], recur:[], budgets:{}, lastBackup:null, lang:'kk', theme:'auto', rate:null, home:null, ver:0 };
+var DB = { tx:[], goals:[], accounts:[], btx:[], debts:[], recur:[], budgets:{}, lastBackup:null, lang:'kk', theme:'auto', rate:null };
 
 function load(){
   try{
@@ -15,13 +15,13 @@ function load(){
       var d = JSON.parse(raw);
       DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[]; DB.debts = d.debts||[]; DB.recur = d.recur||[];
       DB.budgets = d.budgets||{}; DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto';
-      DB.lastBackup = d.lastBackup||null; DB.rate = d.rate||null; DB.home = d.home||null; DB.ver = d.ver||0;
+      DB.lastBackup = d.lastBackup||null; DB.rate = d.rate||null;
       if(!DB.accounts.length){
-        DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:d.start||0,start:d.start||0}];
+        DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:d.start||0}];
       }
     }
   }catch(e){}
-  if(!DB.accounts.length) DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:0,start:0}];
+  if(!DB.accounts.length) DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:0}];
 }
 /* ================= IndexedDB ҚОЙМАСЫ ================= */
 /* localStorage шегі ~5 МБ. IndexedDB — жүздеген МБ.
@@ -83,29 +83,20 @@ function applyDB(d){
   DB.tx = d.tx || []; DB.goals = d.goals || []; DB.accounts = d.accounts || [];
   DB.btx = d.btx || []; DB.debts = d.debts || []; DB.recur = d.recur || []; DB.budgets = d.budgets || {};
   DB.lastBackup = d.lastBackup || null; DB.lang = d.lang || 'kk';
-  DB.theme = d.theme || 'auto'; DB.rate = d.rate || null; DB.home = d.home || null; DB.ver = d.ver || 0;
+  DB.theme = d.theme || 'auto'; DB.rate = d.rate || null;
   DB.updated = d.updated || null;
-  if(!DB.accounts.length) DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:0,start:0,cur:'KZT'}];
+  if(!DB.accounts.length) DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:0,cur:'KZT'}];
 }
 
 var saveTimer = null;
-var SAVE_ERR = false, LS_FULL = false;
 function save(){
   DB.updated = new Date().toISOString();
-  /* localStorage — жеделдігі үшін. Толып қалса қорқынышты емес (негізгі қойма — IndexedDB),
-     бірақ үнсіз қалдырмай, жад бөлімінде белгісін көрсетеміз. */
-  try { localStorage.setItem('qarzhy_v1', JSON.stringify(DB)); LS_FULL = false; }
-  catch(e){ LS_FULL = true; }
+  /* localStorage — жеделдігі үшін, сыймаса үнсіз өтеді */
+  try { localStorage.setItem('qarzhy_v1', JSON.stringify(DB)); } catch(e){}
   /* IndexedDB — негізгі қойма, 300 мс кідіріспен */
   if(saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(function(){
-    idbSet('db', JSON.parse(JSON.stringify(DB))).then(function(){
-      if(SAVE_ERR){ SAVE_ERR = false; drawWarnings(); }
-    }).catch(function(){
-      /* бұл шын мәнінде қауіпті жағдай — үндемей қалуға болмайды */
-      if(!SAVE_ERR){ SAVE_ERR = true; toast('Дерек сақталмады!'); }
-      drawWarnings();
-    });
+    idbSet('db', JSON.parse(JSON.stringify(DB))).catch(function(){});
   }, 300);
 }
 
@@ -179,13 +170,8 @@ function restoreSnap(day){
   idbGet('snap:' + day).then(function(d){
     if(!d){ toast('Көшірме табылмады'); return; }
     if(!confirm(tr('Осы күнгі күйге қайтарамыз ба?') + ' ' + fullDate(day))) return;
-    var back = JSON.parse(JSON.stringify(DB));
     applyDB(d);
-    migrateBal();
-    save(); render();
-    toastUndo('Қайтарылды', function(){
-      applyDB(back); recalcBal(); save(); render(); toast('Болдырылмады');
-    });
+    save(); render(); toast('Қайтарылды');
   }).catch(function(){ toast('Көшірме оқылмады'); });
 }
 function drawSnaps(){
@@ -389,43 +375,6 @@ function spendable(){ return DB.accounts.filter(function(a){ return a.kind==='as
 var view = 'home';
 function sheetOpen(){ return !!document.querySelector('.sheet.on'); }
 
-/* ================= ЖАБЫСҚАҚ ТАҚЫРЫП ЖӘНЕ СЕКІРУ ================= */
-var PAGE_TITLE = {
-  home:'Басты', accounts:'Менің қаржым', ops:'Операциялар', overview:'Шолу',
-  stat:'Статистика', goals:'Мақсаттар', calc:'Калькулятор',
-  'calc-inv':'Инвестиция калькуляторы', 'calc-loan':'Несие калькуляторы',
-  'calc-dep':'Депозит калькуляторы', 'calc-tax':'Салық калькуляторы',
-  set:'Баптау', recur:'Тұрақты операциялар', debts:'Қарыздар', budget:'Бюджет',
-  broker:'Брокерлік шот', import:'Файл жүктеу', invest:'Инвестиция', homeset:'Басты бет'
-};
-/* қай беттен қайда қайту керек */
-var PAGE_BACK = {
-  accounts:'home', ops:'home', overview:'home', stat:'home', goals:'home', calc:'home',
-  'calc-inv':'calc', 'calc-loan':'calc', 'calc-dep':'calc', 'calc-tax':'calc',
-  set:'home', recur:'home', debts:'home', budget:'home',
-  broker:'accounts', import:'home', invest:'accounts', homeset:'home'
-};
-
-function scrollTop(){ window.scrollTo({ top:0, behavior:'smooth' }); }
-function topBack(){ go(PAGE_BACK[view] || 'home'); }
-function jumpTo(id){
-  var el = document.getElementById(id);
-  if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
-}
-function syncTopbar(){
-  var bar = document.getElementById('topbar');
-  if(!bar) return;
-  var t = document.getElementById('tb-title');
-  if(t){
-    var nm = PAGE_TITLE[view] || 'Қаржы';
-    if(view === 'broker'){ var ba = acc(brId); if(ba) nm = ba.name; }
-    if(t.textContent !== nm) t.textContent = tr(nm);
-  }
-  document.getElementById('tb-back').style.visibility = (view === 'home') ? 'hidden' : '';
-  bar.classList.toggle('on', window.scrollY > 96);
-}
-window.addEventListener('scroll', syncTopbar, { passive:true });
-
 function go(v, silent){
   var same = (v === view);
   view = v;
@@ -437,7 +386,6 @@ function go(v, silent){
   for(var j=0;j<btns.length;j++) btns[j].classList.toggle('on', btns[j].dataset.tab===v);
   window.scrollTo(0,0);
   render();
-  syncTopbar();
 
   saveView();
   /* Android-тың «артқа» түймесі қосымшадан шығармай, алдыңғы бетке қайтсын */
@@ -582,15 +530,14 @@ function saveTx(){
     date:document.getElementById('f-date').value||todayISO(),
     note:document.getElementById('f-note').value.trim(), acc:fAcc, loan:fLoan,
     to:(fType==='tr'?fTo:null) };
-  stampTx(t);
 
   if(fEdit){
     var old=null; DB.tx.forEach(function(x){ if(x.id===fEdit) old=x; });
     if(old){
+      applyTx(old, -1);
       t.id = old.id;
-      if(old.r) t.r = old.r;
       DB.tx = DB.tx.map(function(x){ return x.id===old.id ? t : x; });
-      recalcBal();
+      applyTx(t, 1);
       fEdit=null;
       save(); closeSheets(); render(); toast('Өзгертілді');
       return;
@@ -598,101 +545,19 @@ function saveTx(){
     fEdit=null;
   }
   DB.tx.push(t);
-  recalcBal();
+  applyTx(t, 1);
   save(); closeSheets(); render();
   toast(fType==='in'?'Кіріс қосылды':(fType==='tr'?'Аударым жасалды':'Шығын қосылды'));
 }
-/* ================= ҚАЛДЫҚ — ЕСЕПТЕЛЕТІН САН ================= */
-/* Шоттың қалдығы енді жадта жинақталмайды. Ол әр өзгерістен кейін
-   a.start (бастапқы қалдық) + барлық жазба бойынша нөлден қайта есептеледі.
-   Сол себепті бір операция қате өшсе де, импорт жартылай тоқтаса да,
-   қалдық қисайып қалмайды — келесі есептеуде өзі түзеледі. */
-
-function r2(x){ return Math.round((x || 0) * 100) / 100; }
-
-/* Доллар шоты үшін жазба жасалған сәттегі курсты пайдаланамыз.
-   Курс өзгергенде ескі жазбалар қайта саналып, қалдық жылжып кетпесін деп. */
-function toAccR(a, kzt, r){
-  if(!a || a.cur !== 'USD') return kzt;
-  var v = r || rateV();
-  return v > 0 ? kzt / v : kzt;
-}
-function usdAcc(id){ var a = acc(id); return !!(a && a.cur === 'USD'); }
-/* жазбаға сол сәттегі курсты бекітіп қоямыз (тек доллар шоты қатысса) */
-function stampTx(t){
-  if(!t.r && (usdAcc(t.acc) || usdAcc(t.to))) t.r = rateV() || null;
-  return t;
-}
-
-function recalcBal(){
-  DB.accounts.forEach(function(a){
-    if(a.kind === 'broker') return;
-    if(typeof a.start !== 'number') a.start = 0;
-    a.bal = a.start;
-  });
-  /* 1. операциялар */
-  DB.tx.forEach(function(t){ applyTx(t, 1); });
-  /* 2. жеке қарыздар: беру/алу және өтелген төлемдер */
-  (DB.debts || []).forEach(function(d){
-    var a = acc(d.acc);
-    if(a && a.kind !== 'broker') a.bal += toAccR(a, d.dir === 'out' ? -d.amt : d.amt, d.r);
-    (d.hist || []).forEach(function(x){
-      var pa = acc(x.acc);
-      if(pa && pa.kind !== 'broker') pa.bal += toAccR(pa, d.dir === 'out' ? x.amt : -x.amt, x.r);
-    });
-  });
-  /* 3. мақсатқа шоттан салынған ақша */
-  (DB.goals || []).forEach(function(g){
-    (g.hist || []).forEach(function(x){
-      if(!x.acc) return;
-      var a = acc(x.acc);
-      if(a && a.kind !== 'broker') a.bal -= toAccR(a, x.amt, x.r);
-    });
-  });
-  DB.accounts.forEach(function(a){ if(a.kind !== 'broker') a.bal = r2(a.bal); });
-  syncBrokers();
-}
-
-/* Ескі деректі жаңа модельге көшіру: қазіргі қалдықты өзгертпей,
-   айырманы a.start-қа жазып қоямыз. Сол себепті сандар бір тиынға да жылжымайды. */
-function migrateBal(){
-  if(DB.ver >= 2){ recalcBal(); return; }
-  var before = {};
-  DB.accounts.forEach(function(a){ before[a.id] = a.bal || 0; });
-  var rv = rateV() || null;
-  DB.tx.forEach(function(t){ if(!t.r && (usdAcc(t.acc) || usdAcc(t.to))) t.r = rv; });
-  (DB.debts || []).forEach(function(d){
-    if(!d.r && usdAcc(d.acc)) d.r = rv;
-    (d.hist || []).forEach(function(x){ if(!x.r && usdAcc(x.acc)) x.r = rv; });
-  });
-  (DB.goals || []).forEach(function(g){
-    (g.hist || []).forEach(function(x){ if(!x.r && x.acc && usdAcc(x.acc)) x.r = rv; });
-  });
-  DB.accounts.forEach(function(a){ a.start = 0; });
-  recalcBal();
-  DB.accounts.forEach(function(a){
-    if(a.kind === 'broker') return;
-    a.start = r2((before[a.id] || 0) - (a.bal || 0));
-  });
-  DB.ver = 2;
-  recalcBal();
-}
-
-/* Баптаудағы "қайта есептеу" түймесі — қолмен түзету жолы */
-function forceRecalc(){
-  recalcBal(); save(); render();
-  toast('Қалдық қайта есептелді');
-}
-
 function applyTx(t, sign){
   var a=acc(t.acc);
   if(t.type==='tr'){
     var to=acc(t.to);
-    if(a) a.bal -= sign * toAccR(a, t.amt, t.r);
-    if(to && to.kind !== 'broker') to.bal += sign * toAccR(to, t.amt, t.r);
+    if(a) a.bal -= sign * toAcc(a, t.amt);
+    if(to && to.kind !== 'broker') to.bal += sign * toAcc(to, t.amt);
     return;
   }
-  if(a) a.bal += sign * toAccR(a, (t.type==='in' ? t.amt : -t.amt), t.r);
+  if(a) a.bal += sign * toAcc(a, (t.type==='in' ? t.amt : -t.amt));
   if(t.loan){
     var l=acc(t.loan);
     if(l) l.bal -= sign * t.amt;   // өтеген сайын несие азаяды
@@ -727,8 +592,9 @@ function openView(id){
   openSheet('sheet-view');
 }
 function delTx(){
+  var t=null; DB.tx.forEach(function(x){ if(x.id===viewId) t=x; });
+  if(t) applyTx(t,-1);
   DB.tx=DB.tx.filter(function(x){return x.id!==viewId;});
-  recalcBal();
   save(); closeSheets(); render(); toast('Өшірілді');
 }
 
@@ -812,7 +678,6 @@ function saveAcc(){
   if(!n){ toast('Атауын жазыңыз'); return; }
   var a={ id:newId(), name:n, kind:accKind, icon:accIcon,
     bal:parseFloat(document.getElementById('ac-bal').value)||0 };
-  a.start = a.bal;   /* бастапқы қалдық — қалғанын жазбалар есептейді */
   if(accKind==='debt'){
     a.rate=parseFloat(document.getElementById('ac-rate').value)||0;
     a.pay=parseFloat(document.getElementById('ac-pay').value)||0;
@@ -826,20 +691,14 @@ function saveAcc(){
     var old=acc(accEdit);
     if(old){
       old.name=a.name; old.icon=a.icon;
-      if(accKind!=='broker'){
-        /* формадағы сан — қазіргі қалдық. Айырманы бастапқы қалдыққа қосамыз,
-           сонда жазбалар тарихы бұзылмайды (сверка осылай жасалады). */
-        old.start = r2((old.start || 0) + (a.bal - (old.bal || 0)));
-        old.cur = a.cur;
-      }
+      if(accKind!=='broker'){ old.bal=a.bal; old.cur=a.cur; }
       if(accKind==='debt'){ old.rate=a.rate; old.pay=a.pay; }
       if(accKind==='broker'){ if(!old.vals) old.vals={KZT:0,USD:0}; }
     }
     accEdit=null;
-    recalcBal();
     save(); closeSheets(); render(); toast('Сақталды'); return;
   }
-  DB.accounts.push(a); recalcBal(); save(); closeSheets(); render();
+  DB.accounts.push(a); save(); closeSheets(); render();
   toast(KIND_TITLE[accKind]+' қосылды');
 }
 function openAccView(id){
@@ -870,12 +729,7 @@ function openAccView(id){
   h+='<div class="kv"><span>Операция</span><b>'+cnt+'</b></div>';
   document.getElementById('v-body').innerHTML=h;
   var extraBtns='<button class="btn line" onclick="openAcc(\''+a.kind+'\',\''+a.id+'\')">Түзету</button>';
-  if(a.kind==='broker'){
-    extraBtns='<button class="btn" onclick="openBroker(\''+a.id+'\')">Операцияларын ашу</button>'+
-      '<button class="btn line" onclick="openBVal(\''+a.id+'\')">Құнын жаңарту</button>'+extraBtns;
-  } else {
-    extraBtns='<button class="btn" onclick="accOps(\''+a.id+'\')">Операцияларын көру ('+cnt+')</button>'+extraBtns;
-  }
+  if(a.kind==='broker') extraBtns='<button class="btn" onclick="openBVal(\''+a.id+'\')">Құнын жаңарту</button>'+extraBtns;
   document.getElementById('v-body').innerHTML=h;
   var slot=document.getElementById('v-extra');
   if(slot) slot.innerHTML=extraBtns;
@@ -883,28 +737,6 @@ function openAccView(id){
   document.getElementById('v-del').onclick=delAcc;
   openSheet('sheet-view');
 }
-/* Шот бетінен бірден сол шоттың операцияларына өту.
-   Бұрын Операциялар бетіне барып, шот белгісін өзің тауып басу керек болатын. */
-function accOps(id){
-  opsAcc = id; opsFilter = 'all'; opsMonth = null;
-  var q = document.getElementById('ops-q'); if(q) q.value = '';
-  closeSheets();
-  go('ops');
-  setTimeout(function(){
-    jumpTo('ops-card');
-    var chip = document.querySelector('#ops-accs .chip.on');
-    if(chip && chip.scrollIntoView) chip.scrollIntoView({ block:'nearest', inline:'center' });
-  }, 60);
-}
-
-function opsClear(){
-  opsAcc = 'all'; opsFilter = 'all'; opsMonth = null;
-  var q = document.getElementById('ops-q'); if(q) q.value = '';
-  var segs = document.querySelectorAll('[data-of]');
-  for(var i = 0; i < segs.length; i++) segs[i].classList.toggle('on', segs[i].dataset.of === 'all');
-  render();
-}
-
 function delAcc(){
   DB.accounts=DB.accounts.filter(function(a){return a.id!==viewId;});
   DB.tx.forEach(function(t){ if(t.acc===viewId) t.acc=null; if(t.loan===viewId) t.loan=null; });
@@ -1104,7 +936,26 @@ function saveBVal(){
 }
 
 /* ---- жылдам баптау ---- */
-
+function quickSetup(){
+  var want=[
+    {name:'Kaspi Bank', kind:'asset', icon:'card'},
+    {name:'Freedom SuperApp', kind:'asset', icon:'bank'},
+    {name:'Брокерлік шот 1', kind:'broker', icon:'invest'},
+    {name:'Брокерлік шот 2', kind:'broker', icon:'chart'}
+  ];
+  var added=0;
+  want.forEach(function(w){
+    var exists=false;
+    DB.accounts.forEach(function(a){ if(a.name.toLowerCase()===w.name.toLowerCase()) exists=true; });
+    if(exists) return;
+    var na = { id:newId(), name:w.name, kind:w.kind, icon:w.icon, bal:0, cur:'KZT' };
+    if(w.kind==='broker'){ na.vals={KZT:0,USD:0}; na.invested=0; na.valSet=false; }
+    DB.accounts.push(na);
+    added++;
+  });
+  save(); render();
+  toast(added? added+' шот қосылды — қалдықтарын жазыңыз' : 'Бұл шоттар бар');
+}
 
 /* ---- goals ---- */
 var goalId=null;
@@ -1173,16 +1024,18 @@ function addToGoal(){
   if(!v || v<=0){ toast('Соманы жазыңыз'); return; }
   var g=goal(goalId);
   if(!g) return;
+  if(gvAcc){
+    var a=acc(gvAcc);
+    if(a) a.bal -= toAcc(a, v);
+  }
   g.saved += v;
   g.hist = g.hist || [];
-  g.hist.push({ date: todayISO(), acc: gvAcc || null, amt: v, r: usdAcc(gvAcc) ? (rateV() || null) : null });
-  recalcBal();
+  g.hist.push({ date: todayISO(), acc: gvAcc || null, amt: v });
   save(); closeSheets(); render();
   toast(gvAcc ? (acc(gvAcc).name+' шотынан алынды') : 'Салым қосылды');
 }
 function delGoal(){
   DB.goals=DB.goals.filter(function(g){return g.id!==goalId;});
-  recalcBal();
   save(); closeSheets(); render(); toast('Өшірілді');
 }
 
@@ -1193,144 +1046,24 @@ function exportData(){
   a.href=URL.createObjectURL(blob); a.download='qarzhy-'+todayISO()+'.json'; a.click();
   DB.lastBackup=new Date().toISOString(); save(); render();
 }
-/* ---- көшірмені тексеру ----
-   Бұрын кез келген JSON файл бүкіл базаны үнсіз ауыстырып жіберетін.
-   Енді: құрылымы тексеріледі, ішіндегісі көрсетіліп расталады,
-   ауыстырар алдында қазіргі күй бөлек көшірмеге жазылады. */
-function checkBackup(d){
-  if(!d || typeof d !== 'object' || Array.isArray(d)) return 'Файл құрылымы дұрыс емес';
-  if(!Array.isArray(d.tx) && !Array.isArray(d.accounts)) return 'Бұл Қаржы көшірмесі емес';
-  var arrs = ['tx','goals','accounts','btx','debts','recur'], i;
-  for(i = 0; i < arrs.length; i++){
-    if(d[arrs[i]] !== undefined && !Array.isArray(d[arrs[i]])) return 'Файлдың ішіндегі дерек бүлінген';
-  }
-  if(d.budgets !== undefined && (typeof d.budgets !== 'object' || Array.isArray(d.budgets)))
-    return 'Файлдың ішіндегі дерек бүлінген';
-  var bad = 0;
-  (d.tx || []).forEach(function(t){
-    if(!t || typeof t.amt !== 'number' || !isFinite(t.amt) || !t.date || !t.type) bad++;
-  });
-  (d.accounts || []).forEach(function(a){ if(!a || !a.id || !a.name) bad++; });
-  if(bad) return bad + ' жазба бүлінген';
-  return null;
-}
-
-/* ---- Excel үшін CSV ---- */
-/* статистика есебінің жолдары — экрандағы сандардан жиналады */
-function statRows(){
-  var TYPE = { in: 'Кіріс', out: 'Шығын' };
-  var list = DB.tx.filter(function(t){ return inRange(t.date) && t.type !== 'tr'; });
-  var sIn = 0, sOut = 0, sums = { in: {}, out: {} };
-  list.forEach(function(t){
-    if(t.type === 'in') sIn += t.amt; else sOut += t.amt;
-    sums[t.type][t.cat] = (sums[t.type][t.cat] || 0) + t.amt;
-  });
-  var rows = [
-    ['Кезең', (range.from || '') + ' — ' + (range.to || '')],
-    ['Кіріс', Math.round(sIn)],
-    ['Шығын', Math.round(sOut)],
-    ['Нәтиже', Math.round(sIn - sOut)],
-    []
-  ];
-  ['out', 'in'].forEach(function(ty){
-    var ks = Object.keys(sums[ty]).sort(function(a, b){ return sums[ty][b] - sums[ty][a]; });
-    if(!ks.length) return;
-    rows.push([TYPE[ty] + ' санаттары', 'Сома', 'Үлесі']);
-    var tot = ty === 'in' ? sIn : sOut;
-    ks.forEach(function(k){
-      rows.push([k, Math.round(sums[ty][k]), (tot ? Math.round(sums[ty][k] / tot * 100) : 0) + '%']);
-    });
-    rows.push([]);
-  });
-  rows.push(['Операциялар', '', '', '', '']);
-  rows.push(['Күні', 'Түрі', 'Санат', 'Сома', 'Шот']);
-  list.slice().sort(function(a, b){ return a.date < b.date ? -1 : 1; }).forEach(function(t){
-    var a = acc(t.acc);
-    rows.push([t.date, TYPE[t.type], t.cat || '', Math.round(t.amt), a ? a.name : '']);
-  });
-  return rows;
-}
-
-function csvCell(v){
-  v = (v === null || v === undefined) ? '' : String(v);
-  return /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
-}
-function exportCSV(){
-  var TYPE = { in: 'Кіріс', out: 'Шығын', tr: 'Аударым' };
-  var rows = [['Күні', 'Түрі', 'Санат', 'Сома', 'Шот', 'Қайда', 'Ескертпе']];
-  DB.tx.slice().sort(function(a, b){ return a.date < b.date ? -1 : 1; }).forEach(function(t){
-    var a = acc(t.acc), to = acc(t.to);
-    rows.push([t.date, TYPE[t.type] || t.type, t.cat || '', Math.round(t.amt),
-               a ? a.name : '', to ? to.name : '', t.note || '']);
-  });
-  /* Excel нүктелі үтірді бағанға бөледі, BOM — кириллица мен қазақ әрпі үшін */
-  var csv = '\ufeff' + rows.map(function(r){ return r.map(csvCell).join(';'); }).join('\r\n');
-  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-  var a2 = document.createElement('a');
-  a2.href = URL.createObjectURL(blob);
-  a2.download = 'qarzhy-' + todayISO() + '.csv';
-  a2.click();
-  setTimeout(function(){ URL.revokeObjectURL(a2.href); }, 4000);
-  toast(DB.tx.length + ' операция шығарылды');
-}
-
-/* ---- көшірмені бірден жіберу (Telegram, Drive, пошта) ---- */
-function shareBackup(){
-  var txt = JSON.stringify(DB, null, 2);
-  var name = 'qarzhy-' + todayISO() + '.json';
-  var f = null;
-  try { f = new File([txt], name, { type: 'application/json' }); } catch(e){}
-  if(f && navigator.canShare && navigator.canShare({ files: [f] })){
-    navigator.share({ files: [f], title: name }).then(function(){
-      DB.lastBackup = new Date().toISOString(); save(); render();
-    }).catch(function(){});
-    return;
-  }
-  exportData();   /* қолдамаса — әдеттегідей жүктеп аламыз */
-}
-
 function importData(el){
-  var f = el.files[0];
-  if(!f){ return; }
-  var r = new FileReader();
-  r.onerror = function(){ el.value = ''; alert(tr('Файл оқылмады')); };
-  r.onload = function(){
-    var d = null;
-    try { d = JSON.parse(r.result); }
-    catch(e){ el.value = ''; alert(tr('Файл оқылмады') + ' — JSON емес.'); return; }
-
-    var err = checkBackup(d);
-    if(err){ el.value = ''; alert(tr('Файл жарамсыз') + ': ' + tr(err)); return; }
-
-    var when = d.updated ? fullDate(String(d.updated).slice(0, 10)) : tr('белгісіз');
-    var msg = tr('Көшірмедегі дерек:') + '\n' +
-      '• ' + (d.tx || []).length + ' ' + tr('операция') + '\n' +
-      '• ' + (d.accounts || []).length + ' ' + tr('шот') + '\n' +
-      '• ' + (d.debts || []).length + ' ' + tr('қарыз') + ' · ' + (d.goals || []).length + ' ' + tr('мақсат') + '\n' +
-      tr('Жазылған күні') + ': ' + when + '\n\n' +
-      tr('Қазіргі дерегіңіз') + ': ' + DB.tx.length + ' ' + tr('операция') + '.\n' +
-      tr('Ол ауыстырылады. Жалғастырасыз ба?');
-    if(!confirm(msg)){ el.value = ''; return; }
-
-    /* артқа қайтару үшін қазіргі күйді сақтап аламыз */
-    var back = JSON.parse(JSON.stringify(DB));
-    idbSet('snap:import-' + todayISO(), back).catch(function(){});
-
-    applyDB(d);
-    migrateBal();
-    save(); render();
-    el.value = '';
-    toastUndo('Қалпына келтірілді', function(){
-      applyDB(back); recalcBal(); save(); render(); toast('Қайтарылды');
-    });
+  var f=el.files[0]; if(!f) return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var d=JSON.parse(r.result);
+      DB.tx=d.tx||[]; DB.goals=d.goals||[]; DB.accounts=d.accounts||[]; DB.btx=d.btx||[];
+      DB.debts=d.debts||[]; DB.recur=d.recur||[]; DB.budgets=d.budgets||{};
+      if(!DB.accounts.length) DB.accounts=[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:d.start||0}];
+      save(); render(); toast('Қалпына келтірілді');
+    }catch(e){ toast('Файл оқылмады'); }
   };
-  r.readAsText(f);
+  r.readAsText(f); el.value='';
 }
 function wipe(){
   if(!confirm('Барлық дерек өшіріледі. Жалғастырасыз ба?')) return;
-  DB={tx:[],goals:[],accounts:[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:0,start:0,cur:'KZT'}],
-      btx:[],debts:[],recur:[],budgets:{},lastBackup:DB.lastBackup,lang:DB.lang,
-      theme:DB.theme,home:DB.home,rate:DB.rate,ver:2};
+  DB={tx:[],goals:[],accounts:[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:0,cur:'KZT'}],
+      btx:[],debts:[],recur:[],budgets:{},lastBackup:DB.lastBackup,lang:DB.lang,rate:DB.rate};
   SNAPS.forEach(function(x){ idbDel('snap:'+x.day); });
   SNAPS=[]; idbSet('snaps',[]).catch(function(){});
   save(); render(); toast('Өшірілді');
@@ -1339,7 +1072,6 @@ function wipe(){
 /* ================= FILTERS ================= */
 var opsFilter='all', opsAcc='all', statFilter='all', period='month';
 var range={from:null,to:null};
-var opsMonth = null;   /* 'YYYY-MM' — тек сол айды көрсету, null болса бәрі */
 function setOpsFilter(f){
   opsFilter=f;
   document.querySelectorAll('[data-of]').forEach(function(b){ b.classList.toggle('on', b.dataset.of===f); });
@@ -1371,71 +1103,14 @@ function customRange(){
 }
 function inRange(d){ return (!range.from || d>=range.from) && (!range.to || d<=range.to); }
 
-/* ================= АЙ СОҢЫНА БОЛЖАМ ================= */
-/* Осы айдағы нақты қарқын + әлі келмеген тұрақты операциялар.
-   Тұрақты операциялар орташа есепке қосылмайды (олар бөлек саналады),
-   әйтпесе бір төлем екі рет есептеліп кетер еді. */
-function forecast(){
-  var d = new Date(), day = d.getDate(), dim = daysInYM(ymOf(todayISO()));
-  var rest = Math.max(0, dim - day);
-  var mIn = 0, mOut = 0, freeOut = 0;
-  DB.tx.forEach(function(t){
-    if(!inMonth(t.date) || t.type === 'tr') return;
-    if(t.type === 'in') mIn += t.amt;
-    else { mOut += t.amt; if(!t.rec) freeOut += t.amt; }
-  });
-  var avg = day > 0 ? freeOut / day : 0;
-  var planIn = 0, planOut = 0;
-  (DB.recur || []).forEach(function(r){
-    if(r.active === false) return;
-    var rd = Math.min(r.day, dim);
-    if(rd <= day) return;                    /* бүгінге дейінгісі әлдеқашан жазылған */
-    if(r.type === 'in') planIn += r.amt; else planOut += r.amt;
-  });
-  var restOut = avg * rest + planOut;
-  var T = totals();
-  return {
-    day: day, dim: dim, rest: rest,
-    inNow: mIn, outNow: mOut, avg: avg,
-    planIn: planIn, planOut: planOut,
-    endIn: mIn + planIn, endOut: mOut + restOut,
-    endBal: T.banks + planIn - restOut,
-    now: T.banks
-  };
-}
-
-/* ================= МАҚСАТҚА ЖЕТУ МЕРЗІМІ ================= */
-/* Соңғы 3 айдағы нақты қарқын бойынша. Қарқын жоқ болса — болжам да жоқ. */
-function goalETA(g){
-  var left = (g.target || 0) - (g.saved || 0);
-  if(left <= 0) return { done: true };
-  var lim = new Date(); lim.setMonth(lim.getMonth() - 3);
-  var from = lim.toISOString().slice(0, 10), sum = 0;
-  (g.hist || []).forEach(function(x){ if(x.date >= from) sum += x.amt; });
-  if(sum <= 0) return { rate: 0 };
-  var per = sum / 3;
-  var months = Math.ceil(left / per);
-  if(months > 600) return { rate: per, far: true };
-  var e = new Date(); e.setDate(1); e.setMonth(e.getMonth() + months);
-  return { rate: per, months: months, when: MONTHS[e.getMonth()] + ' ' + e.getFullYear() };
-}
-
 /* ================= RENDER ================= */
-/* Бұрын render() әр өзгерісте барлық бетті — статистиканы, калькуляторларды,
-   көрінбей тұрған тізімдерді — қайта сызатын. Енді әр бөлім өз беті ашық
-   тұрғанда ғана сызылады. go() әр ауысқанда render() шақырады, сондықтан
-   бет ашылған сәтте деректің жаңасы болады. */
-function on(v){ return view === v; }
-
 function render(){
   syncBrokers();
-  if(on('broker')) renderBroker();
   var T=totals();
   var mTx=DB.tx.filter(function(t){return inMonth(t.date) && t.type!=='tr';});
   var mIn=0,mOut=0; mTx.forEach(function(t){ if(t.type==='in') mIn+=t.amt; else mOut+=t.amt; });
 
   /* --- home --- */
-  if(on('home')){
   animNum(document.getElementById('h-net'), T.net);
   var pill=document.getElementById('h-pill');
   pill.textContent = T.net>=0?'↑ Оң':'↓ Теріс';
@@ -1445,6 +1120,7 @@ function render(){
   document.getElementById('h-out').textContent=money(mOut);
   document.getElementById('h-banks').textContent=money(T.banks);
   document.getElementById('h-broker').textContent=money(T.broker);
+  if(view==='broker') renderBroker();
   document.getElementById('h-debts').textContent=money(T.debts);
   var hl=document.getElementById('h-lent'), ho=document.getElementById('h-owed');
   if(hl) hl.textContent=money(T.lent);
@@ -1456,17 +1132,17 @@ function render(){
     (openDebts ? ' · '+openDebts+' қарыз' : '');
   document.getElementById('h-rate').textContent=rateText();
   document.getElementById('h-rate-at').textContent = rateV()? (rateAgo()+' · ↻') : '↻';
+  var sri=document.getElementById('set-rate-info');
+  if(sri) sri.textContent = rateV()
+    ? rateText()+' · '+rateAgo()+(DB.rate.src==='manual'?' (қолмен)':'')
+    : 'Курс әлі алынбаған. Интернет болса жаңартыңыз немесе қолмен жазыңыз.';
+
   var recent=DB.tx.slice().sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,5);
   var hb=document.getElementById('home-tx'); hb.innerHTML='';
   if(!recent.length) hb.innerHTML='<div class="empty">Операция жоқ.<br>Жоғарыдағы <b>+</b> түймесімен қосыңыз.</div>';
   else recent.forEach(function(t){ hb.appendChild(txRow(t)); });
-  applyHome();
-  renderHomeWidgets();
-  drawWarnings();
-  }
 
   /* --- accounts --- */
-  if(on('accounts')){
   document.getElementById('a-count').textContent=DB.accounts.length+' шот';
   animNum(document.getElementById('a-net'), T.net);
   document.getElementById('a-banks').textContent=money(T.banks);
@@ -1480,15 +1156,12 @@ function render(){
   renderAccList('asset','a-list-asset','Банк шоты жоқ. Төмендегі түймемен қосыңыз.');
   renderAccList('broker','a-list-broker','Брокерлік шот жоқ. Инвестицияңызды осында қосыңыз.');
   renderAccList('debt','a-list-debt','Несие жоқ — тамаша.');
-  }
 
   /* --- ops --- */
-  if(on('ops')){
   var q=(document.getElementById('ops-q').value||'').trim().toLowerCase();
   var ops=DB.tx.filter(function(t){
     if(opsFilter!=='all' && t.type!==opsFilter) return false;
     if(opsAcc!=='all' && t.acc!==opsAcc && t.to!==opsAcc) return false;
-    if(opsMonth && t.date.slice(0,7)!==opsMonth) return false;
     if(q){
       var hay=((t.cat||'')+' '+(t.note||'')+' '+Math.round(t.amt)).toLowerCase();
       if(hay.indexOf(q)===-1) return false;
@@ -1498,15 +1171,10 @@ function render(){
 
   var oIn=0,oOut=0;
   ops.forEach(function(t){ if(t.type==='in') oIn+=t.amt; else if(t.type==='out') oOut+=t.amt; });
-  var fAccName = opsAcc!=='all' ? (acc(opsAcc) ? acc(opsAcc).name : '') : '';
-  var fMonth = opsMonth ? MONTHS[parseInt(opsMonth.slice(5,7),10)-1]+' '+opsMonth.slice(0,4) : '';
-  var anyF = q||opsAcc!=='all'||opsFilter!=='all'||opsMonth;
-  document.getElementById('o-count').textContent = anyF
-      ? (fMonth ? fMonth+' · ' : '')+(fAccName ? fAccName+' · ' : '')+
-        ops.length+' табылды · +'+nf(oIn)+' / −'+nf(oOut)+' ₸'
+  document.getElementById('o-count').textContent =
+    (q||opsAcc!=='all'||opsFilter!=='all')
+      ? ops.length+' табылды · +'+nf(oIn)+' / −'+nf(oOut)+' ₸'
       : DB.tx.length+' операция';
-  var clr = document.getElementById('ops-clear');
-  if(clr) clr.classList.toggle('hide', !anyF);
 
   var oab=document.getElementById('ops-accs'); oab.innerHTML='';
   var oaList=[{id:'all',name:'Барлық шот',icon:'◎'}].concat(DB.accounts);
@@ -1536,10 +1204,7 @@ function render(){
     });
   }
 
-  }
-
   /* --- overview --- */
-  if(on('overview')){
   animNum(document.getElementById('ov-net'), T.net);
   var rate = mIn>0 ? Math.round((mIn-mOut)/mIn*100) : 0;
   document.getElementById('ov-month').innerHTML=
@@ -1602,25 +1267,16 @@ function render(){
     });
   }
 
-  }
-
-  /* --- жаңа бөлімдер: әрқайсысы өз бетінде ғана --- */
-  if(on('budget')) drawBudget();
-  if(on('debts')) drawDebts();
-  if(on('recur')) drawRecur();
-  if(on('calc-dep')) calcDep();
-  if(on('calc-tax')) calcTax();
-  if(on('invest')) renderInvest();
-  if(on('homeset')) drawHomeSet();
-  if(on('stat')) renderStats();
-  drawSelBar();
-  if(on('set')){
-  var sri=document.getElementById('set-rate-info');
-  if(sri) sri.textContent = rateV()
-    ? rateText()+' · '+rateAgo()+(DB.rate.src==='manual'?' (қолмен)':'')
-    : 'Курс әлі алынбаған. Интернет болса жаңартыңыз немесе қолмен жазыңыз.';
+  /* --- жаңа бөлімдер --- */
+  drawBudget();
+  drawDebts();
+  drawRecur();
+  calcDep();
+  calcTax();
+  drawWarnings();
   drawSnaps();
   drawStorage();
+  drawSelBar();
   var bk=document.getElementById('bk-info');
   if(bk){
     var dd=daysSinceBackup();
@@ -1638,15 +1294,15 @@ function render(){
     });
     di.textContent = dc ? dc+' қайталанған операция табылды.' : 'Қайталанған операция жоқ.';
   }
+
+  /* --- stats --- */
+  renderStats();
+  fillIcons();
   drawLangChips();
   drawThemeChips();
-  }
-
-  fillIcons();
   translateDom(document.body);
 
   /* --- goals --- */
-  if(!on('goals')) return;
   var gt=0; DB.goals.forEach(function(g){ gt+=g.saved; });
   animNum(document.getElementById('g-total'), gt);
   document.getElementById('g-count').textContent=DB.goals.length+' мақсат';
@@ -1654,10 +1310,6 @@ function render(){
   if(!DB.goals.length) gl.innerHTML='<div class="card"><div class="empty">Мақсат әлі жоқ.<br>Жинайтын сомаңызды белгілеп қойыңыз.</div></div>';
   else DB.goals.forEach(function(g){
     var pct=Math.min(100,Math.round(g.saved/g.target*100));
-    var eta=goalETA(g);
-    var etaTxt = eta.done ? 'Мақсат орындалды'
-      : (eta.when ? 'Осы қарқынмен ' + eta.when + ' шамасында'
-      : (eta.far ? 'Осы қарқынмен өте ұзаққа созылады' : 'Қарқын белгісіз — салым жасаңыз'));
     var el=document.createElement('div'); el.className='card';
     el.onclick=function(){ openGview(g.id); };
     el.innerHTML='<div style="display:flex;align-items:center;gap:11px;margin-bottom:12px">'+
@@ -1665,8 +1317,6 @@ function render(){
       '<div class="track"><div class="fill" style="width:'+pct+'%"></div></div>'+
       '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;color:var(--ink-2)">'+
       '<span>'+money(g.saved)+' / '+money(g.target)+'</span><b style="color:var(--ink)">'+pct+'%</b></div>'+
-      '<div class="muted" style="margin-top:6px">'+etaTxt+
-        (eta.rate>0&&!eta.done ? ' · айына ~'+money(eta.rate) : '')+'</div>'+
       (function(){
         if(!g.hist || !g.hist.length) return '';
         var last=g.hist[g.hist.length-1], la=last.acc?acc(last.acc):null;
@@ -2587,10 +2237,9 @@ function importConfirm(){
   sel.forEach(function(r){
     var t = { id: newId(), type: r.type, cat: r.cat, amt: r.amt, date: r.date,
               note: r.note === '—' ? '' : r.note, acc: IMP.acc, loan: null };
-    stampTx(t);
     DB.tx.push(t);
+    applyTx(t, 1);
   });
-  recalcBal();
   save();
   IMP.rows = [];
   document.getElementById('imp-result').innerHTML = '';
@@ -2628,6 +2277,7 @@ var TR = [
 ["+ Банк шотын қосу","+ Добавить банковский счёт","+ Add bank account"],
 ["+ Брокерлік шот қосу","+ Добавить брокерский счёт","+ Add brokerage account"],
 ["+ Несие қосу","+ Добавить кредит","+ Add loan"],
+["Дайын үлгі: Kaspi + Freedom + брокерлік шоттар","⚡ Готовый набор: Kaspi + Freedom + брокерские счета","⚡ Quick setup: Kaspi + Freedom + brokerage"],
 ["Банк шоты жоқ. Төмендегі түймемен қосыңыз.","Банковских счетов нет. Добавьте кнопкой ниже.","No bank accounts. Add one below."],
 ["Брокерлік шот жоқ. Инвестицияңызды осында қосыңыз.","Брокерских счетов нет. Добавьте инвестиции здесь.","No brokerage accounts. Add your investments here."],
 ["Несие жоқ — тамаша.","Кредитов нет — отлично.","No loans — excellent."],
@@ -2679,15 +2329,6 @@ var TR = [
 /* --- калькулятор --- */
 ["Қаржылық есептеулер","Финансовые расчёты","Financial calculations"],
 ["Инвестиция калькуляторы","Инвестиционный калькулятор","Investment calculator"],
-["Статистика есебі","Отчёт по статистике","Statistics report"],
-["Депозит калькуляторы","Депозитный калькулятор","Deposit calculator"],
-["Салық калькуляторы","Налоговый калькулятор","Tax calculator"],
-["Кезең","Период","Period"],
-["Кіріс санаттары","Категории доходов","Income categories"],
-["Үлесі","Доля","Share"],
-["Сома","Сумма","Amount"],
-["Түрі","Тип","Type"],
-["Күні","Дата","Date"],
 ["Табыс · Мерзім · Күрделі пайыз","Доход · Срок · Сложный процент","Return · Term · Compound interest"],
 ["Несие калькуляторы","Кредитный калькулятор","Loan calculator"],
 ["Ай төлем · Ерте өтеу · Кесте","Платёж · Досрочное · График","Payment · Early payoff · Schedule"],
@@ -2894,6 +2535,7 @@ var TR = [
 ["Бердім","Дал","Lent"],["Алдым","Взял","Borrowed"],["Қайтарылды","Возвращено","Repaid"],
 ["Қарыз мерзімі өтті","Просроченные долги","Overdue debts"],["қарыз","долг","debt"],
 
+["Депозит калькуляторы","Депозитный калькулятор","Deposit calculator"],
 ["Банк салымының табысы","Доход по вкладу","Deposit return"],
 ["Капитализация · Толықтыру","Капитализация · Пополнение","Compounding · Top-ups"],
 ["Салым сомасы, ₸","Сумма вклада, ₸","Deposit amount, ₸"],["Мерзімі, ай","Срок, мес.","Term, months"],
@@ -2904,6 +2546,7 @@ var TR = [
 ["Тиімді жылдық өсім","Эффективная годовая доходность","Effective annual return"],
 ["Айына орташа табыс","Средний доход в месяц","Average monthly return"],
 
+["Салық калькуляторы","Налоговый калькулятор","Tax calculator"],
 ["ЖК · оңайлатылған декларация","ИП · упрощённая декларация","Sole trader · simplified"],
 ["ЖК · оңайлатылған декларация (910-форма)","ИП · упрощённая декларация (форма 910)","Sole trader · simplified (form 910)"],
 ["Кезеңдегі табыс, ₸","Доход за период, ₸","Income for the period, ₸"],
@@ -2958,101 +2601,7 @@ var TR = [
 ["Көшірме жасаңыз","Сделайте копию","Make a backup"],
 ["Көшірме ескірді","Копия устарела","Backup is outdated"],
 ["Дерек әлі жоқ","Данных пока нет","No data yet"],
-["Дерек тек осы телефонда сақталады.","Данные хранятся только на этом телефоне.","Data is stored only on this phone."],
-
-/* --- басты бетті реттеу --- */
-["Басты бетті реттеу","Настроить главную","Customize home"],
-["Басты бет","Главный экран","Home screen"],
-["Қай карта көрінеді және қандай ретпен","Какие карточки видны и в каком порядке","Which cards show, and in what order"],
-["Карталар","Карточки","Cards"],
-["Көзді басып жасырыңыз, көрсеткішпен ретін ауыстырыңыз.","Глазом — скрыть, стрелками — поменять порядок.","Tap the eye to hide, arrows to reorder."],
-["Басты беттегі карталардың ретін өзгертіп, керексізін жасыруға болады.","Порядок карточек на главной можно менять, лишние — скрывать.","Reorder the cards on the home screen and hide the ones you do not need."],
-["Әдепкі қалпына қайтару","Вернуть по умолчанию","Reset to default"],
-["Әдепкі қалпына келтірілді","Возвращено по умолчанию","Reset to default"],
-["Жылдам сілтемелер","Быстрые ссылки","Quick links"],
-["Айдағы шығын","Расходы за месяц","Spending this month"],
-["Статистика →","Статистика →","Stats →"],
-["Санат лимиті қойылмаған. Бюджет бөлімінен қойыңыз.","Лимиты по категориям не заданы. Задайте их в разделе «Бюджет».","No category limits set. Add them in Budget."],
-["Бұл айда шығын жоқ.","В этом месяце расходов нет.","No spending this month."],
-["Мақсат әлі жоқ. Жинайтын сомаңызды белгілеп қойыңыз.","Целей пока нет. Отметьте сумму, которую копите.","No goals yet. Set an amount to save toward."],
-
-/* --- инвестиция беті --- */
-["Брокерлер","Брокеры","Brokers"],
-["Валюта бойынша","По валютам","By currency"],
-["Портфель","Портфель","Portfolio"],
-["Барлығын салыстыру →","Сравнить все →","Compare all →"],
-["Брокерлік шот жоқ.","Брокерских счетов нет.","No brokerage accounts."],
-["Төмендегі түймемен қосыңыз.","Добавьте кнопкой ниже.","Add one with the button below."],
-["Дерек жоқ.","Данных нет.","No data."],
-["Барлығы теңгемен","Всего в тенге","Total in tenge"],
-
-/* --- қалдық пен көшірме --- */
-["Шот қалдығы","Остаток счёта","Account balance"],
-["Қалдықты қайта есептеу","Пересчитать остаток","Recalculate balance"],
-["Қалдық қайта есептелді","Остаток пересчитан","Balance recalculated"],
-["Қалдық жазбалар бойынша есептеледі. Бір жерде сан күмәнді көрінсе, қайта есептеп көріңіз — дерек өзгермейді.","Остаток считается по записям. Если где-то цифра выглядит странно — пересчитайте, данные не изменятся.","The balance is computed from your records. If a number looks off, recalculate — nothing is deleted."],
-["Қазіргі нақты қалдықты жазыңыз — айырма бастапқы қалдыққа жазылады, операциялар тарихы бұзылмайды.","Впишите текущий фактический остаток — разница уйдёт в начальный остаток, история операций не пострадает.","Enter the real current balance — the difference goes to the opening balance, and your history stays intact."],
-["Файл жарамсыз","Файл не подходит","Invalid file"],
-["Файл құрылымы дұрыс емес","Структура файла неверна","The file structure is wrong"],
-["Бұл Қаржы көшірмесі емес","Это не копия Қаржы","This is not a Qarzhy backup"],
-["Файлдың ішіндегі дерек бүлінген","Данные внутри файла повреждены","The data inside the file is damaged"],
-["жазба бүлінген","записей повреждено","records are damaged"],
-["Көшірмедегі дерек:","В копии:","In this backup:"],
-["Жазылған күні","Дата копии","Backup date"],
-["белгісіз","неизвестно","unknown"],
-["Қазіргі дерегіңіз","Сейчас у вас","You currently have"],
-["Ол ауыстырылады. Жалғастырасыз ба?","Оно будет заменено. Продолжить?","It will be replaced. Continue?"],
-["операция","операций","transactions"],
-["шот","счетов","accounts"],
-["қарыз","долгов","debts"],
-["мақсат","целей","goals"],
-["Болдырылмады","Отменено","Undone"],
-
-/* --- болжам, CSV, жіберу --- */
-["Ай соңына болжам","Прогноз на конец месяца","Month-end forecast"],
-["Қалады","Останется","Left"],
-["Қазір шоттарда","Сейчас на счетах","In accounts now"],
-["Күнделікті орташа шығын","Средний расход в день","Average daily spending"],
-["Күтіп тұрған тұрақты төлем","Ожидаемые регулярные платежи","Upcoming recurring payments"],
-["Күтілетін кіріс","Ожидаемый доход","Expected income"],
-["Айдың болжамды шығыны","Прогноз расходов за месяц","Forecast spending this month"],
-["Осы айдағы қарқын мен әлі келмеген тұрақты төлемдер бойынша шамалау.","Оценка по темпу этого месяца и ещё не наступившим регулярным платежам.","An estimate from this month's pace plus recurring payments still to come."],
-["ай аяқталды","месяц закончился","month is over"],
-["Мақсат орындалды","Цель достигнута","Goal reached"],
-["Қарқын белгісіз — салым жасаңыз","Темп неизвестен — сделайте взнос","No pace yet — add a contribution"],
-["Осы қарқынмен өте ұзаққа созылады","При таком темпе это займёт очень долго","At this pace it will take a very long time"],
-["Көшірмені жіберу (Telegram · Drive · пошта)","Отправить копию (Telegram · Drive · почта)","Send a backup (Telegram · Drive · mail)"],
-["Деректі файлға сақтау","Сохранить данные в файл","Save data to a file"],
-["Операцияларды Excel-ге (CSV)","Операции в Excel (CSV)","Transactions to Excel (CSV)"],
-["Дерек сақталмады!","Данные не сохранены!","Data was not saved!"],
-["Дерек сақталмады","Данные не сохранены","Data was not saved"],
-["Соңғы өзгеріс телефон жадына жазылмады. Қосымшаны жаппай тұрып, Баптау → Деректі сақтау арқылы файл көшірмесін жасаңыз.","Последнее изменение не записалось в память телефона. Не закрывая приложение, сделайте копию: Настройки → Сохранить данные.","The last change was not written to your phone. Before closing the app, make a backup: Settings → Save data."],
-
-/* --- навигация, график, есеп --- */
-["Операцияларын көру","Показать операции","View transactions"],
-["Операцияларын ашу","Открыть операции","Open transactions"],
-["↓ Операциялар тізіміне","↓ К списку операций","↓ To the transaction list"],
-["✕ Сүзгіні алу — барлық операция","✕ Снять фильтр — все операции","✕ Clear filter — all transactions"],
-["нүктені басыңыз","нажмите на точку","tap a point"],
-["Осы айдың операцияларын көру","Показать операции этого месяца","View this month's transactions"],
-["Өткен айға қарағанда","По сравнению с прошлым месяцем","Compared with last month"],
-["Есепті жіберу (PDF · Excel)","Отправить расчёт (PDF · Excel)","Send the result (PDF · Excel)"],
-["Есепті қалай жіберейін?","В каком виде отправить?","How should I send it?"],
-["Экранда тұрған нәтиже сол күйінде файлға айналады.","Результат с экрана станет файлом как есть.","The result on screen becomes a file as it is."],
-["PDF — оқуға және басып шығаруға","PDF — читать и печатать","PDF — to read and print"],
-["Excel (CSV) — сандармен жұмыс істеуге","Excel (CSV) — работать с числами","Excel (CSV) — to work with the numbers"],
-["Болдырмау","Отмена","Cancel"],
-["Алдымен есептеңіз","Сначала посчитайте","Calculate something first"],
-["Кесте табылмады","Таблица не найдена","No table found"],
-["Бұл есеп шамамен берілген, шарт банкке қарай өзгеруі мүмкін.","Расчёт примерный, условия банка могут отличаться.","This is an estimate; bank terms may differ."],
-["Инвестиция калькуляторы","Инвестиционный калькулятор","Investment calculator"],
-["Несие калькуляторы","Кредитный калькулятор","Loan calculator"],
-["Тұрақты операциялар","Регулярные операции","Recurring transactions"],
-["Брокерлік шот","Брокерский счёт","Brokerage account"],
-["Файл жүктеу","Загрузка файла","File import"],
-["Басты","Главная","Home"],
-["Баптау","Настройки","Settings"],
-["Шолу","Обзор","Overview"]
+["Дерек тек осы телефонда сақталады.","Данные хранятся только на этом телефоне.","Data is stored only on this phone."]
 ];
 
 var LANG = 'kk';
@@ -3091,13 +2640,7 @@ var TR_RULES = [
   [/^Салынған (.+) · (.+)$/, "Вложено $1 · $2", "Invested $1 · $2"],
   [/^(\d+) жыл (\d+) ай$/, "$1 л. $2 мес.", "$1 y $2 mo"],
   [/^(\d+) ай \((.+) жыл\)$/, "$1 мес. ($2 лет)", "$1 months ($2 years)"],
-  [/^(\d+) ай \((\d+) ай қысқарды\)$/, "$1 мес. (короче на $2 мес.)", "$1 months ($2 fewer)"],
-  [/^(\d+) брокер$/, "Брокеров: $1", "$1 brokerages"],
-  [/^Портфельдің (\d+)%-ы$/, "$1% портфеля", "$1% of portfolio"],
-  [/^(\d+) күн қалды$/, "Осталось дней: $1", "$1 days left"],
-  [/^Осы қарқынмен (.+) шамасында$/, "При таком темпе примерно $1", "At this pace, around $1"],
-  [/^(\d+) операция шығарылды$/, "Выгружено операций: $1", "$1 transactions exported"],
-  [/^Операцияларын көру \((\d+)\)$/, "Показать операции ($1)", "View transactions ($1)"]
+  [/^(\d+) ай \((\d+) ай қысқарды\)$/, "$1 мес. (короче на $2 мес.)", "$1 months ($2 fewer)"]
 ];
 
 function tr(str){
@@ -3321,18 +2864,9 @@ function drawTrend(){
        'stroke-linejoin="round" stroke-linecap="round"/>';
   s += '<path class="line" d="' + path('out') + '" fill="none" stroke="url(#gNegL)" stroke-width="1.7" ' +
        'stroke-linejoin="round" stroke-linecap="round" style="animation-delay:.15s"/>';
-  /* екі сызықтың да нүктелері — қайсысын басқаныңыз көрінсін */
   months.forEach(function(x, i){
-    s += '<circle cx="' + px(i).toFixed(1) + '" cy="' + py(x.out).toFixed(1) +
-         '" r="1.0" fill="#FF4D67" style="animation-delay:' + (0.5 + i * 0.05).toFixed(2) + 's"/>';
     s += '<circle cx="' + px(i).toFixed(1) + '" cy="' + py(x.in).toFixed(1) +
          '" r="1.1" fill="#00BE86" style="animation-delay:' + (0.5 + i * 0.05).toFixed(2) + 's"/>';
-  });
-  /* басуға ыңғайлы болу үшін әр ай бойымен көрінбейтін кең жолақ */
-  months.forEach(function(x, i){
-    var w = (W - pad * 2) / 11;
-    s += '<rect class="tr-hit" data-mi="' + i + '" x="' + Math.max(0, px(i) - w / 2).toFixed(1) +
-         '" y="0" width="' + w.toFixed(1) + '" height="' + (bot + 4) + '"/>';
   });
   s += '</svg>';
 
@@ -3363,56 +2897,6 @@ function drawTrend(){
        '<div class="kv"><span>Ең табысты ай</span><b>' + MONTHS[best.m] + ' ' + best.y + '</b></div>';
 
   box.innerHTML = s;
-
-  /* --- нүктені (немесе ай бағанын) басқанда сол айдың сандары --- */
-  var info = document.getElementById('trend-info');
-  function showMonth(i){
-    if(!info) return;
-    var x = months[i], prev = i > 0 ? months[i - 1] : null;
-    var net = x.in - x.out;
-    var diff = prev ? (x.out - prev.out) : 0;
-    info.className = 'on';
-    info.innerHTML =
-      '<div class="m">' + MONTHS[x.m] + ' ' + x.y + '</div>' +
-      '<div class="kv"><span>Кіріс</span><b class="gpos">' + money(x.in) + '</b></div>' +
-      '<div class="kv"><span>Шығын</span><b class="gneg">' + money(x.out) + '</b></div>' +
-      '<div class="kv"><span>Нәтиже</span><b style="color:' + (net >= 0 ? 'var(--pos)' : 'var(--neg)') + '">' +
-        (net >= 0 ? '+' : '−') + nf(Math.abs(net)) + ' ₸</b></div>' +
-      (prev && prev.out > 0
-        ? '<div class="kv"><span>Өткен айға қарағанда</span><b style="color:' +
-          (diff <= 0 ? 'var(--pos)' : 'var(--neg)') + '">' + (diff <= 0 ? '−' : '+') +
-          nf(Math.abs(diff)) + ' ₸ (' + Math.abs(Math.round(diff / prev.out * 100)) + '%)</b></div>'
-        : '') +
-      '<button class="btn line sm" style="margin-top:10px" data-mo="' + x.key + '">Осы айдың операцияларын көру</button>';
-    var b = info.querySelector('[data-mo]');
-    if(b) b.onclick = function(){ monthOps(x.key); };
-    /* таңдалған айды графикте белгілеп қою */
-    var svg = box.querySelector('svg');
-    var old = svg && svg.querySelector('.tr-sel');
-    if(old) old.parentNode.removeChild(old);
-    if(svg){
-      var ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      ln.setAttribute('class', 'tr-sel');
-      ln.setAttribute('x1', px(i).toFixed(1)); ln.setAttribute('x2', px(i).toFixed(1));
-      ln.setAttribute('y1', top - 2); ln.setAttribute('y2', bot);
-      svg.insertBefore(ln, svg.firstChild);
-    }
-  }
-  var hits = box.querySelectorAll('.tr-hit');
-  for(var hi = 0; hi < hits.length; hi++){
-    (function(el){
-      el.onclick = function(){ showMonth(parseInt(el.getAttribute('data-mi'), 10)); };
-    })(hits[hi]);
-  }
-}
-
-/* графиктен сол айдың операцияларына өту */
-function monthOps(key){
-  opsMonth = key;
-  opsAcc = 'all'; opsFilter = 'all';
-  var q = document.getElementById('ops-q'); if(q) q.value = '';
-  go('ops');
-  setTimeout(function(){ jumpTo('ops-card'); }, 60);
 }
 
 
@@ -3546,12 +3030,12 @@ function swipeWrap(row, onLeft, onRight){
 
 function deleteTxWithUndo(t){
   var copy = JSON.parse(JSON.stringify(t));
+  applyTx(t, -1);
   DB.tx = DB.tx.filter(function(x){ return x.id !== t.id; });
-  recalcBal();
   save(); render();
   toastUndo('Өшірілді', function(){
     DB.tx.push(copy);
-    recalcBal();
+    applyTx(copy, 1);
     save(); render();
     toast('Қайтарылды');
   });
@@ -3732,9 +3216,7 @@ var SVGI = {
   clock:  '<circle cx="12" cy="12" r="8.6"/><path d="M12 6.8V12l3.6 2.2"/>',
   down:   '<path d="M3.6 7.2 9 12.6l3.6-3.6 7 7"/><path d="M19.6 12.6v4h-4"/>',
   coin:   '<circle cx="12" cy="12" r="8.4"/><path d="M12 7.4v9.2"/><path d="M14.6 9.6c-.6-.8-1.6-1.2-2.6-1.2-1.5 0-2.7.8-2.7 2s1.2 1.7 2.7 2 2.7.8 2.7 2-1.2 2-2.7 2c-1 0-2-.4-2.6-1.2"/>',
-  invest: '<path d="M4 19.4h16"/><path d="M7.4 16.4V12"/><path d="M11.8 16.4V7.4"/><path d="M16.2 16.4v-6.4"/><path d="M6.2 8.6 12 3.8l5.8 4.8"/>',
-  eye:    '<path d="M2.4 12S5.9 5.8 12 5.8 21.6 12 21.6 12 18.1 18.2 12 18.2 2.4 12 2.4 12Z"/><circle cx="12" cy="12" r="2.9"/>',
-  eyeOff: '<path d="M4.2 4.2 19.8 19.8"/><path d="M9.6 6.2A9.6 9.6 0 0 1 12 5.8c6.1 0 9.6 6.2 9.6 6.2a17 17 0 0 1-3.1 3.8"/><path d="M6.6 8.2A16.6 16.6 0 0 0 2.4 12S5.9 18.2 12 18.2c1.1 0 2.1-.2 3-.5"/><path d="M10.1 10.2a2.9 2.9 0 0 0 3.9 3.9"/>'
+  invest: '<path d="M4 19.4h16"/><path d="M7.4 16.4V12"/><path d="M11.8 16.4V7.4"/><path d="M16.2 16.4v-6.4"/><path d="M6.2 8.6 12 3.8l5.8 4.8"/>'
 };
 
 var CAT_ICON = {
@@ -3834,9 +3316,9 @@ function saveDebt(){
     note: document.getElementById('de-note').value.trim(),
     acc: dAcc, hist: []
   };
-  if(usdAcc(dAcc)) d.r = rateV() || null;
+  var a = acc(dAcc);
+  if(a) a.bal += toAcc(a, dDir === 'out' ? -amt : amt);
   debts().push(d);
-  recalcBal();
   save(); closeSheets(); render();
   toast(dDir === 'out' ? 'Қарызға берілді' : 'Қарыз алынды');
 }
@@ -3893,18 +3375,24 @@ function payDebt(){
   if(!v || v <= 0){ toast('Соманы жазыңыз'); return; }
   var left = debtLeft(d);
   if(v > left) v = left;
+  var a = acc(dPayAcc);
+  if(a) a.bal += toAcc(a, d.dir === 'out' ? v : -v);
   d.paid = (d.paid || 0) + v;
   d.hist = d.hist || [];
-  d.hist.push({ date: todayISO(), amt: v, acc: dPayAcc, r: usdAcc(dPayAcc) ? (rateV() || null) : null });
-  recalcBal();
+  d.hist.push({ date: todayISO(), amt: v, acc: dPayAcc });
   save(); closeSheets(); render();
   toast(debtLeft(d) <= 0 ? 'Толық жабылды' : 'Төлем жазылды');
 }
 function delDebt(){
   var d = debtOf(dId); if(!d) return;
   if(!confirm('Жазба өшіріледі, шот қалдықтары бастапқы күйге қайтарылады. Жалғастырасыз ба?')) return;
+  var a = acc(d.acc);
+  if(a) a.bal += toAcc(a, d.dir === 'out' ? d.amt : -d.amt);
+  (d.hist || []).forEach(function(x){
+    var pa = acc(x.acc);
+    if(pa) pa.bal += toAcc(pa, d.dir === 'out' ? -x.amt : x.amt);
+  });
   DB.debts = debts().filter(function(x){ return x.id !== dId; });
-  recalcBal();
   save(); closeSheets(); render(); toast('Өшірілді');
 }
 
@@ -3970,8 +3458,59 @@ function drawDebts(){
 
 /* ================= ДЕПОЗИТ КАЛЬКУЛЯТОРЫ ================= */
 var depCap = true;
+function toggleDepCap(){
+  depCap = !depCap;
+  document.getElementById('dp-sw').classList.toggle('on', depCap);
+  document.getElementById('dp-sw-txt').textContent = depCap
+    ? 'Ай сайын капитализация — пайызға пайыз'
+    : 'Пайыз мерзім соңында бір рет төленеді';
+  calcDep();
+}
+function calcDep(){
+  var P = num('dp-sum'), M = num('dp-add'), r = num('dp-rate') / 100, n = Math.round(num('dp-term'));
+  var box = document.getElementById('dp-res');
+  if(!box) return;
+  if(P <= 0 || n <= 0){ box.innerHTML = '<div class="empty">Мәндерді толтырыңыз.</div>'; return; }
 
+  var i = r / 12, bal, invested = P + M * n, interest;
+  if(depCap){
+    bal = P;
+    for(var k = 0; k < n; k++){ bal = bal * (1 + i) + M; }
+  } else {
+    var base = P, acc2 = 0;
+    for(var j = 0; j < n; j++){ acc2 += base * i; base += M; }
+    bal = base + acc2;
+  }
+  interest = bal - invested;
+  var years = n / 12;
+  var eff = invested > 0 && years > 0 ? (Math.pow(bal / invested, 1 / years) - 1) * 100 : 0;
 
+  var rows = '';
+  if(n >= 12){
+    var b2 = P, base2 = P, a2 = 0;
+    rows = '<div class="card"><h2>Жыл сайынғы өсім</h2><table class="sched">' +
+           '<tr><th>Жыл</th><th>Салынған</th><th>Сома</th></tr>';
+    for(var m = 1; m <= n; m++){
+      if(depCap) b2 = b2 * (1 + i) + M;
+      else { a2 += base2 * i; base2 += M; b2 = base2 + a2; }
+      if(m % 12 === 0 || m === n){
+        rows += '<tr><td>' + Math.ceil(m / 12) + '</td><td>' + nf(P + M * m) + '</td><td><b>' + nf(b2) + '</b></td></tr>';
+      }
+    }
+    rows += '</table></div>';
+  }
+
+  box.innerHTML =
+    '<div class="res"><div class="lab">Мерзім соңындағы сома</div><div class="big">' + money(bal) + '</div></div>' +
+    '<div class="card">' +
+      '<div class="kv"><span>Салынған қаражат</span><b>' + money(invested) + '</b></div>' +
+      '<div class="kv"><span>Пайыздық табыс</span><b style="color:var(--pos)">' + money(interest) + '</b></div>' +
+      '<div class="kv"><span>Мерзім</span><b>' + n + ' ай (' + years.toFixed(1) + ' жыл)</b></div>' +
+      '<div class="kv"><span>Тиімді жылдық өсім</span><b>' + eff.toFixed(2) + '%</b></div>' +
+      '<div class="kv"><span>Айына орташа табыс</span><b>' + money(interest / n) + '</b></div>' +
+    '</div>' + rows +
+    '<p class="muted" style="padding:0 4px">Есеп шамамен. Банктің нақты шарттарын (толықтыру шегі, мерзімінен бұрын алу кезінде пайыздың жоғалуы) тексеріңіз.</p>';
+}
 
 /* --- несие кестесін PDF ретінде --- */
 function exportLoanPdf(){
@@ -4049,60 +3588,7 @@ function exportLoanPdf(){
   exportPdf(html, 'qarzhy-nesie-' + todayISO() + '.pdf');
 }
 
-/* ================= ДЕПОЗИТ ЖӘНЕ САЛЫҚ КАЛЬКУЛЯТОРЛАРЫ ================= */
-function calcDep(){
-  var P = num('dp-sum'), M = num('dp-add'), r = num('dp-rate') / 100, n = Math.round(num('dp-term'));
-  var box = document.getElementById('dp-res');
-  if(!box) return;
-  if(P <= 0 || n <= 0){ box.innerHTML = '<div class="empty">Мәндерді толтырыңыз.</div>'; return; }
-
-  var i = r / 12, bal, invested = P + M * n, interest;
-  if(depCap){
-    bal = P;
-    for(var k = 0; k < n; k++){ bal = bal * (1 + i) + M; }
-  } else {
-    var base = P, acc2 = 0;
-    for(var j = 0; j < n; j++){ acc2 += base * i; base += M; }
-    bal = base + acc2;
-  }
-  interest = bal - invested;
-  var years = n / 12;
-  var eff = invested > 0 && years > 0 ? (Math.pow(bal / invested, 1 / years) - 1) * 100 : 0;
-
-  var rows = '';
-  if(n >= 12){
-    var b2 = P, base2 = P, a2 = 0;
-    rows = '<div class="card"><h2>Жыл сайынғы өсім</h2><table class="sched">' +
-           '<tr><th>Жыл</th><th>Салынған</th><th>Сома</th></tr>';
-    for(var m = 1; m <= n; m++){
-      if(depCap) b2 = b2 * (1 + i) + M;
-      else { a2 += base2 * i; base2 += M; b2 = base2 + a2; }
-      if(m % 12 === 0 || m === n){
-        rows += '<tr><td>' + Math.ceil(m / 12) + '</td><td>' + nf(P + M * m) + '</td><td><b>' + nf(b2) + '</b></td></tr>';
-      }
-    }
-    rows += '</table></div>';
-  }
-
-  box.innerHTML =
-    '<div class="res"><div class="lab">Мерзім соңындағы сома</div><div class="big">' + money(bal) + '</div></div>' +
-    '<div class="card">' +
-      '<div class="kv"><span>Салынған қаражат</span><b>' + money(invested) + '</b></div>' +
-      '<div class="kv"><span>Пайыздық табыс</span><b style="color:var(--pos)">' + money(interest) + '</b></div>' +
-      '<div class="kv"><span>Мерзім</span><b>' + n + ' ай (' + years.toFixed(1) + ' жыл)</b></div>' +
-      '<div class="kv"><span>Тиімді жылдық өсім</span><b>' + eff.toFixed(2) + '%</b></div>' +
-      '<div class="kv"><span>Айына орташа табыс</span><b>' + money(interest / n) + '</b></div>' +
-    '</div>' + rows +
-    '<p class="muted" style="padding:0 4px">Есеп шамамен. Банктің нақты шарттарын (толықтыру шегі, мерзімінен бұрын алу кезінде пайыздың жоғалуы) тексеріңіз.</p>';
-}
-function toggleDepCap(){
-  depCap = !depCap;
-  document.getElementById('dp-sw').classList.toggle('on', depCap);
-  document.getElementById('dp-sw-txt').textContent = depCap
-    ? 'Ай сайын капитализация — пайызға пайыз'
-    : 'Пайыз мерзім соңында бір рет төленеді';
-  calcDep();
-}
+/* ================= САЛЫҚ КАЛЬКУЛЯТОРЫ (ЖК, оңайлатылған) ================= */
 function calcTax(){
   var box = document.getElementById('tx-res');
   if(!box) return;
@@ -4154,8 +3640,6 @@ function calcTax(){
     '<p class="muted" style="padding:0 4px">Бұл — шамамен есеп, ресми құжат емес. Мөлшерлемелер мен МРП/МЗП жыл сайын өзгереді, ' +
     'жеңілдіктер мен ерекше жағдайлар ескерілмеген. Нақты сомасын salyk.kz немесе бухгалтерден растаңыз.</p>';
 }
-
-
 
 /* ================= PDF ЕСЕП ================= */
 var CDN_H2C = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
@@ -4354,104 +3838,6 @@ function buildReport(){
   '</div>';
 }
 
-/* ================= КАЛЬКУЛЯТОР ЕСЕБІН ЖІБЕРУ ================= */
-/* Экранда тұрған нәтижені сол күйінде PDF немесе Excel файлы етіп жасайды.
-   Ешқандай қайта есептеу жоқ — көріп отырған сандарыңыз. */
-var CALC_SRC = {
-  inv:  ['i-res',  'Инвестиция калькуляторы'],
-  loan: ['l-res',  'Несие калькуляторы'],
-  dep:  ['dp-res', 'Депозит калькуляторы'],
-  tax:  ['tx-res', 'Салық калькуляторы'],
-  stat: [null, 'Статистика есебі']   /* бұл экрандағы блоктан емес, buildReport-тан жиналады */
-};
-
-function calcHTML(kind){
-  var src = CALC_SRC[kind]; if(!src) return null;
-  var el = document.getElementById(src[0]);
-  if(!el || !el.innerHTML.trim()) return null;
-  return '<div style="width:760px;padding:38px;background:#fff;color:#0B1020;' +
-    'font-family:Inter,Arial,sans-serif">' +
-    '<div style="font-size:12px;letter-spacing:.12em;color:#5B6480">ҚАРЖЫ</div>' +
-    '<div style="font-size:26px;font-weight:800;margin:4px 0 2px">' + tr(src[1]) + '</div>' +
-    '<div style="font-size:13px;color:#5B6480;margin-bottom:20px">' + fullDate(todayISO()) + '</div>' +
-    '<div style="border-top:2px solid #021CF5;padding-top:18px">' + el.innerHTML + '</div>' +
-    '<div style="margin-top:26px;font-size:11.5px;color:#8892AB">' +
-    tr('Бұл есеп шамамен берілген, шарт банкке қарай өзгеруі мүмкін.') + '</div></div>';
-}
-
-/* нәтиженің «атауы — мәні» жолдарын кестеге жинау */
-function calcRows(kind){
-  if(kind === 'stat') return statRows();
-  var src = CALC_SRC[kind];
-  var el = src && document.getElementById(src[0]);
-  if(!el) return [];
-  var rows = [], i;
-  var kv = el.querySelectorAll('.kv');
-  for(i = 0; i < kv.length; i++){
-    var sp = kv[i].querySelector('span'), b = kv[i].querySelector('b');
-    if(sp && b) rows.push([sp.textContent.trim(), b.textContent.trim()]);
-  }
-  /* өтеу кестесі болса — оны да қосамыз */
-  var tr2 = el.querySelectorAll('table tr');
-  if(tr2.length){
-    rows.push(['', '']);
-    for(i = 0; i < tr2.length; i++){
-      var cells = tr2[i].querySelectorAll('td,th'), r = [];
-      for(var j = 0; j < cells.length; j++) r.push(cells[j].textContent.trim());
-      if(r.length) rows.push(r);
-    }
-  }
-  return rows;
-}
-
-function calcCSV(kind){
-  var rows = calcRows(kind);
-  if(!rows.length) return false;
-  var src = CALC_SRC[kind] || ['', 'Есеп'];
-  var head = [[tr(src[1])], [fullDate(todayISO())], []];
-  var csv = '\ufeff' + head.concat(rows)
-    .map(function(r){ return r.map(csvCell).join(';'); }).join('\r\n');
-  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-  var name = 'qarzhy-' + kind + '-' + todayISO() + '.csv';
-  var f = null;
-  try { f = new File([blob], name, { type: 'text/csv' }); } catch(e){}
-  if(f && navigator.canShare && navigator.canShare({ files: [f] }) && navigator.share){
-    navigator.share({ files: [f], title: tr(src[1]) }).catch(function(){});
-    return true;
-  }
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = name; a.click();
-  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
-  return true;
-}
-
-/* Статистика бетінің есебі — бұрын тек PDF болатын, енді CSV де бар */
-function shareStat(){
-  askCalcFmt('stat', buildReport());
-}
-
-function shareCalc(kind){
-  var html = calcHTML(kind);
-  if(!html){ toast('Алдымен есептеңіз'); return; }
-  askCalcFmt(kind, html);
-}
-
-/* қай пішімде — қарапайым сұрақ терезесі */
-function askCalcFmt(kind, html){
-  var name = 'qarzhy-' + kind + '-' + todayISO();
-  var sc = document.getElementById('fmt-sheet');
-  if(!sc) return exportPdf(html, name + '.pdf');
-  document.getElementById('fmt-pdf').onclick = function(){
-    closeSheets();
-    exportPdf(html, name + '.pdf');
-  };
-  document.getElementById('fmt-csv').onclick = function(){
-    closeSheets();
-    if(!calcCSV(kind)) toast('Кесте табылмады');
-  };
-  openSheet('fmt-sheet');
-}
-
 function exportPdf(html, fname){
   var wrap = document.getElementById('pdf-stage');
   if(!wrap){
@@ -4557,15 +3943,15 @@ function runRecurring(){
       if(!r.start || date >= r.start){
         var t = { id: newId(), type: r.type, cat: r.cat, amt: r.amt, date: date,
                   note: r.note || '', acc: r.acc, loan: null, to: null, rec: r.id };
-        stampTx(t);
         DB.tx.push(t);
+        applyTx(t, 1);
         added++;
       }
       r.last = ym;
       ym = ymNext(ym);
     }
   });
-  if(added){ recalcBal(); save(); }
+  if(added){ save(); }
   return added;
 }
 
@@ -4743,16 +4129,25 @@ function selDelete(){
   if(!confirm(n + ' ' + tr('жазба өшіріледі. Жалғастырасыз ба?'))) return;
 
   if(SEL.kind === 'tx'){
+    DB.tx.forEach(function(t){ if(SEL.ids[t.id]) applyTx(t, -1); });
     DB.tx = DB.tx.filter(function(t){ return !SEL.ids[t.id]; });
   } else if(SEL.kind === 'btx'){
     (DB.btx || []).forEach(function(b){ if(SEL.ids[b.id]) applyBTx(b, -1); });
     DB.btx = (DB.btx || []).filter(function(b){ return !SEL.ids[b.id]; });
   } else if(SEL.kind === 'debt'){
+    (DB.debts || []).forEach(function(d){
+      if(!SEL.ids[d.id]) return;
+      var a = acc(d.acc);
+      if(a) a.bal += toAcc(a, d.dir === 'out' ? d.amt : -d.amt);
+      (d.hist || []).forEach(function(x){
+        var pa = acc(x.acc);
+        if(pa) pa.bal += toAcc(pa, d.dir === 'out' ? -x.amt : x.amt);
+      });
+    });
     DB.debts = (DB.debts || []).filter(function(d){ return !SEL.ids[d.id]; });
   } else if(SEL.kind === 'recur'){
     DB.recur = (DB.recur || []).filter(function(r){ return !SEL.ids[r.id]; });
   }
-  recalcBal();
   save();
   SEL.on = false; SEL.ids = {};
   render();
@@ -4928,10 +4323,6 @@ function drawWarnings(){
   var box=document.getElementById('home-warn');
   if(!box) return;
   var html='';
-  if(SAVE_ERR){
-    html+='<div class="warnbar" style="background:#FDECEB;color:#8A2F29"><b>Дерек сақталмады</b>'+
-      'Соңғы өзгеріс телефон жадына жазылмады. Қосымшаны жаппай тұрып, Баптау → Деректі сақтау арқылы файл көшірмесін жасаңыз.</div>';
-  }
   if(!storageOK()){
     html+='<div class="warnbar" style="background:#FDECEB;color:#8A2F29"><b>Дерек сақталмайды</b>'+
       'Браузер жадына жазу мүмкін емес. Chrome-ды жеке (инкогнито) режимде ашпаңыз.</div>';
@@ -4940,7 +4331,7 @@ function drawWarnings(){
   if(d===null && DB.tx.length>5){
     html+='<div class="warnbar"><b>Көшірме жасаңыз</b>Дерек тек осы браузерде тұр. '+
       'Баптау → Деректі сақтау арқылы сақтап қойыңыз.</div>';
-  } else if(d!==null && d>=14){
+  } else if(d!==null && d>=30){
     html+='<div class="warnbar"><b>Көшірме ескірді</b>Соңғы көшірмеден '+d+' күн өтті. Жаңартып қойыңыз.</div>';
   }
   var dt2 = debtTotals();
@@ -4963,9 +4354,9 @@ function cleanDups(){
   });
   if(!dups.length){ toast('Қайталанған операция жоқ'); render(); return; }
   if(!confirm(dups.length+' қайталанған операция табылды. Өшіресіз бе?')) return;
+  dups.forEach(function(t){ applyTx(t,-1); });
   var ids={}; dups.forEach(function(t){ ids[t.id]=1; });
   DB.tx=DB.tx.filter(function(t){ return !ids[t.id]; });
-  recalcBal();
   save(); render(); toast(dups.length+' операция өшірілді');
 }
 
@@ -5009,320 +4400,12 @@ function initHistory(){
   });
 }
 
-/* ================= БАСТЫ БЕТТІ РЕТТЕУ ================= */
-/* Басты беттегі карталардың реті мен көрінуі DB.home ішінде тұрады.
-   Карта HTML-де бір рет жазылады, мұндағы код тек ретін ауыстырып, керексізін жасырады. */
-
-var WIDGETS = [
-  ['finance', 'Менің қаржым',              'brief'],
-  ['quick',   'Жылдам сілтемелер',         'grid'],
-  ['invest',  'Инвестиция',                'invest'],
-  ['forecast','Ай соңына болжам',          'target'],
-  ['budget',  'Бюджет',                    'budget'],
-  ['goals',   'Мақсаттар',                 'flag'],
-  ['debts',   'Қарыздар',                  'swap'],
-  ['cats',    'Айдағы шығын',              'chart'],
-  ['import',  'Банк үзіндісін жүктеу',     'inbox'],
-  ['recent',  'Соңғы операциялар',         'receipt']
-];
-/* әдепкіде көрінетіндер — қалғаны жасырулы тұрады */
-var HOME_ON_DEF = ['finance', 'quick', 'forecast', 'invest', 'import', 'recent'];
-
-function widgetIdx(k){ for(var i = 0; i < WIDGETS.length; i++) if(WIDGETS[i][0] === k) return i; return -1; }
-function widgetName(k){ var i = widgetIdx(k); return i < 0 ? k : WIDGETS[i][1]; }
-function widgetIcon(k){ var i = widgetIdx(k); return i < 0 ? 'star' : WIDGETS[i][2]; }
-
-function homeCfg(){
-  var h = DB.home;
-  if(!h || !h.order || !h.order.length){
-    h = DB.home = { order: WIDGETS.map(function(w){ return w[0]; }), off: {} };
-    WIDGETS.forEach(function(w){ if(HOME_ON_DEF.indexOf(w[0]) === -1) h.off[w[0]] = 1; });
-  }
-  if(!h.off) h.off = {};
-  /* жаңа карта шықса — соңына, жасырулы күйде */
-  WIDGETS.forEach(function(w){
-    if(h.order.indexOf(w[0]) === -1){
-      h.order.push(w[0]);
-      if(HOME_ON_DEF.indexOf(w[0]) === -1) h.off[w[0]] = 1;
-    }
-  });
-  /* енді жоқ картаны тізімнен алып тастаймыз */
-  h.order = h.order.filter(function(k){ return widgetIdx(k) !== -1; });
-  return h;
-}
-function widgetOn(k){ return !homeCfg().off[k]; }
-
-function applyHome(){
-  var box = document.getElementById('home-widgets');
-  if(!box) return;
-  var cfg = homeCfg(), now = [], i;
-  for(i = 0; i < box.children.length; i++){
-    var kk = box.children[i].getAttribute('data-w');
-    if(kk) now.push(kk);
-  }
-  var want = [];
-  cfg.order.forEach(function(k){ if(box.querySelector('[data-w="' + k + '"]')) want.push(k); });
-  /* рет өзгермесе — DOM-ды қозғамаймыз (әйтпесе әр render-де анимация қайта басталады) */
-  var same = now.join('|') === want.join('|');
-  want.forEach(function(k){
-    var el = box.querySelector('[data-w="' + k + '"]');
-    var hide = !!cfg.off[k];
-    if((el.style.display === 'none') !== hide) el.style.display = hide ? 'none' : '';
-    if(!same) box.appendChild(el);
-  });
-}
-function toggleWidget(k){
-  var cfg = homeCfg();
-  if(cfg.off[k]) delete cfg.off[k]; else cfg.off[k] = 1;
-  save(); render();
-}
-function moveWidget(k, d){
-  var cfg = homeCfg(), i = cfg.order.indexOf(k), j = i + d;
-  if(i < 0 || j < 0 || j >= cfg.order.length) return;
-  cfg.order[i] = cfg.order[j]; cfg.order[j] = k;
-  save(); render();
-}
-function resetHome(){
-  DB.home = null; homeCfg(); save(); render();
-  toast('Әдепкі қалпына келтірілді');
-}
-function drawHomeSet(){
-  var box = document.getElementById('hs-list');
-  if(!box) return;
-  var cfg = homeCfg();
-  box.innerHTML = '';
-  cfg.order.forEach(function(k, i){
-    var off = !!cfg.off[k];
-    var el = document.createElement('div');
-    el.className = 'hs-row' + (off ? ' off' : '');
-    el.innerHTML =
-      '<div class="ic">' + svgIcon(widgetIcon(k)) + '</div>' +
-      '<div class="nm">' + widgetName(k) + '</div>' +
-      '<button class="hs-btn eye' + (off ? '' : ' on') + '">' + svgIcon(off ? 'eyeOff' : 'eye') + '</button>' +
-      '<button class="hs-btn"' + (i === 0 ? ' disabled' : '') + '>\u2191</button>' +
-      '<button class="hs-btn"' + (i === cfg.order.length - 1 ? ' disabled' : '') + '>\u2193</button>';
-    var bs = el.querySelectorAll('button');
-    bs[0].onclick = function(){ toggleWidget(k); };
-    bs[1].onclick = function(){ moveWidget(k, -1); };
-    bs[2].onclick = function(){ moveWidget(k, 1); };
-    box.appendChild(el);
-  });
-}
-
-/* ---- басты беттегі жаңа карталардың ішін толтыру ---- */
-function renderHomeWidgets(){
-  var cfg = homeCfg();
-
-  if(!cfg.off.invest && document.getElementById('w-inv-val')){
-    var IT = investTotals();
-    document.getElementById('w-inv-count').textContent = IT.list.length + ' брокер';
-    document.getElementById('w-inv-val').textContent = money(IT.valT);
-    document.getElementById('w-inv-inv').textContent = money(IT.invT);
-    var wp = document.getElementById('w-inv-pl');
-    wp.textContent = (IT.pl >= 0 ? '+' : '\u2212') + nf(IT.pl) + ' \u20b8';
-    wp.style.color = IT.pl >= 0 ? 'var(--pos)' : 'var(--neg)';
-    var wl = document.getElementById('w-inv-list');
-    wl.innerHTML = '';
-    if(!IT.list.length){
-      wl.innerHTML = '<div class="empty" style="padding:18px 8px">Брокерлік шот жоқ. Инвестицияңызды осында қосыңыз.</div>';
-    } else {
-      IT.list.slice().sort(function(x, y){ return y.bal - x.bal; }).slice(0, 3).forEach(function(a){
-        var v = bVals(a), inv = kztOf(bInv(a.id)), pl = a.bal - inv;
-        var row = document.createElement('div');
-        row.className = 'row';
-        row.style.cursor = 'inherit';
-        row.innerHTML = accBadge(a, true) +
-          '<div style="min-width:0;flex:1"><div class="name">' + esc(a.name) + '</div>' +
-          '<div class="sub2" style="color:' + (pl >= 0 ? 'var(--pos)' : 'var(--neg)') + '">' +
-            (pl >= 0 ? '+' : '\u2212') + nf(pl) + ' \u20b8' +
-            (inv > 0 ? ' (' + (pl >= 0 ? '+' : '\u2212') + Math.abs(Math.round(pl / inv * 100)) + '%)' : '') +
-          '</div></div>' +
-          '<div class="amt">' + curPair(v, true) + '</div>';
-        wl.appendChild(row);
-      });
-    }
-  }
-
-  if(!cfg.off.forecast && document.getElementById('w-fc-end')){
-    var F = forecast();
-    document.getElementById('w-fc-end').textContent = money(F.endBal);
-    document.getElementById('w-fc-end').style.color = F.endBal >= 0 ? '' : 'var(--neg)';
-    document.getElementById('w-fc-sub').textContent =
-      F.rest ? F.rest + ' күн қалды' : 'ай аяқталды';
-    document.getElementById('w-fc-box').innerHTML =
-      '<div class="kv"><span>Қазір шоттарда</span><b>' + money(F.now) + '</b></div>' +
-      '<div class="kv"><span>Күнделікті орташа шығын</span><b>' + money(F.avg) + '</b></div>' +
-      (F.planOut ? '<div class="kv"><span>Күтіп тұрған тұрақты төлем</span><b style="color:var(--neg)">' + money(F.planOut) + '</b></div>' : '') +
-      (F.planIn ? '<div class="kv"><span>Күтілетін кіріс</span><b style="color:var(--pos)">' + money(F.planIn) + '</b></div>' : '') +
-      '<div class="kv"><span>Айдың болжамды шығыны</span><b>' + money(F.endOut) + '</b></div>';
-  }
-
-  if(!cfg.off.budget && document.getElementById('w-budget-box')){
-    var bb = document.getElementById('w-budget-box');
-    bb.innerHTML = '';
-    var bk = Object.keys(budgets()).filter(function(c){ return budgets()[c] > 0; });
-    if(!bk.length){
-      bb.innerHTML = '<div class="empty">Санат лимиті қойылмаған. Бюджет бөлімінен қойыңыз.</div>';
-    } else {
-      bk.map(function(c){ return { cat: c, lim: budgets()[c], sp: monthSpend(c) }; })
-        .sort(function(x, y){ return (y.sp / y.lim) - (x.sp / x.lim); })
-        .slice(0, 4).forEach(function(b){
-          var f = b.sp / b.lim;
-          bb.appendChild(barRow(
-            catSvg('out', b.cat, 'bar-ic') + '<span>' + b.cat + '</span>',
-            nf(b.sp) + ' / ' + nf(b.lim) + ' \u20b8',
-            Math.min(1, f), f >= 0.8 ? 'neg' : ''));
-        });
-    }
-  }
-
-  if(!cfg.off.goals && document.getElementById('w-goals-box')){
-    var gb = document.getElementById('w-goals-box');
-    gb.innerHTML = '';
-    if(!DB.goals.length){
-      gb.innerHTML = '<div class="empty">Мақсат әлі жоқ. Жинайтын сомаңызды белгілеп қойыңыз.</div>';
-    } else {
-      DB.goals.slice(0, 4).forEach(function(g){
-        var f = g.target > 0 ? g.saved / g.target : 0;
-        gb.appendChild(barRow(
-          svgIcon('flag', 'bar-ic') + '<span>' + esc(g.name) + '</span>',
-          nf(g.saved) + ' / ' + nf(g.target) + ' \u20b8 \u00b7 ' + Math.min(100, Math.round(f * 100)) + '%',
-          Math.min(1, f), 'pos'));
-      });
-    }
-  }
-
-  if(!cfg.off.debts && document.getElementById('w-debts-box')){
-    var dt = debtTotals();
-    document.getElementById('w-debts-box').innerHTML =
-      '<div class="kv"><span>Маған қарыз</span><b style="color:var(--pos)">' + money(dt.lent) + '</b></div>' +
-      '<div class="kv"><span>Мен қарызбын</span><b style="color:var(--neg)">' + money(dt.owed) + '</b></div>' +
-      (dt.overdue ? '<div class="kv"><span>Мерзімі өткен</span><b style="color:var(--neg)">' + dt.overdue + '</b></div>' : '');
-  }
-
-  if(!cfg.off.cats && document.getElementById('w-cats-box')){
-    var cb = document.getElementById('w-cats-box');
-    cb.innerHTML = '';
-    var sums = {}, tot = 0;
-    DB.tx.forEach(function(t){
-      if(t.type === 'out' && inMonth(t.date)){ sums[t.cat] = (sums[t.cat] || 0) + t.amt; tot += t.amt; }
-    });
-    var ks = Object.keys(sums).sort(function(x, y){ return sums[y] - sums[x]; }).slice(0, 5);
-    if(!ks.length){
-      cb.innerHTML = '<div class="empty">Бұл айда шығын жоқ.</div>';
-    } else {
-      ks.forEach(function(k){
-        var f = tot ? sums[k] / tot : 0;
-        cb.appendChild(barRow(
-          catSvg('out', k, 'bar-ic') + '<span>' + k + '</span>',
-          money(sums[k]) + ' \u00b7 ' + Math.round(f * 100) + '%', f, 'neg'));
-      });
-    }
-  }
-}
-
-/* ================= ИНВЕСТИЦИЯ: БАРЛЫҚ БРОКЕР БІР БЕТТЕ ================= */
-function investTotals(){
-  var list = accsOf('broker');
-  var val = { KZT: 0, USD: 0 }, inv = { KZT: 0, USD: 0 },
-      dv  = { KZT: 0, USD: 0 }, fe  = { KZT: 0, USD: 0 };
-  list.forEach(function(a){
-    syncBroker(a);
-    var v = bVals(a), i = bInv(a.id), d = bDivFee(a.id);
-    val.KZT += v.KZT; val.USD += v.USD;
-    inv.KZT += i.KZT; inv.USD += i.USD;
-    dv.KZT  += d.KZT.div; dv.USD += d.USD.div;
-    fe.KZT  += d.KZT.fee; fe.USD += d.USD.fee;
-  });
-  var valT = kztOf(val), invT = kztOf(inv);
-  return { list: list, val: val, inv: inv, div: dv, fee: fe,
-           valT: valT, invT: invT, pl: valT - invT,
-           pct: invT > 0 ? (valT - invT) / invT * 100 : 0 };
-}
-
-function renderInvest(){
-  if(!document.getElementById('iv-list')) return;
-  var IT = investTotals();
-
-  document.getElementById('iv-count').textContent = IT.list.length + ' брокер';
-  animNum(document.getElementById('iv-val'), IT.valT);
-  var pill = document.getElementById('iv-pill');
-  pill.textContent = IT.invT > 0
-    ? (IT.pl >= 0 ? '\u2191 +' : '\u2193 \u2212') + Math.abs(Math.round(IT.pct)) + '%'
-    : '\u2014';
-  pill.style.color = IT.pl >= 0 ? '#7CF2CE' : '#FFA8B3';
-  document.getElementById('iv-inv').textContent = curPair(IT.inv, true);
-  var ple = document.getElementById('iv-pl');
-  ple.textContent = (IT.pl >= 0 ? '+' : '\u2212') + nf(IT.pl) + ' \u20b8';
-  ple.style.color = IT.pl >= 0 ? '#7CF2CE' : '#FFA8B3';
-
-  /* --- брокерлер тізімі --- */
-  var box = document.getElementById('iv-list');
-  box.innerHTML = '';
-  if(!IT.list.length){
-    box.innerHTML = '<div class="empty">Брокерлік шот жоқ.<br>Төмендегі түймемен қосыңыз.</div>';
-  } else {
-    IT.list.slice().sort(function(x, y){ return y.bal - x.bal; }).forEach(function(a, n){
-      var v = bVals(a), i = bInv(a.id), invT = kztOf(i), pl = a.bal - invT;
-      var share = IT.valT > 0 ? Math.max(0, a.bal / IT.valT) : 0;
-      var el = document.createElement('div');
-      el.style.padding = '4px 0 12px';
-      if(n) el.style.borderTop = '1px solid var(--line)';
-      el.innerHTML =
-        '<div class="row">' + accBadge(a) +
-          '<div style="min-width:0;flex:1"><div class="name">' + esc(a.name) + '</div>' +
-          '<div class="sub2">Салынған ' + curPair(i, true) + ' \u00b7 ' +
-            (pl >= 0 ? '+' : '\u2212') + nf(pl) + ' \u20b8' +
-            (invT > 0 ? ' (' + (pl >= 0 ? '+' : '\u2212') + Math.abs(Math.round(pl / invT * 100)) + '%)' : '') +
-          '</div></div>' +
-          '<div class="amt">' + curPair(v, true) + '</div>' +
-        '</div>' +
-        '<div class="iv-share"><i style="width:' + Math.round(share * 100) + '%"></i></div>' +
-        '<div style="display:flex;justify-content:space-between;gap:10px;margin-top:7px;font-size:12.4px;color:var(--ink-2)">' +
-          '<span>Портфельдің ' + Math.round(share * 100) + '%-ы</span>' +
-          '<span class="lnk" data-bval="1">Құнын жаңарту</span>' +
-        '</div>';
-      el.onclick = function(){ openBroker(a.id); };
-      el.querySelector('[data-bval]').onclick = function(e){ e.stopPropagation(); openBVal(a.id); };
-      box.appendChild(el);
-    });
-  }
-
-  /* --- валюта бойынша --- */
-  var h = '';
-  ['USD', 'KZT'].forEach(function(c){
-    var sg = c === 'USD' ? '$' : '\u20b8';
-    if(!IT.val[c] && !IT.inv[c]) return;
-    var p = IT.val[c] - IT.inv[c];
-    h += '<label class="f" style="margin-top:12px">' + (c === 'USD' ? 'Доллар' : 'Теңге') + '</label>' +
-      '<div class="kv"><span>Портфель құны</span><b>' + nf(IT.val[c]) + ' ' + sg + '</b></div>' +
-      '<div class="kv"><span>Салынған</span><b>' + nf(IT.inv[c]) + ' ' + sg + '</b></div>' +
-      '<div class="kv"><span>Табыс</span><b style="color:' + (p >= 0 ? 'var(--pos)' : 'var(--neg)') + '">' +
-        (p >= 0 ? '+' : '\u2212') + nf(p) + ' ' + sg +
-        (IT.inv[c] > 0 ? ' (' + (p >= 0 ? '+' : '\u2212') + Math.abs(Math.round(p / IT.inv[c] * 100)) + '%)' : '') +
-      '</b></div>';
-  });
-  document.getElementById('iv-cur').innerHTML = h || '<div class="empty">Дерек жоқ.</div>';
-
-  /* --- жалпы есеп --- */
-  var dvT = kztOf(IT.div), feT = kztOf(IT.fee);
-  document.getElementById('iv-info').innerHTML =
-    '<div class="kv"><span>Портфель құны</span><b>' + curPair(IT.val, true) + '</b></div>' +
-    '<div class="kv"><span>Барлығы теңгемен</span><b>' + money(IT.valT) + '</b></div>' +
-    '<div class="kv"><span>Салынған қаражат</span><b>' + money(IT.invT) + '</b></div>' +
-    (dvT ? '<div class="kv"><span>Дивиденд · купон</span><b style="color:var(--pos)">+' + nf(dvT) + ' \u20b8</b></div>' : '') +
-    (feT ? '<div class="kv"><span>Комиссия · салық</span><b style="color:var(--neg)">\u2212' + nf(feT) + ' \u20b8</b></div>' : '') +
-    '<div class="kv"><span>Курс</span><b>' +
-      (rateV() ? '1 $ = ' + rateV().toFixed(2).replace('.', ',') + ' \u20b8' : '\u2014') + '</b></div>';
-}
-
 /* ================= START ================= */
 if('serviceWorker' in navigator){
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 }
 function boot(){
   initHistory();
-  migrateBal();          /* ескі деректі есептелетін қалдық моделіне көшіру */
   var recAdded = runRecurring();
   autoSnapshot();
   loadSnaps();
