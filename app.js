@@ -1236,6 +1236,8 @@ function render(){
 
   var debts=DB.accounts.filter(function(a){return a.kind==='debt';});
   var db=document.getElementById('ov-debts'); db.innerHTML='';
+  var dcard=document.getElementById('ov-debt-card');
+  if(dcard) dcard.classList.toggle('hide', !debts.length);
   if(!debts.length) db.innerHTML='<div class="empty">Несие жоқ — тамаша.</div>';
   else {
     var pay=0; debts.forEach(function(a){ pay+=a.pay||0; });
@@ -1412,7 +1414,7 @@ function drawCatBars(elId,type,list,total){
 }
 function drawChart(list){
   var box=document.getElementById('s-chart');
-  if(!list.length){ box.innerHTML='<div class="empty">Диаграмма үшін дерек жоқ.</div>'; return; }
+  if(!list.length){ box.innerHTML='<div class="empty">Кесте үшін дерек жоқ.</div>'; return; }
   var days={};
   list.forEach(function(t){
     if(!days[t.date]) days[t.date]={in:0,out:0};
@@ -2250,9 +2252,9 @@ function importConfirm(){
 var TR = [
 /* --- навигация --- */
 ["Басты","Главная","Home"],["Қаржы","Финансы","Finance"],["Операция","Операции","Activity"],
-["Статистика","Статистика","Stats"],["Баптау","Настройки","Settings"],
+["Нәтиже","Нәтиже","Stats"],["Баптау","Настройки","Settings"],
 ["Шолу","Обзор","Overview"],["Операциялар","Операции","Transactions"],
-["Мақсаттар","Цели","Goals"],["Калькулятор","Калькулятор","Calculator"],["Бюджет — санат лимиттері","Бюджет — лимиты по категориям","Budget — category limits"],
+["Мақсаттар","Цели","Goals"],["Есептегіш","Есептегіш","Calculator"],["Бюджет — санат лимиттері","Бюджет — лимиты по категориям","Budget — category limits"],
 
 /* --- басты бет --- */
 ["Таза капитал","Чистый капитал","Net worth"],["Кіріс","Доход","Income"],["Шығын","Расход","Expense"],
@@ -2306,7 +2308,7 @@ var TR = [
 ["Кіріс / Шығын","Доход / Расход","Income / Expense"],["Шығын санаттары","Категории расходов","Expense categories"],
 ["Кіріс көздері","Источники дохода","Income sources"],
 ["Бұл кезеңде дерек жоқ.","За этот период данных нет.","No data for this period."],
-["Диаграмма үшін дерек жоқ.","Нет данных для графика.","No data for the chart."],
+["Кесте үшін дерек жоқ.","Нет данных для графика.","No data for the chart."],
 ["Бұл айда кіріс жазылмаған.","В этом месяце доходов нет.","No income this month."],
 ["Бұл айда шығын жазылмаған.","В этом месяце расходов нет.","No expenses this month."],
 
@@ -2567,7 +2569,7 @@ var TR = [
 ["Санаттар үлесі","Доли категорий","Category split"],
 ["Шығын санаттарының үлесі","Доли категорий расходов","Expense category split"],
 ["Кіріс көздерінің үлесі","Доли источников дохода","Income source split"],
-["12 айлық тенденция","Тренд за 12 месяцев","12-month trend"],
+["12 айлық өзгеріс","Динамика за 12 месяцев","12-month trend"],
 ["Барлық шығын","Все расходы","All expenses"],["Барлық кіріс","Все доходы","All income"],
 ["Басқалары","Прочее","Other"],
 ["Айлық орташа кіріс","Средний доход в месяц","Average monthly income"],

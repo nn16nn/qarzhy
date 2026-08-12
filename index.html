@@ -13,7 +13,7 @@
 <title>Қаржы</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root{
     --g-deep:#010B4D; --g-mid:#021CF5; --g-bright:#3F5CFF; --g-soft:#E9ECFF;
@@ -28,6 +28,8 @@
     --blue-bg:#EFE9FF;
     --shadow:rgba(10,20,80,.07);
     --shadow-2:rgba(10,20,80,.14);
+    --sh1:rgba(10,20,80,.06);
+    --sh2:rgba(10,20,80,.20);
   }
   html[data-theme="dark"]{
     --g-deep:#04061C; --g-mid:#1B34F0; --g-bright:#5A72FF; --g-soft:#1A1F3D;
@@ -42,6 +44,8 @@
     --blue-bg:#221B45;
     --shadow:rgba(0,0,0,.35);
     --shadow-2:rgba(0,0,0,.5);
+    --sh1:rgba(0,0,0,.30);
+    --sh2:rgba(0,0,0,.55);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
@@ -57,6 +61,8 @@
     padding-bottom:calc(86px + env(safe-area-inset-bottom));
   }
   h1,h2,h3,.cap,.amt,.v{letter-spacing:-0.024em}
+  .cap,.big{font-weight:900;letter-spacing:-.035em}
+  .amt{font-weight:800;font-variant-numeric:tabular-nums}
   .muted,.sub,.sub2,.l,.f{letter-spacing:0}
   button,input,select{font-family:inherit;font-size:16px}
   .page{display:none}
@@ -251,6 +257,11 @@
   .legend2 .lg b{font-weight:800;color:var(--ink)}
 
   .cat-sep{height:1px;background:var(--line);margin:16px 0 18px}
+  .cap-in{background:linear-gradient(135deg,var(--g-soft),transparent 70%);
+    border-radius:16px;padding:15px 16px;margin-bottom:14px}
+  .cap-in .cap-label{font-size:11.5px;color:var(--ink-2);font-weight:700;
+    letter-spacing:.055em;text-transform:uppercase}
+  .cap-in .cap-v{font-size:27px;font-weight:900;letter-spacing:-.035em;margin-top:3px}
   .cat-row{margin-bottom:16px}
   .cat-row:last-child{margin-bottom:2px}
   .cat-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
@@ -386,6 +397,51 @@
 
   .brand{animation:floatY 5s ease-in-out infinite}
 
+  /* ---------- қазақи өрнек (қошқар мүйіз мотиві) ---------- */
+  .hero{position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'>\
+<g fill='none' stroke='%23ffffff' stroke-width='1.6' stroke-linecap='round' opacity='0.5'>\
+<path d='M60 22c-11 0-19 8-19 18 0 7 5 12 11 12 5 0 8-3 8-7 0-3-2-5-5-5'/>\
+<path d='M60 22c11 0 19 8 19 18 0 7-5 12-11 12-5 0-8-3-8-7 0-3 2-5 5-5'/>\
+<path d='M60 60v16'/>\
+<path d='M60 98c-11 0-19-8-19-18 0-7 5-12 11-12 5 0 8 3 8 7 0 3-2 5-5 5'/>\
+<path d='M60 98c11 0 19-8 19-18 0-7-5-12-11-12-5 0-8 3-8 7 0 3 2 5 5 5'/>\
+<circle cx='60' cy='60' r='3.2'/>\
+</g></svg>");
+    background-size:118px 118px;background-position:center -14px;
+    opacity:.085;mix-blend-mode:overlay}
+  .hero>*{position:relative;z-index:1}
+  html[data-theme="dark"] .hero::before{opacity:.13}
+
+  /* жіңішке өрнекті бөлгіш */
+  .ornament{height:16px;margin:2px 0 14px;opacity:.30;
+    background-image:url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='56' height='16' viewBox='0 0 56 16'>\
+<g fill='none' stroke='%23021CF5' stroke-width='1.5' stroke-linecap='round'>\
+<path d='M4 8h6'/><path d='M46 8h6'/>\
+<path d='M14 8c0-4 3-6 6-6s6 2 6 6-3 6-6 6-6-2-6-6'/>\
+<path d='M42 8c0-4-3-6-6-6s-6 2-6 6 3 6 6 6 6-2 6-6'/>\
+<circle cx='28' cy='8' r='2'/></g></svg>");
+    background-repeat:repeat-x;background-position:center}
+  html[data-theme="dark"] .ornament{filter:invert(1) brightness(1.6);opacity:.22}
+
+  /* ---------- көлеңке жүйесі ---------- */
+  .card{box-shadow:0 1px 2px var(--sh1), 0 6px 18px -6px var(--sh2)}
+  .quad button{box-shadow:0 1px 2px var(--sh1), 0 5px 14px -6px var(--sh2)}
+  .hero{box-shadow:0 12px 34px -14px rgba(2,28,245,.55)}
+  html[data-theme="dark"] .hero{box-shadow:0 12px 34px -16px rgba(0,0,0,.7)}
+  .tabbar{box-shadow:0 -1px 2px var(--sh1), 0 -10px 28px -12px var(--sh2)}
+  .sheet{box-shadow:0 -6px 40px -8px rgba(0,0,0,.28)}
+  .btn:not(.line):not(.ghost):not(.dashed){box-shadow:0 4px 14px -4px rgba(2,28,245,.45)}
+  .ico,.brand{box-shadow:0 2px 6px -2px var(--sh2)}
+  .plus{box-shadow:0 6px 18px -6px rgba(0,0,0,.35)}
+  .res,.cap-in{box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+
+  /* тереңдік: карта басылғанда көлеңке жиырылады */
+  .card:active{box-shadow:0 1px 2px var(--sh1)}
+
   @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 
   /* ---------- Свайп ---------- */
@@ -416,7 +472,6 @@
   .search{width:100%;border:0;border-radius:14px;padding:12px 14px;background:rgba(255,255,255,.16);
     color:#fff;font-size:15px;margin-top:12px}
   .search::placeholder{color:rgba(255,255,255,.6)}
-    background:rgba(255,255,255,.1);color:#fff;font-size:26px;font-weight:600}
   .warnbar{background:var(--warn-bg);color:var(--warn-fg);border-radius:16px;padding:13px 15px;font-size:13.5px;
     line-height:1.5;margin-bottom:12px}
   .warnbar b{display:block;margin-bottom:3px}
@@ -463,12 +518,12 @@
       <div class="mini"><div class="t"><span class="dot out">↑</span> Шығын</div><div class="v" id="h-out">0 ₸</div></div>
     </div>
     <div class="ratebar" onclick="fetchRate(true)">
-      <span class="qi" data-i="coin" style="display:inline-flex"></span><span id="h-rate">Курс жүктелуде…</span>
+      <span class="qi" data-i="coin" style="display:inline-flex"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4v9.2"/><path d="M14.6 9.6c-.6-.8-1.6-1.2-2.6-1.2-1.5 0-2.7.8-2.7 2s1.2 1.7 2.7 2 2.7.8 2.7 2-1.2 2-2.7 2c-1 0-2-.4-2.6-1.2"/></svg></span><span id="h-rate">Курс жүктелуде…</span>
       <span class="ref" id="h-rate-at">жаңарту ↻</span>
     </div>
     <div class="wide" onclick="go('stat')">
-      <div class="ic" data-i="stats"></div>
-      <div><div style="font-weight:700">Статистика</div><div class="sub">Кіріс · Шығын · Санаттар</div></div>
+      <div class="ic" data-i="stats"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11"/><path d="M9.3 20V5"/><path d="M14.7 20v-6"/><path d="M20 20V9"/></svg></div>
+      <div><div style="font-weight:700">Нәтиже</div><div class="sub">Кіріс · Шығын · Санаттар</div></div>
       <div style="margin-left:auto">→</div>
     </div>
   </div>
@@ -476,7 +531,7 @@
   <div class="wrap">
     <div class="card" onclick="go('accounts')">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-        <div class="ico" data-i="brief"></div>
+        <div class="ico" data-i="brief"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2.6"/><path d="M8.8 7V5.4a1.8 1.8 0 0 1 1.8-1.8h2.8a1.8 1.8 0 0 1 1.8 1.8V7"/><path d="M3 12.5h18"/></svg></div>
         <div><div style="font-weight:700;font-size:16px">Менің қаржым</div>
           <div class="muted" id="acc-count">0 шот</div></div>
         <div style="margin-left:auto;color:var(--ink-2)">→</div>
@@ -491,16 +546,16 @@
       </div>
     </div>
 
+    <div class="ornament"></div>
     <div class="quad">
-      <button onclick="go('overview')"><span class="qi" data-i="chart"></span> Шолу</button>
-      <button onclick="go('ops')"><span class="qi" data-i="receipt"></span> Операциялар</button>
-      <button onclick="go('goals')"><span class="qi" data-i="flag"></span> Мақсаттар</button>
-      <button onclick="go('calc')"><span class="qi" data-i="calc"></span> Калькулятор</button>
-      <button onclick="go('debts')"><span class="qi" data-i="swap"></span> Қарыздар</button>
+      <button onclick="go('ops')"><span class="qi" data-i="receipt"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.2h12v17.6l-3-1.8-3 1.8-3-1.8-3 1.8V3.2Z"/><path d="M9.2 8.2h5.6"/><path d="M9.2 12h5.6"/></svg></span> Операциялар</button>
+      <button onclick="go('goals')"><span class="qi" data-i="flag"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V3.8"/><path d="M6 4.4h11.5l-2.2 3.8 2.2 3.8H6"/></svg></span> Мақсаттар</button>
+      <button onclick="go('calc')"><span class="qi" data-i="calc"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="2.8" width="15" height="18.4" rx="2.6"/><path d="M8 7h8"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15h.01M8.5 18.3h.01M12 18.3h.01M15.5 18.3h.01"/></svg></span> Есептегіш</button>
+      <button onclick="go('debts')" style="grid-column:1/-1"><span class="qi" data-i="swap"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h13"/><path d="M13.6 5 17 8.5 13.6 12"/><path d="M20 15.5H7"/><path d="M10.4 12 7 15.5 10.4 19"/></svg></span> Қарыздар</button>
     </div>
     <div id="home-warn"></div>
 
-    <button class="btn dashed" onclick="startBankImport()" style="margin-bottom:12px"><span class="qi" data-i="inbox" style="display:inline-flex;vertical-align:-6px;margin-right:8px"></span>Банк үзіндісін жүктеу (PDF · Excel)</button>
+    <button class="btn dashed" onclick="startBankImport()" style="margin-bottom:12px"><span class="qi" data-i="inbox" style="display:inline-flex;vertical-align:-6px;margin-right:8px"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9.5"/><path d="M8.2 9.2 12 13l3.8-3.8"/><path d="M3.5 14.5h4l1.6 2.6h5.8l1.6-2.6h4"/><path d="M3.5 14.5V18a2.5 2.5 0 0 0 2.5 2.5h12a2.5 2.5 0 0 0 2.5-2.5v-3.5"/></svg></span>Банк үзіндісін жүктеу (PDF · Excel)</button>
 
     <div class="card">
       <h2>Соңғы операциялар <small onclick="go('ops')">Барлығы →</small></h2>
@@ -533,7 +588,7 @@
     <button class="btn dashed" onclick="openAcc('asset')">+ Банк шотын қосу</button>
     <button class="btn dashed" onclick="openAcc('broker')">+ Брокерлік шот қосу</button>
     <button class="btn dashed" onclick="openAcc('debt')">+ Несие қосу</button>
-    <button class="btn line" onclick="startBrokerImportAll()"><span class="qi" data-i="inbox" style="display:inline-flex;vertical-align:-6px;margin-right:8px"></span>Брокер есебін жүктеу (шоттарға бөледі)</button>
+    <button class="btn line" onclick="startBrokerImportAll()"><span class="qi" data-i="inbox" style="display:inline-flex;vertical-align:-6px;margin-right:8px"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9.5"/><path d="M8.2 9.2 12 13l3.8-3.8"/><path d="M3.5 14.5h4l1.6 2.6h5.8l1.6-2.6h4"/><path d="M3.5 14.5V18a2.5 2.5 0 0 0 2.5 2.5h12a2.5 2.5 0 0 0 2.5-2.5v-3.5"/></svg></span>Брокер есебін жүктеу (шоттарға бөледі)</button>
     <button class="btn line" onclick="quickSetup()">Дайын үлгі: Kaspi + Freedom + брокерлік шоттар</button>
   </div>
 </section>
@@ -565,29 +620,14 @@
 </section>
 
 <!-- ============ ШОЛУ ============ -->
-<section class="page" id="p-overview">
-  <div class="hero flat">
-    <div class="hero-top">
-      <button class="back" onclick="go('home')">←</button>
-      <div style="flex:1"><h1 style="font-size:24px">Шолу</h1><div class="sub">Қаржылық жағдай</div></div>
-    </div>
-    <div class="cap-label">Таза капитал</div>
-    <div class="cap" id="ov-net">0 ₸</div>
-  </div>
-  <div class="wrap">
-    <div class="card"><h2>Осы ай</h2><div id="ov-month"></div></div>
-    <div class="card"><h2>Активтер құрылымы</h2><div id="ov-assets"></div></div>
-    <div class="card"><h2>Несие жүктемесі</h2><div id="ov-debts"></div></div>
-    <div class="card"><h2>Ең көп шығын (осы ай)</h2><div id="ov-top"></div></div>
-  </div>
-</section>
+
 
 <!-- ============ СТАТИСТИКА ============ -->
 <section class="page" id="p-stat">
   <div class="hero flat">
     <div class="hero-top">
       <button class="back" onclick="go('home')">←</button>
-      <div style="flex:1"><h1 style="font-size:24px">Статистика</h1><div class="sub" id="s-count">0 операция</div></div>
+      <div style="flex:1"><h1 style="font-size:24px">Нәтиже</h1><div class="sub" id="s-count">0 операция</div></div>
     </div>
     <div class="chips glass" style="margin-top:14px;margin-bottom:10px">
       <button class="chip" data-per="day" onclick="setPeriod('day')">Бүгін</button>
@@ -607,12 +647,24 @@
   </div>
   <div class="wrap">
     <div class="stat3">
-      <div class="c"><div class="ico pos" style="margin:0 auto" data-i="biz"></div><div class="l">Кіріс</div><div class="v gpos" id="s-in">0 ₸</div></div>
-      <div class="c"><div class="ico red" style="margin:0 auto" data-i="down"></div><div class="l">Шығын</div><div class="v gneg" id="s-out">0 ₸</div></div>
-      <div class="c"><div class="ico" style="margin:0 auto" data-i="stats"></div><div class="l">Нәтиже</div><div class="v" id="s-net">0 ₸</div></div>
+      <div class="c"><div class="ico pos" style="margin:0 auto" data-i="biz"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 16.8 9 11.4l3.6 3.6 7-7"/><path d="M15.6 8h4v4"/></svg></div><div class="l">Кіріс</div><div class="v gpos" id="s-in">0 ₸</div></div>
+      <div class="c"><div class="ico red" style="margin:0 auto" data-i="down"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 7.2 9 12.6l3.6-3.6 7 7"/><path d="M19.6 12.6v4h-4"/></svg></div><div class="l">Шығын</div><div class="v gneg" id="s-out">0 ₸</div></div>
+      <div class="c"><div class="ico" style="margin:0 auto" data-i="stats"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11"/><path d="M9.3 20V5"/><path d="M14.7 20v-6"/><path d="M20 20V9"/></svg></div><div class="l">Нәтиже</div><div class="v" id="s-net">0 ₸</div></div>
     </div>
+    <div class="ornament"></div>
     <div class="card">
-      <h2>12 айлық тенденция</h2>
+      <h2>Қаржылық жағдай</h2>
+      <div class="cap-in">
+        <div class="cap-label">Таза капитал</div>
+        <div class="cap-v" id="ov-net">0 ₸</div>
+      </div>
+      <div id="ov-month"></div>
+    </div>
+    <div class="card"><h2>Активтер құрылымы</h2><div id="ov-assets"></div></div>
+    <div class="card" id="ov-debt-card"><h2>Несие жүктемесі</h2><div id="ov-debts"></div></div>
+    <div class="card"><h2>Ең көп шығын (осы ай)</h2><div id="ov-top"></div></div>
+    <div class="card">
+      <h2>12 айлық өзгеріс</h2>
       <div id="trend-chart"></div>
     </div>
     <div class="card">
@@ -660,30 +712,30 @@
   <div class="hero flat">
     <div class="hero-top">
       <button class="back" onclick="go('home')">←</button>
-      <div style="flex:1"><h1 style="font-size:24px">Калькулятор</h1><div class="sub">Қаржылық есептеулер</div></div>
+      <div style="flex:1"><h1 style="font-size:24px">Есептегіш</h1><div class="sub">Қаржылық есептеулер</div></div>
     </div>
   </div>
   <div class="wrap">
     <div class="card" onclick="go('calc-inv')" style="display:flex;align-items:center;gap:13px">
-      <div class="ico" data-i="invest"></div>
+      <div class="ico" data-i="invest"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.4h16"/><path d="M7.4 16.4V12"/><path d="M11.8 16.4V7.4"/><path d="M16.2 16.4v-6.4"/><path d="M6.2 8.6 12 3.8l5.8 4.8"/></svg></div>
       <div><div style="font-weight:700;font-size:16px">Инвестиция калькуляторы</div>
         <div class="muted">Табыс · Мерзім · Күрделі пайыз</div></div>
       <div style="margin-left:auto;color:var(--ink-2)">›</div>
     </div>
     <div class="card" onclick="go('calc-loan')" style="display:flex;align-items:center;gap:13px">
-      <div class="ico red" data-i="card"></div>
+      <div class="ico red" data-i="card"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="5.4" width="18.4" height="13.2" rx="2.6"/><path d="M2.8 10h18.4"/><path d="M6.4 14.6h3.4"/></svg></div>
       <div><div style="font-weight:700;font-size:16px">Несие калькуляторы</div>
         <div class="muted">Ай төлем · Ерте өтеу · Кесте</div></div>
       <div style="margin-left:auto;color:var(--ink-2)">›</div>
     </div>
     <div class="card" onclick="go('calc-dep')" style="display:flex;align-items:center;gap:13px">
-      <div class="ico pos" data-i="coin"></div>
+      <div class="ico pos" data-i="coin"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4v9.2"/><path d="M14.6 9.6c-.6-.8-1.6-1.2-2.6-1.2-1.5 0-2.7.8-2.7 2s1.2 1.7 2.7 2 2.7.8 2.7 2-1.2 2-2.7 2c-1 0-2-.4-2.6-1.2"/></svg></div>
       <div><div style="font-weight:700;font-size:16px">Депозит калькуляторы</div>
         <div class="muted">Капитализация · Толықтыру</div></div>
       <div style="margin-left:auto;color:var(--ink-2)">›</div>
     </div>
     <div class="card" onclick="go('calc-tax')" style="display:flex;align-items:center;gap:13px">
-      <div class="ico" data-i="receipt"></div>
+      <div class="ico" data-i="receipt"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.2h12v17.6l-3-1.8-3 1.8-3-1.8-3 1.8V3.2Z"/><path d="M9.2 8.2h5.6"/><path d="M9.2 12h5.6"/></svg></div>
       <div><div style="font-weight:700;font-size:16px">Салық калькуляторы</div>
         <div class="muted">ЖК · оңайлатылған декларация</div></div>
       <div style="margin-left:auto;color:var(--ink-2)">›</div>
@@ -984,10 +1036,10 @@
   </div>
   <div class="wrap">
     <div class="quad">
-      <button onclick="openBVal(brId)"><span class="qi" data-i="invest"></span> Құнын жаңарту</button>
-      <button onclick="openBOp()"><span class="qi" data-i="coin"></span> Операция қосу</button>
-      <button onclick="startBrokerImport()"><span class="qi" data-i="inbox"></span> Файл жүктеу</button>
-      <button onclick="openAcc('broker', brId)"><span class="qi" data-i="gear"></span> Түзету</button>
+      <button onclick="openBVal(brId)"><span class="qi" data-i="invest"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.4h16"/><path d="M7.4 16.4V12"/><path d="M11.8 16.4V7.4"/><path d="M16.2 16.4v-6.4"/><path d="M6.2 8.6 12 3.8l5.8 4.8"/></svg></span> Құнын жаңарту</button>
+      <button onclick="openBOp()"><span class="qi" data-i="coin"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4v9.2"/><path d="M14.6 9.6c-.6-.8-1.6-1.2-2.6-1.2-1.5 0-2.7.8-2.7 2s1.2 1.7 2.7 2 2.7.8 2.7 2-1.2 2-2.7 2c-1 0-2-.4-2.6-1.2"/></svg></span> Операция қосу</button>
+      <button onclick="startBrokerImport()"><span class="qi" data-i="inbox"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9.5"/><path d="M8.2 9.2 12 13l3.8-3.8"/><path d="M3.5 14.5h4l1.6 2.6h5.8l1.6-2.6h4"/><path d="M3.5 14.5V18a2.5 2.5 0 0 0 2.5 2.5h12a2.5 2.5 0 0 0 2.5-2.5v-3.5"/></svg></span> Файл жүктеу</button>
+      <button onclick="openAcc('broker', brId)"><span class="qi" data-i="gear"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.3"/><path d="M19 12c0 .5-.05.9-.13 1.35l2.1 1.6-2 3.46-2.5-1a7.4 7.4 0 0 1-2.33 1.35l-.37 2.64h-4l-.37-2.64A7.4 7.4 0 0 1 7.07 17.4l-2.5 1-2-3.46 2.1-1.6A7.6 7.6 0 0 1 4.54 12c0-.46.05-.9.13-1.35l-2.1-1.6 2-3.46 2.5 1a7.4 7.4 0 0 1 2.33-1.35L9.77 2.6h4l.37 2.64a7.4 7.4 0 0 1 2.33 1.35l2.5-1 2 3.46-2.1 1.6c.08.45.13.89.13 1.35Z"/></svg></span> Түзету</button>
     </div>
     <div class="card"><h2>Есеп</h2><div id="br-info"></div></div>
     <div class="card">
@@ -1022,11 +1074,11 @@
 
 <!-- ============ TABBAR ============ -->
 <nav class="tabbar">
-  <button class="on" data-tab="home" onclick="go('home')"><span class="g" data-i="home"></span>Басты</button>
-  <button data-tab="accounts" onclick="go('accounts')"><span class="g" data-i="wallet"></span>Қаржы</button>
-  <button data-tab="ops" onclick="go('ops')"><span class="g" data-i="receipt"></span>Операция</button>
-  <button data-tab="stat" onclick="go('stat')"><span class="g" data-i="stats"></span>Статистика</button>
-  <button data-tab="set" onclick="go('set')"><span class="g" data-i="gear"></span>Баптау</button>
+  <button class="on" data-tab="home" onclick="go('home')"><span class="g" data-i="home"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11 12 3.5 20.5 11"/><path d="M5.8 9.7V20h12.4V9.7"/><path d="M10 20v-5h4v5"/></svg></span>Басты</button>
+  <button data-tab="accounts" onclick="go('accounts')"><span class="g" data-i="wallet"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6.5" width="18" height="13" rx="3"/><path d="M3 9.5V7a2.5 2.5 0 0 1 2.5-2.5H16"/><circle cx="16.5" cy="13" r="1.4"/></svg></span>Қаржы</button>
+  <button data-tab="ops" onclick="go('ops')"><span class="g" data-i="receipt"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.2h12v17.6l-3-1.8-3 1.8-3-1.8-3 1.8V3.2Z"/><path d="M9.2 8.2h5.6"/><path d="M9.2 12h5.6"/></svg></span>Операция</button>
+  <button data-tab="stat" onclick="go('stat')"><span class="g" data-i="stats"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11"/><path d="M9.3 20V5"/><path d="M14.7 20v-6"/><path d="M20 20V9"/></svg></span>Нәтиже</button>
+  <button data-tab="set" onclick="go('set')"><span class="g" data-i="gear"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.3"/><path d="M19 12c0 .5-.05.9-.13 1.35l2.1 1.6-2 3.46-2.5-1a7.4 7.4 0 0 1-2.33 1.35l-.37 2.64h-4l-.37-2.64A7.4 7.4 0 0 1 7.07 17.4l-2.5 1-2-3.46 2.1-1.6A7.6 7.6 0 0 1 4.54 12c0-.46.05-.9.13-1.35l-2.1-1.6 2-3.46 2.5 1a7.4 7.4 0 0 1 2.33-1.35L9.77 2.6h4l.37 2.64a7.4 7.4 0 0 1 2.33 1.35l2.5-1 2 3.46-2.1 1.6c.08.45.13.89.13 1.35Z"/></svg></span>Баптау</button>
 </nav>
 
 <div class="scrim" id="scrim" onclick="closeSheets()"></div>
