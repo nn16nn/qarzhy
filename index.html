@@ -223,11 +223,27 @@
   svg.chart{width:100%;height:150px;display:block}
   .donut-wrap{display:flex;align-items:center;gap:14px}
   svg.donut{width:44%;max-width:170px;height:auto;display:block;flex:none;margin:0}
-  svg.trend{width:100%;height:150px;display:block}
-  .tr-x{position:relative;height:20px;margin:4px 0 2px}
+  svg.trend{width:100%;height:160px;display:block;touch-action:pan-y}
+  .tr-box{position:relative}
+  .tr-x{position:relative;height:22px;margin:4px 0 2px}
   .tr-x span{position:absolute;transform:translateX(-50%);white-space:nowrap;
-    font-size:12px;font-weight:600;color:var(--ink-2);letter-spacing:0}
-  .tr-x span.cur{color:var(--ink);font-weight:800}
+    font-size:12px;font-weight:600;color:var(--ink-2);letter-spacing:0;
+    padding:3px 6px;border-radius:8px;cursor:pointer}
+  .tr-x span.cur{color:#fff;font-weight:800;background:var(--g-mid)}
+  svg.trend .tp{transition:r .18s cubic-bezier(.3,1.4,.5,1)}
+  .tr-hit{cursor:pointer}
+  .tr-pop{position:absolute;top:2px;transform:translateX(-50%);
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    padding:9px 12px;box-shadow:0 8px 26px var(--shadow-2);
+    pointer-events:none;white-space:nowrap;z-index:3;
+    animation:popIn .22s cubic-bezier(.3,1.3,.5,1)}
+  .tr-pop .tp-m{font-size:11.5px;font-weight:700;color:var(--ink-2);
+    letter-spacing:.03em;margin-bottom:5px}
+  .tr-pop .tp-r{display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:700;margin-top:2px}
+  .tr-pop .tp-r i{width:8px;height:8px;border-radius:99px;flex:none}
+  .tr-pop .tp-n{font-size:13.5px;font-weight:800;margin-top:5px;
+    padding-top:5px;border-top:1px solid var(--line)}
+  .tr-pop .tp-c{font-size:11px;color:var(--ink-2);margin-top:3px}
   .legend2{flex:1;min-width:0;display:flex;flex-direction:column;gap:9px}
   .legend2 .lg{display:flex;align-items:center;gap:9px;font-size:13.5px;min-width:0}
   .legend2 .lg i{width:10px;height:10px;border-radius:99px;flex:none}
@@ -321,6 +337,54 @@
   svg.trend text.cur{font-weight:700}
   svg.trend text{font-family:inherit;letter-spacing:0}
   .wide .ic{animation:breathe 4s ease-in-out infinite}
+
+  /* ---------- бренд қозғалысы ---------- */
+  @keyframes slideL{from{opacity:0;transform:translateX(-14px)}}
+  @keyframes slideR{from{opacity:0;transform:translateX(14px)}}
+  @keyframes sheen{0%{background-position:-150% 0}55%,100%{background-position:250% 0}}
+  @keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+  @keyframes barGrow{from{transform:scaleX(0)}}
+
+  /* бет ауысқанда мазмұн жанынан кіреді */
+  .page.on .hero{animation:slideL .38s cubic-bezier(.2,.85,.3,1) backwards}
+  .page.on .wrap>*{animation:rise .38s cubic-bezier(.2,.85,.3,1) backwards}
+
+  /* карталарды басқанда серпіліс */
+  .card{transition:transform .16s cubic-bezier(.3,1.3,.5,1)}
+  .quad button{transition:transform .16s cubic-bezier(.3,1.3,.5,1),background .15s}
+  .quad button:active{transform:scale(.96)}
+  .btn{transition:transform .14s cubic-bezier(.3,1.3,.5,1),opacity .15s}
+  .btn:active{transform:scale(.975)}
+
+  /* hero сомасының үстінен өтетін жарық */
+  .hero .big,.hero h1{position:relative}
+  .hero .big::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(100deg,transparent 38%,rgba(255,255,255,.35) 50%,transparent 62%);
+    background-size:250% 100%;animation:sheen 7s ease-in-out infinite;pointer-events:none}
+
+  /* жолақтар солдан оңға өседі */
+  .fill{transform-origin:left center;animation:barGrow .7s cubic-bezier(.2,.85,.3,1) backwards}
+  .cat-row:nth-child(1) .fill{animation-delay:.04s}
+  .cat-row:nth-child(2) .fill{animation-delay:.10s}
+  .cat-row:nth-child(3) .fill{animation-delay:.16s}
+  .cat-row:nth-child(4) .fill{animation-delay:.22s}
+  .cat-row:nth-child(5) .fill{animation-delay:.28s}
+  .cat-row:nth-child(n+6) .fill{animation-delay:.34s}
+
+  /* легенда жолдары бірінен соң бірі */
+  .legend2 .lg{animation:slideR .4s cubic-bezier(.2,.85,.3,1) backwards}
+  .legend2 .lg:nth-child(1){animation-delay:.30s}
+  .legend2 .lg:nth-child(2){animation-delay:.36s}
+  .legend2 .lg:nth-child(3){animation-delay:.42s}
+  .legend2 .lg:nth-child(4){animation-delay:.48s}
+  .legend2 .lg:nth-child(5){animation-delay:.54s}
+  .legend2 .lg:nth-child(n+6){animation-delay:.60s}
+
+  /* қалқыма терезенің фоны жұмсақ ашылады */
+  .scrim{transition:opacity .26s ease}
+  .sheet{transition:transform .3s cubic-bezier(.2,.9,.25,1)}
+
+  .brand{animation:floatY 5s ease-in-out infinite}
 
   @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 
@@ -433,8 +497,6 @@
       <button onclick="go('goals')"><span class="qi" data-i="flag"></span> Мақсаттар</button>
       <button onclick="go('calc')"><span class="qi" data-i="calc"></span> Калькулятор</button>
       <button onclick="go('debts')"><span class="qi" data-i="swap"></span> Қарыздар</button>
-      <button onclick="go('budget')"><span class="qi" data-i="budget"></span> Бюджет</button>
-      <button onclick="go('recur')" style="grid-column:1/-1"><span class="qi" data-i="clock"></span> Тұрақты операциялар</button>
     </div>
     <div id="home-warn"></div>
 
@@ -558,7 +620,10 @@
       <div id="s-chart"></div>
       <div class="legend"><span><i style="background:linear-gradient(92deg,#7CF2CE,#00BE86)"></i>Кіріс</span><span><i style="background:linear-gradient(92deg,#FFA8B3,#FF4D67)"></i>Шығын</span></div>
     </div>
-    <button class="btn" onclick="exportPdf()">PDF есеп жасау</button>
+    <div class="row2" style="gap:10px;margin-bottom:12px">
+      <button class="btn" onclick="exportPdf()" style="margin:0">PDF есеп</button>
+      <button class="btn line" onclick="exportOpsXlsx()" style="margin:0">Excel</button>
+    </div>
     <div class="card" id="s-card-out">
       <h2>Шығын санаттары</h2>
       <div id="s-donut-out"></div>
@@ -677,6 +742,10 @@
     </div>
 
     <div id="i-res" style="margin-top:16px"></div>
+    <div class="row2" style="gap:10px;margin-top:10px">
+      <button class="btn line" onclick="exportInvPdf()" style="margin:0">PDF-ке шығару</button>
+      <button class="btn line" onclick="exportInvXlsx()" style="margin:0">Excel-ге шығару</button>
+    </div>
   </div>
 </section>
 
@@ -733,7 +802,10 @@
     </div>
 
     <div id="l-res"></div>
-    <button class="btn line" onclick="exportLoanPdf()" style="margin-top:10px">Кестені PDF-ке шығару</button>
+    <div class="row2" style="gap:10px;margin-top:10px">
+      <button class="btn line" onclick="exportLoanPdf()" style="margin:0">PDF-ке шығару</button>
+      <button class="btn line" onclick="exportLoanXlsx()" style="margin:0">Excel-ге шығару</button>
+    </div>
   </div>
 </section>
 
@@ -804,28 +876,6 @@
 </section>
 
 <!-- ============ ТҰРАҚТЫ ОПЕРАЦИЯЛАР ============ -->
-<section class="page" id="p-recur">
-  <div class="hero flat">
-    <div class="hero-top">
-      <button class="back" onclick="go('home')">←</button>
-      <div style="flex:1"><h1 style="font-size:24px">Тұрақты</h1>
-        <div class="sub" id="rc-count">0 жазба</div></div>
-      <button class="plus" onclick="openRecur()">+</button>
-    </div>
-    <div class="two">
-      <div class="mini"><div class="t">Ай сайынғы кіріс</div><div class="v" id="rc-in-sum">0 ₸</div></div>
-      <div class="mini"><div class="t">Ай сайынғы шығын</div><div class="v" id="rc-out-sum">0 ₸</div></div>
-    </div>
-  </div>
-  <div class="wrap">
-    <p class="muted" style="padding:0 6px 8px">Бір рет жазсаңыз, ай сайын белгіленген күні өзі қосылады.
-    Қосымшаны ашқанда өтіп кеткен айлар да толтырылады.</p>
-    <div class="card">
-      <h2>Тізім <small class="act" onclick="selStart('recur')">Таңдау</small></h2>
-      <div id="rc-list"></div></div>
-    <button class="btn dashed" onclick="openRecur()">+ Тұрақты операция қосу</button>
-  </div>
-</section>
 
 <!-- ============ ҚАРЫЗДАР ============ -->
 <section class="page" id="p-debts">
@@ -857,22 +907,6 @@
 </section>
 
 <!-- ============ БЮДЖЕТ ============ -->
-<section class="page" id="p-budget">
-  <div class="hero flat">
-    <div class="hero-top">
-      <button class="back" onclick="go('home')">←</button>
-      <div style="flex:1"><h1 style="font-size:24px">Бюджет</h1><div class="sub" id="bd-sub">Айлық шығын шектеуі</div></div>
-    </div>
-    <div class="two">
-      <div class="mini"><div class="t">Шектелген</div><div class="v" id="bd-limit">0 ₸</div></div>
-      <div class="mini"><div class="t">Жұмсалды</div><div class="v" id="bd-spent">0 ₸</div></div>
-    </div>
-  </div>
-  <div class="wrap">
-    <p class="muted" style="padding:0 4px 8px">Санатқа айлық шек қойыңыз. 80%-ға жеткенде ескертеміз. 0 деп қойсаңыз — шек жоқ.</p>
-    <div class="card" id="bd-list"></div>
-  </div>
-</section>
 
 <!-- ============ ДЕПОЗИТ КАЛЬКУЛЯТОРЫ ============ -->
 <section class="page" id="p-calc-dep">
@@ -896,6 +930,10 @@
         <div class="muted" id="dp-sw-txt">Ай сайын капитализация — пайызға пайыз</div></div>
     </div>
     <div id="dp-res" style="margin-top:6px"></div>
+    <div class="row2" style="gap:10px;margin-top:10px">
+      <button class="btn line" onclick="exportDepPdf()" style="margin:0">PDF-ке шығару</button>
+      <button class="btn line" onclick="exportDepXlsx()" style="margin:0">Excel-ге шығару</button>
+    </div>
   </div>
 </section>
 
@@ -922,6 +960,10 @@
         <input class="inp soft" id="tx-mzp" type="number" inputmode="decimal" value="85000" oninput="calcTax()" style="margin:0;width:150px"></div>
     </div>
     <div id="tx-res"></div>
+    <div class="row2" style="gap:10px;margin-top:10px">
+      <button class="btn line" onclick="exportTaxPdf()" style="margin:0">PDF-ке шығару</button>
+      <button class="btn line" onclick="exportTaxXlsx()" style="margin:0">Excel-ге шығару</button>
+    </div>
   </div>
 </section>
 
@@ -1077,28 +1119,6 @@
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
 </div>
 
-<!-- Sheet: recurring -->
-<div class="sheet" id="sheet-recur">
-  <div class="grab"></div>
-  <h3 id="rc-title">Тұрақты операция</h3>
-  <div class="seg">
-    <button id="rc-out" class="on" onclick="setRType('out')">Шығын</button>
-    <button id="rc-in" onclick="setRType('in')">Кіріс</button>
-  </div>
-  <label class="f">Сома, ₸</label>
-  <input class="inp big" id="rc-amt" type="number" inputmode="decimal" placeholder="0">
-  <label class="f">Санат</label>
-  <div class="chips" id="rc-cats"></div>
-  <label class="f">Қай шот</label>
-  <div class="chips" id="rc-accs"></div>
-  <label class="f">Айдың қай күні</label>
-  <input class="inp" id="rc-day" type="number" inputmode="numeric" min="1" max="31" value="1">
-  <label class="f">Түсініктеме</label>
-  <input class="inp" id="rc-note" type="text" placeholder="Мысалы: пәтер жалдау">
-  <button class="btn" onclick="saveRecur()">Сақтау</button>
-  <button class="btn danger hide" id="rc-del" onclick="delRecur()">Өшіру</button>
-  <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
-</div>
 
 <!-- Sheet: debt -->
 <div class="sheet" id="sheet-debt">
