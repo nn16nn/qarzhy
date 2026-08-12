@@ -1391,8 +1391,10 @@ function renderStats(){
   ne.textContent=(net>=0?'+':'')+money(net);
   ne.style.color = net>=0?'var(--pos)':'var(--neg)';
 
-  document.getElementById('s-card-in').classList.toggle('hide', statFilter==='out');
-  document.getElementById('s-card-out').classList.toggle('hide', statFilter==='in');
+  var cIn=document.getElementById('s-card-in');
+  if(cIn) cIn.classList.toggle('hide', statFilter==='out');
+  var cOut=document.getElementById('s-card-out');
+  if(cOut) cOut.classList.toggle('hide', statFilter==='in');
 
   drawCatBars('s-cat-out','out',list,sOut);
   drawCatBars('s-cat-in','in',list,sIn);
@@ -1402,7 +1404,7 @@ function renderStats(){
   drawTrend();
 }
 function drawCatBars(elId,type,list,total){
-  var box=document.getElementById(elId); box.innerHTML='';
+  var box=document.getElementById(elId); if(!box) return; box.innerHTML='';
   var sums={};
   list.filter(function(t){return t.type===type;}).forEach(function(t){ sums[t.cat]=(sums[t.cat]||0)+t.amt; });
   var keys=Object.keys(sums).sort(function(a,b){return sums[b]-sums[a];});
@@ -1414,6 +1416,7 @@ function drawCatBars(elId,type,list,total){
 }
 function drawChart(list){
   var box=document.getElementById('s-chart');
+  if(!box) return;
   if(!list.length){ box.innerHTML='<div class="empty">Кесте үшін дерек жоқ.</div>'; return; }
   var days={};
   list.forEach(function(t){
