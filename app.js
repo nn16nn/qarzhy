@@ -336,6 +336,19 @@ var DAYS = ["Жексенбі","Дүйсенбі","Сейсенбі","Сәрсе
 
 function nf(n){ return Math.round(Math.abs(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g," "); }
 function money(n,c){ return (n<0?"−":"") + nf(n) + " " + (c||"₸"); }
+/* тар ұяшықтарға арналған қысқа пішім: 1 384 546 ₸ → 1,38 млн ₸ */
+function moneyShort(n,c){
+  var sym=c||"₸", a=Math.abs(n), sg=(n<0?"−":"");
+  function d(v){
+    var s = v>=100 ? Math.round(v).toString()
+          : v>=10  ? (Math.round(v*10)/10).toString()
+                   : (Math.round(v*100)/100).toString();
+    return s.replace(".", ",");
+  }
+  if(a>=1e9) return sg + d(a/1e9) + " млрд " + sym;
+  if(a>=1e6) return sg + d(a/1e6) + " млн " + sym;
+  return money(n, sym);
+}
 function icon(type,cat){
   var l = CATS[type]; for(var i=0;i<l.length;i++) if(l[i][0]===cat) return l[i][1];
   return type==="in"?"💰":"✦";
@@ -870,9 +883,7 @@ function renderBroker(){
         (df[c].fee ? '<div class="kv"><span>Комиссия · салық</span><b style="color:var(--neg)">−' + nf(df[c].fee) + ' ' + sg + '</b></div>' : '');
     });
     info.innerHTML = block +
-      '<label class="f" style="margin-top:14px">Барлығы теңгемен</label>' +
-      '<div class="kv"><span>Портфель құны</span><b>' + money(a.bal) + '</b></div>' +
-      '<div class="kv"><span>Салынған қаражат</span><b>' + money(invT) + '</b></div>' +
+      '<label class="f" style="margin-top:14px">Қосымша</label>' +
       '<div class="kv"><span>Курс</span><b>' + (rateV() ? '1 $ = ' + rateV().toFixed(2).replace('.', ',') + ' ₸' : '—') + '</b></div>' +
       '<div class="kv"><span>Құн көзі</span><b>' +
         (a.valSet ? tr('қолмен қойылған') + (a.valAt ? ' · ' + fullDate(a.valAt) : '') : tr('жазбалардан есептелген')) +
@@ -1122,10 +1133,16 @@ function render(){
   document.getElementById('h-broker').textContent=money(T.broker);
   if(view==='broker') renderBroker();
   document.getElementById('h-debts').textContent=money(T.debts);
-  var hl=document.getElementById('h-lent'), ho=document.getElementById('h-owed');
-  if(hl) hl.textContent=money(T.lent);
-  if(ho) ho.textContent=money(T.owed);
-  document.getElementById('h-net2').textContent=money(T.net);
+  var hpd=document.getElementById('h-pdebt');
+  if(hpd){
+    if(T.lent && T.owed){
+      hpd.innerHTML='<span style="color:var(--pos)">+'+nf(T.lent)+'</span>'+
+                    ' <span style="opacity:.5">/</span> '+
+                    '<span style="color:var(--neg)">−'+nf(T.owed)+'</span>';
+    } else if(T.lent){ hpd.textContent='+'+money(T.lent); hpd.style.color='var(--pos)'; }
+    else if(T.owed){ hpd.textContent='−'+money(T.owed); hpd.style.color='var(--neg)'; }
+    else { hpd.textContent='0 ₸'; hpd.style.color=''; }
+  }
   var openDebts = (DB.debts||[]).filter(function(d){ return debtLeft(d) > 0; }).length;
   document.getElementById('acc-count').textContent=
     accsOf('asset').length+' банк · '+accsOf('broker').length+' брокер'+
@@ -1145,14 +1162,17 @@ function render(){
   /* --- accounts --- */
   document.getElementById('a-count').textContent=DB.accounts.length+' шот';
   animNum(document.getElementById('a-net'), T.net);
-  document.getElementById('a-banks').textContent=money(T.banks);
-  document.getElementById('a-broker').textContent=money(T.broker);
-  document.getElementById('a-debts').textContent=money(T.debts);
-  document.getElementById('a-sum-bank').textContent=money(T.banks);
+  document.getElementById('a-banks').textContent=moneyShort(T.banks);
+  document.getElementById('a-broker').textContent=moneyShort(T.broker);
+  document.getElementById('a-debts').textContent=moneyShort(T.debts);
   var pl=T.broker-T.invested;
-  document.getElementById('a-sum-broker').textContent=
-    T.invested>0 ? money(T.broker)+'  ('+(pl>=0?'+':'−')+nf(Math.abs(pl))+' ₸)' : money(T.broker);
-  document.getElementById('a-sum-debt').textContent=money(T.debts);
+  var asb=document.getElementById('a-sum-broker');
+  if(asb){
+    if(T.invested>0){
+      asb.className='tag'+(pl>=0?'':' neg');
+      asb.textContent=(pl>=0?'+':'−')+nf(Math.abs(pl))+' ₸';
+    } else { asb.className=''; asb.textContent=''; }
+  }
   renderAccList('asset','a-list-asset','Банк шоты жоқ. Төмендегі түймемен қосыңыз.');
   renderAccList('broker','a-list-broker','Брокерлік шот жоқ. Инвестицияңызды осында қосыңыз.');
   renderAccList('debt','a-list-debt','Несие жоқ — тамаша.');
@@ -1207,22 +1227,28 @@ function render(){
   /* --- overview --- */
   animNum(document.getElementById('ov-net'), T.net);
   var rate = mIn>0 ? Math.round((mIn-mOut)/mIn*100) : 0;
-  document.getElementById('ov-month').innerHTML=
-    '<div class="kv"><span>Кіріс</span><b style="color:var(--pos)">'+money(mIn)+'</b></div>'+
-    '<div class="kv"><span>Шығын</span><b style="color:var(--neg)">'+money(mOut)+'</b></div>'+
-    '<div class="kv"><span>Қалдық</span><b>'+money(mIn-mOut)+'</b></div>'+
-    '<div class="kv"><span>Жинақ үлесі</span><b>'+(mIn>0?rate+'%':'—')+'</b></div>';
+  /* соңғы 12 айдағы орташа шығын — «қауіпсіздік жастығы» үшін */
+  var now12=new Date(), out12=0, mset={};
+  for(var q=0;q<12;q++){ var dq=new Date(now12.getFullYear(), now12.getMonth()-q, 1);
+    mset[dq.getFullYear()+'-'+String(dq.getMonth()+1).padStart(2,'0')]=1; }
+  DB.tx.forEach(function(t){ if(t.type==='out' && mset[t.date.slice(0,7)]) out12+=t.amt; });
+  var avgOut12 = out12/12;
+  var cushion = avgOut12>0 ? (T.banks/avgOut12) : 0;
+  var ovm=document.getElementById('ov-month');
+  if(ovm) ovm.innerHTML=
+    '<div class="kv"><span>Жинақ үлесі (осы ай)</span><b style="color:'+
+      (rate>=0?'var(--pos)':'var(--neg)')+'">'+(mIn>0?rate+'%':'—')+'</b></div>'+
+    '<div class="kv"><span>Айлық орташа шығын</span><b>'+money(avgOut12)+'</b></div>'+
+    '<div class="kv"><span>Қаражат неше айға жетеді</span><b>'+
+      (avgOut12>0 ? (cushion>=12 ? '12+ ай' : (Math.round(cushion*10)/10).toString().replace('.',',')+' ай') : '—')+
+    '</b></div>';
 
   var assets=accsOf('asset');
   var ob=document.getElementById('ov-assets'); ob.innerHTML='';
   if(!assets.length) ob.innerHTML='<div class="empty">Шот жоқ.</div>';
   else {
     ob.innerHTML='<div class="kv"><span>Банктердегі ақша</span><b style="color:var(--pos)">'+money(T.banks)+'</b></div>'+
-      '<div class="kv"><span>Міндеттемелер</span><b style="color:var(--neg)">'+money(T.debts)+'</b></div>'+
-      (T.lent?'<div class="kv"><span>Маған қарыз</span><b style="color:var(--pos)">'+money(T.lent)+'</b></div>':'')+
-      (T.owed?'<div class="kv"><span>Мен қарызбын</span><b style="color:var(--neg)">'+money(T.owed)+'</b></div>':'')+
-      '<div class="kv"><span>Таза капитал</span><b>'+money(T.net)+'</b></div>'+
-      '<div class="kv" style="margin-top:8px"><span>Инвестиция портфелі (бөлек)</span><b style="color:var(--blue)">'+money(T.broker)+'</b></div>'+
+      '<div class="kv"><span>Инвестиция портфелі (бөлек)</span><b style="color:var(--blue)">'+money(T.broker)+'</b></div>'+
       (T.invested>0?'<div class="kv"><span>Портфель табысы</span><b style="color:'+(T.brokerPL>=0?'var(--pos)':'var(--neg)')+'">'+
         (T.brokerPL>=0?'+':'')+money(T.brokerPL)+'</b></div>':'');
     var wrapB=document.createElement('div'); wrapB.style.marginTop='12px';
@@ -1248,24 +1274,6 @@ function render(){
       var kz=toKZT(a);
       var f=T.debts>0?kz/T.debts:0;
       db.appendChild(barRow(accIconHtml(a,'bar-ic')+'<span>'+esc(a.name)+'</span>', money(kz), f, 'neg'));
-    });
-  }
-
-  var topBox=document.getElementById('ov-top'); topBox.innerHTML='';
-  var sums={};
-  mTx.filter(function(t){return t.type==='out';}).forEach(function(t){ sums[t.cat]=(sums[t.cat]||0)+t.amt; });
-  var keys=Object.keys(sums).sort(function(a,b){return sums[b]-sums[a];}).slice(0,5);
-  if(!keys.length) topBox.innerHTML='<div class="empty">Бұл айда шығын жоқ.</div>';
-  else {
-    var mx=sums[keys[0]]||1;
-    keys.forEach(function(k,i){
-      var col=PIE_COLORS[i%PIE_COLORS.length];
-      var pct=Math.max(2,Math.round(sums[k]/mx*100));
-      var el=document.createElement('div'); el.className='cat-row';
-      el.innerHTML='<div class="cat-top"><span><i class="dotc" style="background:'+col+'"></i>'+esc(k)+'</span>'+
-        '<b>'+money(sums[k])+'</b></div>'+
-        '<div class="track"><div class="fill" style="width:'+pct+'%;background:'+col+'"></div></div>';
-      topBox.appendChild(el);
     });
   }
 
@@ -1356,17 +1364,21 @@ function renderAccList(kind, elId, emptyTxt){
     var sym=accCurSym(a);
     var sub='Банк шоты';
     if(kind==='debt') sub=(a.rate||0)+'% · айына '+nf(a.pay||0)+' ₸';
+    var plHtml='';
     if(kind==='broker'){
-      var inv=a.invested||0, pl=a.bal-inv;
-      sub='Салынған '+nf(inv)+' '+sym+' · '+(pl>=0?'+':'−')+nf(Math.abs(pl))+' '+sym+
-          (inv>0?' ('+(pl>=0?'+':'−')+Math.abs(Math.round(pl/inv*100))+'%)':'');
+      var inv=a.invested||0, bpl=a.bal-inv;
+      sub='Салынған '+nf(inv)+' '+sym;
+      if(inv>0) plHtml='<span class="pl '+(bpl>=0?'up':'down')+'">'+
+        (bpl>=0?'+':'−')+nf(Math.abs(bpl))+' '+sym+' · '+
+        (bpl>=0?'+':'−')+Math.abs(Math.round(bpl/inv*100))+'%</span>';
     }
     if(a.cur==='USD') sub += ' · ≈ '+nf(toKZT(a))+' ₸';
     row.innerHTML=(kind==='asset' ? accBadge(a) :
       '<div class="ico'+(kind==='debt'?' red':' blue')+'">'+accIconHtml(a)+'</div>')+
       '<div style="min-width:0;flex:1"><div class="name">'+esc(a.name)+(a.cur==='USD'?' <span class="badge">$</span>':'')+
       '</div><div class="sub2">'+sub+'</div></div>'+
-      '<div class="amt" style="color:'+(kind==='debt'?'var(--neg)':'var(--ink)')+'">'+money(a.bal,sym)+'</div>';
+      '<div class="amt'+(plHtml?' col':'')+'" style="color:'+(kind==='debt'?'var(--neg)':'var(--ink)')+'">'+
+        '<span>'+money(a.bal,sym)+'</span>'+plHtml+'</div>';
     box.appendChild(row);
   });
 }
@@ -1384,58 +1396,36 @@ function renderStats(){
   var sIn=0,sOut=0;
   list.forEach(function(t){ if(t.type==='in') sIn+=t.amt; else sOut+=t.amt; });
   document.getElementById('s-count').textContent=list.length+' операция';
-  document.getElementById('s-in').textContent=money(sIn);
-  document.getElementById('s-out').textContent=money(sOut);
+  animNum(document.getElementById('s-in'), sIn, '₸', moneyShort);
+  animNum(document.getElementById('s-out'), sOut, '₸', moneyShort);
   var net=sIn-sOut;
   var ne=document.getElementById('s-net');
-  ne.textContent=(net>=0?'+':'')+money(net);
+  ne.textContent=(net>=0?'+':'')+moneyShort(net);
   ne.style.color = net>=0?'var(--pos)':'var(--neg)';
 
-  var cIn=document.getElementById('s-card-in');
-  if(cIn) cIn.classList.toggle('hide', statFilter==='out');
-  var cOut=document.getElementById('s-card-out');
-  if(cOut) cOut.classList.toggle('hide', statFilter==='in');
-
-  drawCatBars('s-cat-out','out',list,sOut);
-  drawCatBars('s-cat-in','in',list,sIn);
-  drawChart(list);
-  drawDonut('s-donut-out', catItems(list, 'out'), 'Барлық шығын');
-  drawDonut('s-donut-in', catItems(list, 'in'), 'Барлық кіріс');
+  /* бір карта — сүзгіге қарай шығын не кіріс санаттарын көрсетеді */
+  var showIn = statFilter==='in';
+  var items  = catItems(list, showIn ? 'in' : 'out');
+  var tot    = showIn ? sIn : sOut;
+  var ct=document.getElementById('s-cat-title');
+  if(ct) ct.textContent = showIn ? 'Кіріс көздері' : 'Шығын санаттары';
+  drawDonut('s-donut-out', items, showIn ? 'Барлық кіріс' : 'Барлық шығын', true);
+  drawCatList('s-cat-out', items, tot);
   drawTrend();
 }
-function drawCatBars(elId,type,list,total){
-  var box=document.getElementById(elId); if(!box) return; box.innerHTML='';
-  var sums={};
-  list.filter(function(t){return t.type===type;}).forEach(function(t){ sums[t.cat]=(sums[t.cat]||0)+t.amt; });
-  var keys=Object.keys(sums).sort(function(a,b){return sums[b]-sums[a];});
-  if(!keys.length){ box.innerHTML='<div class="empty">Бұл кезеңде дерек жоқ.</div>'; return; }
-  keys.forEach(function(k){
-    var pct=total?sums[k]/total:0;
-    box.appendChild(barRow(catSvg(type,k,'bar-ic')+'<span>'+k+'</span>', money(sums[k])+' · '+Math.round(pct*100)+'%', pct, type==='out'?'neg':'pos'));
+function drawCatList(elId, items, total){
+  var box=document.getElementById(elId); if(!box) return;
+  box.innerHTML='';
+  if(!items.length || !total){ box.innerHTML='<div class="empty">Бұл кезеңде дерек жоқ.</div>'; return; }
+  items.forEach(function(it){
+    var pct=total?it.value/total:0;
+    var el=document.createElement('div'); el.className='cat-row';
+    el.innerHTML='<div class="cat-top"><span><i class="dotc" style="background:'+it.color+'"></i>'+
+      esc(it.label)+'</span><b>'+money(it.value)+' · '+Math.round(pct*100)+'%</b></div>'+
+      '<div class="track"><div class="fill" style="width:'+Math.max(2,Math.round(pct*100))+
+      '%;background:'+it.color+'"></div></div>';
+    box.appendChild(el);
   });
-}
-function drawChart(list){
-  var box=document.getElementById('s-chart');
-  if(!box) return;
-  if(!list.length){ box.innerHTML='<div class="empty">Кесте үшін дерек жоқ.</div>'; return; }
-  var days={};
-  list.forEach(function(t){
-    if(!days[t.date]) days[t.date]={in:0,out:0};
-    days[t.date][t.type]+=t.amt;
-  });
-  var keys=Object.keys(days).sort().slice(-31);
-  var max=0; keys.forEach(function(k){ max=Math.max(max,days[k]["in"],days[k].out); });
-  if(max<=0) max=1;
-  var W=100, H=100, n=keys.length, gw=W/n, bw=Math.min(gw*0.36, 3.2);
-  var s='<svg class="chart" viewBox="0 0 100 100" preserveAspectRatio="none">';
-  keys.forEach(function(k,i){
-    var x=i*gw+gw/2;
-    var hi=days[k]["in"]/max*88, ho=days[k].out/max*88;
-    s+='<rect x="'+(x-bw-0.3)+'" y="'+(94-hi)+'" width="'+bw+'" height="'+hi+'" fill="#00BE86" rx="0.6"/>';
-    s+='<rect x="'+(x+0.3)+'" y="'+(94-ho)+'" width="'+bw+'" height="'+ho+'" fill="#FF4D67" rx="0.6"/>';
-  });
-  s+='<line x1="0" y1="94.5" x2="100" y2="94.5" stroke="#DCE1F5" stroke-width="0.4"/></svg>';
-  box.innerHTML=s;
 }
 
 /* ================= ИНВЕСТИЦИЯ КАЛЬКУЛЯТОРЫ ================= */
@@ -2273,12 +2263,12 @@ var TR = [
 
 /* --- шоттар --- */
 ["Банк шоттары","Банковские счета","Bank accounts"],["Брокерлік шоттар","Брокерские счета","Brokerage accounts"],
-["Несиелер","Кредиты","Loans"],["Банктер","Банки","Banks"],["Брокер·бөлек","Брокер·отд.","Broker·sep."],
+["Несиелер","Кредиты","Loans"],["Банктер","Банки","Banks"],["Брокер","Брокер","Broker"],
 ["Несие","Кредит","Loan"],["Банк шоты","Банковский счёт","Bank account"],["Брокерлік шот","Брокерский счёт","Brokerage account"],
 ["Жеке есептеледі — таза капиталға қосылмайды.","Считается отдельно — в чистый капитал не входит.","Counted separately — not part of net worth."],
-["+ Банк шотын қосу","+ Добавить банковский счёт","+ Add bank account"],
-["+ Брокерлік шот қосу","+ Добавить брокерский счёт","+ Add brokerage account"],
-["+ Несие қосу","+ Добавить кредит","+ Add loan"],
+["Банк шотын қосу","Добавить банковский счёт","Add bank account"],
+["Брокерлік шот қосу","Добавить брокерский счёт","Add brokerage account"],
+["Несие қосу","Добавить кредит","Add loan"],
 ["Дайын үлгі: Kaspi + Freedom + брокерлік шоттар","⚡ Готовый набор: Kaspi + Freedom + брокерские счета","⚡ Quick setup: Kaspi + Freedom + brokerage"],
 ["Банк шоты жоқ. Төмендегі түймемен қосыңыз.","Банковских счетов нет. Добавьте кнопкой ниже.","No bank accounts. Add one below."],
 ["Брокерлік шот жоқ. Инвестицияңызды осында қосыңыз.","Брокерских счетов нет. Добавьте инвестиции здесь.","No brokerage accounts. Add your investments here."],
@@ -2316,7 +2306,7 @@ var TR = [
 ["Бұл айда шығын жазылмаған.","В этом месяце расходов нет.","No expenses this month."],
 
 /* --- мақсаттар --- */
-["Жиналған","Накоплено","Saved"],["+ Мақсат қосу","+ Добавить цель","+ Add goal"],
+["Жиналған","Накоплено","Saved"],["Мақсат қосу","Добавить цель","Add goal"],
 ["Мақсат қосу","Новая цель","New goal"],["Мақсат","Цель","Goal"],
 ["Мақсат әлі жоқ.","Целей пока нет.","No goals yet."],
 ["Жинайтын сомаңызды белгілеп қойыңыз.","Укажите сумму, которую копите.","Set the amount you are saving for."],
@@ -2525,8 +2515,8 @@ var TR = [
 ["Кімге екенін жазыңыз","Укажите имя","Enter a name"],
 ["Ешкім қарыз емес.<br>Біреуге ақша берсеңіз, төмендегі түймемен жазып қойыңыз.","Вам никто не должен.<br>Дали кому-то денег — запишите кнопкой ниже.","Nobody owes you.<br>Lent someone money? Add it with the button below."],
 ["Қарызыңыз жоқ.<br>Біреуден ақша алсаңыз, төмендегі түймемен жазып қойыңыз.","У вас нет долгов.<br>Взяли у кого-то — запишите кнопкой ниже.","You owe nothing.<br>Borrowed from someone? Add it below."],
-["+ Мен қарызға бердім","+ Я дал в долг","+ I lent money"],
-["+ Мен қарызға алдым","+ Я взял в долг","+ I borrowed money"],
+["Мен қарызға бердім","Я дал в долг","I lent money"],
+["Мен қарызға алдым","Я взял в долг","I borrowed money"],
 ["мерзімі өтті","просрочен","overdue"],["жабылды","закрыт","closed"],["дейін","до","by"],
 ["Бердім","Дал","Lent"],["Алдым","Взял","Borrowed"],["Қайтарылды","Возвращено","Repaid"],
 ["Қарыз мерзімі өтті","Просроченные долги","Overdue debts"],["қарыз","долг","debt"],
@@ -2598,6 +2588,13 @@ var TR = [
 ["Көшірме ескірді","Копия устарела","Backup is outdated"],
 ["Дерек әлі жоқ","Данных пока нет","No data yet"],
 ["Дерек тек осы телефонда сақталады.","Данные хранятся только на этом телефоне.","Data is stored only on this phone."]
+,
+["Несие қалдығы","Остаток по кредитам","Loan balance"],
+["Қарыз · маған / мен","Долги · мне / я","Debts · to me / mine"],
+["Жинақ үлесі (осы ай)","Доля сбережений (этот месяц)","Savings rate (this month)"],
+["Қаражат неше айға жетеді","На сколько месяцев хватит средств","Months of runway"],
+["12+ ай","12+ мес.","12+ months"],
+["Қосымша","Дополнительно","Details"]
 ];
 
 var LANG = 'kk';
@@ -2605,6 +2602,8 @@ var DICT_RU = {}, DICT_EN = {};
 TR.forEach(function(r){ DICT_RU[r[0]] = r[1]; DICT_EN[r[0]] = r[2]; });
 
 var TR_RULES = [
+  [/^(.+) млн ₸$/, "$1 млн ₸", "$1M ₸"],
+  [/^(.+) млрд ₸$/, "$1 млрд ₸", "$1B ₸"],
   [/^(\d+) шот$/, "Счетов: $1", "$1 accounts"],
   [/^(\d+) банк · (\d+) брокер$/, "Банков: $1 · брокеров: $2", "$1 banks · $2 brokerage"],
   [/^(\d+) операция$/, "Операций: $1", "$1 transactions"],
@@ -2612,7 +2611,7 @@ var TR_RULES = [
   [/^(\d+) мақсат$/, "Целей: $1", "$1 goals"],
   [/^(\d+) сағат бұрын$/, "$1 ч. назад", "$1 h ago"],
   [/^(\d+) күн бұрын$/, "$1 дн. назад", "$1 d ago"],
-  [/^(\d+) ай$/, "$1 мес.", "$1 months"],
+  [/^([\d,\.]+) ай$/, "$1 мес.", "$1 months"],
   [/^Табылды: (\d+) операция$/, "Найдено: $1 операций", "Found: $1 transactions"],
   [/^Табылды: (\d+) жазба$/, "Найдено: $1 записей", "Found: $1 records"],
   [/^(\d+) операцияны қосу$/, "Добавить $1 операций", "Add $1 transactions"],
@@ -2741,7 +2740,7 @@ function bindExitSave(){
 var PIE_COLORS = ['#021CF5','#3F5CFF','#6D3FE8','#00A3C4','#E2534B',
                   '#F0913C','#9B51E0','#2BB673','#7A8199','#C4CAE0'];
 
-function drawDonut(elId, items, centerLabel){
+function drawDonut(elId, items, centerLabel, noLegend){
   var box = document.getElementById(elId);
   if(!box) return;
   var total = 0;
@@ -2764,13 +2763,16 @@ function drawDonut(elId, items, centerLabel){
          '<text x="50" y="58" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--ink)">' +
          nf(total) + ' ₸</text></svg>';
 
-  var leg = '<div class="legend2">';
-  items.forEach(function(it){
-    leg += '<div class="lg"><i style="background:' + it.color + '"></i>' +
-      '<span>' + esc(it.label) + '</span><b>' + Math.round(it.value / total * 100) + '%</b></div>';
-  });
-  leg += '</div>';
-  box.innerHTML = '<div class="donut-wrap">' + svg + leg + '</div>';
+  var leg = '';
+  if(!noLegend){
+    leg = '<div class="legend2">';
+    items.forEach(function(it){
+      leg += '<div class="lg"><i style="background:' + it.color + '"></i>' +
+        '<span>' + esc(it.label) + '</span><b>' + Math.round(it.value / total * 100) + '%</b></div>';
+    });
+    leg += '</div>';
+  }
+  box.innerHTML = '<div class="donut-wrap' + (noLegend ? ' solo' : '') + '">' + svg + leg + '</div>';
   animateDonut(box, C);
 }
 
@@ -2930,17 +2932,10 @@ function drawTrend(){
   });
   s += lab + '</div>';
 
-  s += '<div class="legend">' +
-       '<span><i style="background:linear-gradient(92deg,#7CF2CE,#00BE86)"></i>Кіріс' +
-       '<b class="gpos">' + nf(sm.in) + ' ₸</b></span>' +
-       '<span><i style="background:linear-gradient(92deg,#FFA8B3,#FF4D67)"></i>Шығын' +
-       '<b class="gneg">' + nf(sm.out) + ' ₸</b></span></div>';
-
-  var avgIn = 0, avgOut = 0;
-  months.forEach(function(x){ avgIn += x.in; avgOut += x.out; });
+  var avgIn = 0;
+  months.forEach(function(x){ avgIn += x.in; });
   var best = months.slice().sort(function(a, b){ return (b.in - b.out) - (a.in - a.out); })[0];
-  s += '<div class="kv" style="margin-top:12px"><span>Айлық орташа кіріс</span><b>' + money(avgIn / 12) + '</b></div>' +
-       '<div class="kv"><span>Айлық орташа шығын</span><b>' + money(avgOut / 12) + '</b></div>' +
+  s += '<div class="kv" style="margin-top:14px"><span>Айлық орташа кіріс</span><b>' + money(avgIn / 12) + '</b></div>' +
        '<div class="kv"><span>Ең табысты ай</span><b>' + MONTHS[best.m] + ' ' + best.y + '</b></div>';
 
   box.innerHTML = s;
@@ -3024,21 +3019,22 @@ function watchSystemTheme(){
 }
 
 /* ================= САН АНИМАЦИЯСЫ ================= */
-function animNum(el, val, sym){
+function animNum(el, val, sym, fmt){
   if(!el) return;
   sym = sym || '₸';
+  fmt = fmt || money;
   var prev = parseFloat(el.getAttribute('data-v'));
   el.setAttribute('data-v', val);
   if(isNaN(prev) || Math.abs(val - prev) < 1 ||
      (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
-    el.textContent = money(val, sym);
+    el.textContent = fmt(val, sym);
     return;
   }
   var t0 = performance.now(), dur = 520;
   function step(t){
     var k = Math.min(1, (t - t0) / dur);
     var e = 1 - Math.pow(1 - k, 3);
-    el.textContent = money(prev + (val - prev) * e, sym);
+    el.textContent = fmt(prev + (val - prev) * e, sym);
     if(k < 1) requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
@@ -3486,9 +3482,6 @@ function drawDebts(){
   var le = document.getElementById('d-lent'), oe = document.getElementById('d-owed');
   if(le) le.textContent = money(T.lent);
   if(oe) oe.textContent = money(T.owed);
-  var s1 = document.getElementById('d-sum-lent'), s2 = document.getElementById('d-sum-owed');
-  if(s1) s1.textContent = money(T.lent);
-  if(s2) s2.textContent = money(T.owed);
 
   ['out','in'].forEach(function(dir){
     var box = document.getElementById(dir === 'out' ? 'd-list-lent' : 'd-list-owed');

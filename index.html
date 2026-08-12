@@ -118,6 +118,32 @@
   .trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;background:var(--g-soft);border-radius:16px;padding:14px 8px;text-align:center}
   .trio .l{font-size:11.5px;color:var(--ink-2);font-weight:600;line-height:1.35}
   .trio .v{font-size:15.5px;font-weight:800;margin-top:5px;letter-spacing:-.02em}
+  /* ---------- сандардың пішімі ---------- */
+  .cap,.mini .v,.trio .v,.stat3 .v,.kv b,.amt,.bar-top b,.cap-v{
+    font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+  .mini .v,.trio .v,.stat3 .v{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .trio .v{font-size:15px}
+  .cap{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* үш бағанды шағын ұяшықтар (Шоттар беті) */
+  .two.sm3{grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .two.sm3 .mini{padding:11px 10px}
+  .two.sm3 .mini .t{font-size:11.5px;letter-spacing:-.01em;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;display:block}
+  .two.sm3 .mini .v{font-size:15px;margin-top:6px;letter-spacing:-.03em}
+
+  /* карта тақырыбы мен ондағы сан бір жолда қалады */
+  .card h2{align-items:baseline}
+  .card h2 small{white-space:nowrap;flex:none}
+  .card h2 small.tag{background:var(--pos-soft);color:#00815C;font-weight:800;
+    font-size:11.5px;letter-spacing:-.01em;padding:4px 9px;border-radius:9px}
+  .card h2 small.tag.neg{background:var(--neg-soft);color:#C22F45}
+
+  /* тізімдегі сома + табыс екі жолда */
+  .amt.col{display:flex;flex-direction:column;align-items:flex-end;gap:2px;line-height:1.15}
+  .amt .pl{font-size:11.5px;font-weight:700;letter-spacing:-.01em}
+  .amt .pl.up{color:var(--pos)} .amt .pl.down{color:var(--neg)}
+
   .stat3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
   .stat3 .c{background:var(--surface);border-radius:18px;padding:14px 8px;text-align:center;box-shadow:0 2px 14px var(--shadow)}
   .stat3 .l{font-size:11.5px;color:var(--ink-2);margin-top:7px;font-weight:600}
@@ -228,6 +254,8 @@
 
   svg.chart{width:100%;height:150px;display:block}
   .donut-wrap{display:flex;align-items:center;gap:14px}
+  .donut-wrap.solo{justify-content:center;margin:2px 0 6px}
+  .donut-wrap.solo svg.donut{width:62%;max-width:210px}
   svg.donut{width:44%;max-width:170px;height:auto;display:block;flex:none;margin:0}
   svg.trend{width:100%;height:160px;display:block;touch-action:pan-y}
   .tr-box{position:relative}
@@ -410,7 +438,7 @@
 <circle cx='60' cy='4' r='2.6'/><circle cx='60' cy='116' r='2.6'/>\
 <circle cx='4' cy='60' r='2.6'/><circle cx='116' cy='60' r='2.6'/>\
 </g></svg>");
-    background-size:120px 120px;background-position:center -10px;
+    background-size:120px 120px;background-position:0 -10px;
     opacity:.085;mix-blend-mode:overlay}
   .hero>*{position:relative;z-index:1}
   html[data-theme="dark"] .hero::before{opacity:.13}
@@ -428,6 +456,29 @@
     html[data-theme="dark"] .ornament{opacity:.5;
       background:linear-gradient(90deg,
         rgba(110,134,255,0) 0%, #6E86FF 15%, #A8B7FF 50%, #6E86FF 85%, rgba(110,134,255,0) 100%)}
+  }
+
+  /* ---------- ою-өрнек анимациясы ---------- */
+  @keyframes oyuIn{from{clip-path:inset(0 50% 0 50%);opacity:0}}
+  @keyframes oyuSlide{
+    from{-webkit-mask-position:0 center;mask-position:0 center}
+    to{-webkit-mask-position:54.5px center;mask-position:54.5px center}}
+  @keyframes oyuFloat{
+    from{background-position:0 -10px}
+    to{background-position:120px -10px}}
+  @keyframes oyuGlow{0%,100%{opacity:.085}50%{opacity:.135}}
+
+  .page.on .wrap>.ornament{
+    animation:oyuIn .95s cubic-bezier(.2,.85,.3,1) backwards,
+              oyuSlide 26s linear infinite}
+  .page.on .hero::before{
+    animation:oyuFloat 60s linear infinite, oyuGlow 14s ease-in-out infinite}
+  html[data-theme="dark"] .page.on .hero::before{
+    animation:oyuFloat 60s linear infinite}
+
+  @media (prefers-reduced-motion: reduce){
+    .page.on .wrap>.ornament,
+    .page.on .hero::before{animation:none}
   }
 
   /* ---------- ашылу экраны (Q) ---------- */
@@ -553,11 +604,9 @@
       </div>
       <div class="trio" style="grid-template-columns:1fr 1fr;row-gap:14px">
         <div><div class="l">Банктердегі ақша</div><div class="v" id="h-banks" style="color:var(--pos-light)">0 ₸</div></div>
-        <div><div class="l">Міндеттемелер</div><div class="v" id="h-debts" style="color:var(--red)">0 ₸</div></div>
-        <div><div class="l">Маған қарыз</div><div class="v" id="h-lent" style="color:var(--pos)">0 ₸</div></div>
-        <div><div class="l">Мен қарызбын</div><div class="v" id="h-owed" style="color:var(--neg)">0 ₸</div></div>
-        <div><div class="l">Таза капитал</div><div class="v" id="h-net2">0 ₸</div></div>
+        <div><div class="l">Несие қалдығы</div><div class="v" id="h-debts" style="color:var(--red)">0 ₸</div></div>
         <div><div class="l">Инвестиция · бөлек</div><div class="v" id="h-broker" style="color:var(--blue)">0 ₸</div></div>
+        <div><div class="l">Қарыз · маған / мен</div><div class="v" id="h-pdebt">0 ₸</div></div>
       </div>
     </div>
 
@@ -588,21 +637,21 @@
     </div>
     <div class="cap-label">Таза капитал</div>
     <div class="cap" id="a-net">0 ₸</div>
-    <div class="two" style="grid-template-columns:1fr 1fr 1fr;gap:8px">
-      <div class="mini" style="padding:11px"><div class="t" style="font-size:12px">Банктер</div><div class="v" id="a-banks" style="font-size:15px">0 ₸</div></div>
-      <div class="mini" style="padding:11px"><div class="t" style="font-size:12px">Брокер·бөлек</div><div class="v" id="a-broker" style="font-size:15px">0 ₸</div></div>
-      <div class="mini" style="padding:11px"><div class="t" style="font-size:12px">Несие</div><div class="v" id="a-debts" style="font-size:15px">0 ₸</div></div>
+    <div class="two sm3">
+      <div class="mini"><div class="t">Банктер</div><div class="v" id="a-banks">0 ₸</div></div>
+      <div class="mini"><div class="t">Брокер</div><div class="v" id="a-broker">0 ₸</div></div>
+      <div class="mini"><div class="t">Несие</div><div class="v" id="a-debts">0 ₸</div></div>
     </div>
   </div>
   <div class="wrap">
-    <div class="card"><h2>Банк шоттары <small id="a-sum-bank"></small></h2><div id="a-list-asset"></div></div>
+    <div class="card"><h2>Банк шоттары</h2><div id="a-list-asset"></div></div>
     <div class="card"><h2>Брокерлік шоттар <small id="a-sum-broker"></small></h2>
       <p class="muted" style="margin:-6px 0 10px">Жеке есептеледі — таза капиталға қосылмайды.</p>
       <div id="a-list-broker"></div></div>
-    <div class="card"><h2>Несиелер <small id="a-sum-debt"></small></h2><div id="a-list-debt"></div></div>
-    <button class="btn dashed" onclick="openAcc('asset')">+ Банк шотын қосу</button>
-    <button class="btn dashed" onclick="openAcc('broker')">+ Брокерлік шот қосу</button>
-    <button class="btn dashed" onclick="openAcc('debt')">+ Несие қосу</button>
+    <div class="card"><h2>Несиелер</h2><div id="a-list-debt"></div></div>
+    <button class="btn dashed" onclick="openAcc('asset')">Банк шотын қосу</button>
+    <button class="btn dashed" onclick="openAcc('broker')">Брокерлік шот қосу</button>
+    <button class="btn dashed" onclick="openAcc('debt')">Несие қосу</button>
     <button class="btn line" onclick="startBrokerImportAll()"><span class="qi" data-i="inbox" style="display:inline-flex;vertical-align:-6px;margin-right:8px"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9.5"/><path d="M8.2 9.2 12 13l3.8-3.8"/><path d="M3.5 14.5h4l1.6 2.6h5.8l1.6-2.6h4"/><path d="M3.5 14.5V18a2.5 2.5 0 0 0 2.5 2.5h12a2.5 2.5 0 0 0 2.5-2.5v-3.5"/></svg></span>Брокер есебін жүктеу (шоттарға бөледі)</button>
     <button class="btn line" onclick="quickSetup()">Дайын үлгі: Kaspi + Freedom + брокерлік шоттар</button>
   </div>
@@ -677,7 +726,6 @@
     </div>
     <div class="card"><h2>Активтер құрылымы</h2><div id="ov-assets"></div></div>
     <div class="card" id="ov-debt-card"><h2>Несие жүктемесі</h2><div id="ov-debts"></div></div>
-    <div class="card"><h2>Ең көп шығын (осы ай)</h2><div id="ov-top"></div></div>
     <div class="card">
       <h2>12 айлық өзгеріс</h2>
       <div id="trend-chart"></div>
@@ -687,7 +735,7 @@
       <button class="btn line" onclick="exportOpsXlsx()" style="margin:0">Excel</button>
     </div>
     <div class="card" id="s-card-out">
-      <h2>Шығын санаттары</h2>
+      <h2 id="s-cat-title">Шығын санаттары</h2>
       <div id="s-donut-out"></div>
       <div class="cat-sep"></div>
       <div id="s-cat-out"></div>
@@ -706,7 +754,7 @@
     <div class="cap" id="g-total">0 ₸</div>
   </div>
   <div class="wrap">
-    <button class="btn" onclick="openGoal()">+ Мақсат қосу</button>
+    <button class="btn" onclick="openGoal()">Мақсат қосу</button>
     <div id="goal-list"></div>
   </div>
 </section>
@@ -949,15 +997,14 @@
   </div>
   <div class="wrap">
     <div class="card">
-      <h2>Маған қарыз <span><small id="d-sum-lent"></small>
-        <small class="act" style="margin-left:10px" onclick="selStart('debt')">Таңдау</small></span></h2>
+      <h2>Маған қарыз <small class="act" onclick="selStart('debt')">Таңдау</small></h2>
       <div id="d-list-lent"></div>
-      <button class="btn dashed" style="margin:12px 0 0" onclick="openDebt('out')">+ Мен қарызға бердім</button>
+      <button class="btn dashed" style="margin:12px 0 0" onclick="openDebt('out')">Мен қарызға бердім</button>
     </div>
     <div class="card">
-      <h2>Мен қарызбын <small id="d-sum-owed"></small></h2>
+      <h2>Мен қарызбын</h2>
       <div id="d-list-owed"></div>
-      <button class="btn dashed" style="margin:12px 0 0" onclick="openDebt('in')">+ Мен қарызға алдым</button>
+      <button class="btn dashed" style="margin:12px 0 0" onclick="openDebt('in')">Мен қарызға алдым</button>
     </div>
   </div>
 </section>
