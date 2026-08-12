@@ -389,6 +389,43 @@ function spendable(){ return DB.accounts.filter(function(a){ return a.kind==='as
 var view = 'home';
 function sheetOpen(){ return !!document.querySelector('.sheet.on'); }
 
+/* ================= ЖАБЫСҚАҚ ТАҚЫРЫП ЖӘНЕ СЕКІРУ ================= */
+var PAGE_TITLE = {
+  home:'Басты', accounts:'Менің қаржым', ops:'Операциялар', overview:'Шолу',
+  stat:'Статистика', goals:'Мақсаттар', calc:'Калькулятор',
+  'calc-inv':'Инвестиция калькуляторы', 'calc-loan':'Несие калькуляторы',
+  'calc-dep':'Депозит калькуляторы', 'calc-tax':'Салық калькуляторы',
+  set:'Баптау', recur:'Тұрақты операциялар', debts:'Қарыздар', budget:'Бюджет',
+  broker:'Брокерлік шот', import:'Файл жүктеу', invest:'Инвестиция', homeset:'Басты бет'
+};
+/* қай беттен қайда қайту керек */
+var PAGE_BACK = {
+  accounts:'home', ops:'home', overview:'home', stat:'home', goals:'home', calc:'home',
+  'calc-inv':'calc', 'calc-loan':'calc', 'calc-dep':'calc', 'calc-tax':'calc',
+  set:'home', recur:'home', debts:'home', budget:'home',
+  broker:'accounts', import:'home', invest:'accounts', homeset:'home'
+};
+
+function scrollTop(){ window.scrollTo({ top:0, behavior:'smooth' }); }
+function topBack(){ go(PAGE_BACK[view] || 'home'); }
+function jumpTo(id){
+  var el = document.getElementById(id);
+  if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function syncTopbar(){
+  var bar = document.getElementById('topbar');
+  if(!bar) return;
+  var t = document.getElementById('tb-title');
+  if(t){
+    var nm = PAGE_TITLE[view] || 'Қаржы';
+    if(view === 'broker'){ var ba = acc(brId); if(ba) nm = ba.name; }
+    if(t.textContent !== nm) t.textContent = tr(nm);
+  }
+  document.getElementById('tb-back').style.visibility = (view === 'home') ? 'hidden' : '';
+  bar.classList.toggle('on', window.scrollY > 96);
+}
+window.addEventListener('scroll', syncTopbar, { passive:true });
+
 function go(v, silent){
   var same = (v === view);
   view = v;
@@ -400,6 +437,7 @@ function go(v, silent){
   for(var j=0;j<btns.length;j++) btns[j].classList.toggle('on', btns[j].dataset.tab===v);
   window.scrollTo(0,0);
   render();
+  syncTopbar();
 
   saveView();
   /* Android-тың «артқа» түймесі қосымшадан шығармай, алдыңғы бетке қайтсын */
@@ -832,7 +870,12 @@ function openAccView(id){
   h+='<div class="kv"><span>Операция</span><b>'+cnt+'</b></div>';
   document.getElementById('v-body').innerHTML=h;
   var extraBtns='<button class="btn line" onclick="openAcc(\''+a.kind+'\',\''+a.id+'\')">Түзету</button>';
-  if(a.kind==='broker') extraBtns='<button class="btn" onclick="openBVal(\''+a.id+'\')">Құнын жаңарту</button>'+extraBtns;
+  if(a.kind==='broker'){
+    extraBtns='<button class="btn" onclick="openBroker(\''+a.id+'\')">Операцияларын ашу</button>'+
+      '<button class="btn line" onclick="openBVal(\''+a.id+'\')">Құнын жаңарту</button>'+extraBtns;
+  } else {
+    extraBtns='<button class="btn" onclick="accOps(\''+a.id+'\')">Операцияларын көру ('+cnt+')</button>'+extraBtns;
+  }
   document.getElementById('v-body').innerHTML=h;
   var slot=document.getElementById('v-extra');
   if(slot) slot.innerHTML=extraBtns;
@@ -840,6 +883,28 @@ function openAccView(id){
   document.getElementById('v-del').onclick=delAcc;
   openSheet('sheet-view');
 }
+/* Шот бетінен бірден сол шоттың операцияларына өту.
+   Бұрын Операциялар бетіне барып, шот белгісін өзің тауып басу керек болатын. */
+function accOps(id){
+  opsAcc = id; opsFilter = 'all'; opsMonth = null;
+  var q = document.getElementById('ops-q'); if(q) q.value = '';
+  closeSheets();
+  go('ops');
+  setTimeout(function(){
+    jumpTo('ops-card');
+    var chip = document.querySelector('#ops-accs .chip.on');
+    if(chip && chip.scrollIntoView) chip.scrollIntoView({ block:'nearest', inline:'center' });
+  }, 60);
+}
+
+function opsClear(){
+  opsAcc = 'all'; opsFilter = 'all'; opsMonth = null;
+  var q = document.getElementById('ops-q'); if(q) q.value = '';
+  var segs = document.querySelectorAll('[data-of]');
+  for(var i = 0; i < segs.length; i++) segs[i].classList.toggle('on', segs[i].dataset.of === 'all');
+  render();
+}
+
 function delAcc(){
   DB.accounts=DB.accounts.filter(function(a){return a.id!==viewId;});
   DB.tx.forEach(function(t){ if(t.acc===viewId) t.acc=null; if(t.loan===viewId) t.loan=null; });
@@ -1258,6 +1323,7 @@ function wipe(){
 /* ================= FILTERS ================= */
 var opsFilter='all', opsAcc='all', statFilter='all', period='month';
 var range={from:null,to:null};
+var opsMonth = null;   /* 'YYYY-MM' — тек сол айды көрсету, null болса бәрі */
 function setOpsFilter(f){
   opsFilter=f;
   document.querySelectorAll('[data-of]').forEach(function(b){ b.classList.toggle('on', b.dataset.of===f); });
@@ -1406,6 +1472,7 @@ function render(){
   var ops=DB.tx.filter(function(t){
     if(opsFilter!=='all' && t.type!==opsFilter) return false;
     if(opsAcc!=='all' && t.acc!==opsAcc && t.to!==opsAcc) return false;
+    if(opsMonth && t.date.slice(0,7)!==opsMonth) return false;
     if(q){
       var hay=((t.cat||'')+' '+(t.note||'')+' '+Math.round(t.amt)).toLowerCase();
       if(hay.indexOf(q)===-1) return false;
@@ -1415,10 +1482,15 @@ function render(){
 
   var oIn=0,oOut=0;
   ops.forEach(function(t){ if(t.type==='in') oIn+=t.amt; else if(t.type==='out') oOut+=t.amt; });
-  document.getElementById('o-count').textContent =
-    (q||opsAcc!=='all'||opsFilter!=='all')
-      ? ops.length+' табылды · +'+nf(oIn)+' / −'+nf(oOut)+' ₸'
+  var fAccName = opsAcc!=='all' ? (acc(opsAcc) ? acc(opsAcc).name : '') : '';
+  var fMonth = opsMonth ? MONTHS[parseInt(opsMonth.slice(5,7),10)-1]+' '+opsMonth.slice(0,4) : '';
+  var anyF = q||opsAcc!=='all'||opsFilter!=='all'||opsMonth;
+  document.getElementById('o-count').textContent = anyF
+      ? (fMonth ? fMonth+' · ' : '')+(fAccName ? fAccName+' · ' : '')+
+        ops.length+' табылды · +'+nf(oIn)+' / −'+nf(oOut)+' ₸'
       : DB.tx.length+' операция';
+  var clr = document.getElementById('ops-clear');
+  if(clr) clr.classList.toggle('hide', !anyF);
 
   var oab=document.getElementById('ops-accs'); oab.innerHTML='';
   var oaList=[{id:'all',name:'Барлық шот',icon:'◎'}].concat(DB.accounts);
@@ -2932,7 +3004,35 @@ var TR = [
 ["Операцияларды Excel-ге (CSV)","Операции в Excel (CSV)","Transactions to Excel (CSV)"],
 ["Дерек сақталмады!","Данные не сохранены!","Data was not saved!"],
 ["Дерек сақталмады","Данные не сохранены","Data was not saved"],
-["Соңғы өзгеріс телефон жадына жазылмады. Қосымшаны жаппай тұрып, Баптау → Деректі сақтау арқылы файл көшірмесін жасаңыз.","Последнее изменение не записалось в память телефона. Не закрывая приложение, сделайте копию: Настройки → Сохранить данные.","The last change was not written to your phone. Before closing the app, make a backup: Settings → Save data."]
+["Соңғы өзгеріс телефон жадына жазылмады. Қосымшаны жаппай тұрып, Баптау → Деректі сақтау арқылы файл көшірмесін жасаңыз.","Последнее изменение не записалось в память телефона. Не закрывая приложение, сделайте копию: Настройки → Сохранить данные.","The last change was not written to your phone. Before closing the app, make a backup: Settings → Save data."],
+
+/* --- навигация, график, есеп --- */
+["Операцияларын көру","Показать операции","View transactions"],
+["Операцияларын ашу","Открыть операции","Open transactions"],
+["↓ Операциялар тізіміне","↓ К списку операций","↓ To the transaction list"],
+["✕ Сүзгіні алу — барлық операция","✕ Снять фильтр — все операции","✕ Clear filter — all transactions"],
+["нүктені басыңыз","нажмите на точку","tap a point"],
+["Осы айдың операцияларын көру","Показать операции этого месяца","View this month's transactions"],
+["Өткен айға қарағанда","По сравнению с прошлым месяцем","Compared with last month"],
+["Есепті жіберу (PDF · Excel)","Отправить расчёт (PDF · Excel)","Send the result (PDF · Excel)"],
+["Есепті қалай жіберейін?","В каком виде отправить?","How should I send it?"],
+["Экранда тұрған нәтиже сол күйінде файлға айналады.","Результат с экрана станет файлом как есть.","The result on screen becomes a file as it is."],
+["PDF — оқуға және басып шығаруға","PDF — читать и печатать","PDF — to read and print"],
+["Excel (CSV) — сандармен жұмыс істеуге","Excel (CSV) — работать с числами","Excel (CSV) — to work with the numbers"],
+["Болдырмау","Отмена","Cancel"],
+["Алдымен есептеңіз","Сначала посчитайте","Calculate something first"],
+["Кесте табылмады","Таблица не найдена","No table found"],
+["Бұл есеп шамамен берілген, шарт банкке қарай өзгеруі мүмкін.","Расчёт примерный, условия банка могут отличаться.","This is an estimate; bank terms may differ."],
+["Инвестиция калькуляторы","Инвестиционный калькулятор","Investment calculator"],
+["Несие калькуляторы","Кредитный калькулятор","Loan calculator"],
+["Депозит калькуляторы","Депозитный калькулятор","Deposit calculator"],
+["Салық калькуляторы","Налоговый калькулятор","Tax calculator"],
+["Тұрақты операциялар","Регулярные операции","Recurring transactions"],
+["Брокерлік шот","Брокерский счёт","Brokerage account"],
+["Файл жүктеу","Загрузка файла","File import"],
+["Басты","Главная","Home"],
+["Баптау","Настройки","Settings"],
+["Шолу","Обзор","Overview"]
 ];
 
 var LANG = 'kk';
@@ -2976,7 +3076,8 @@ var TR_RULES = [
   [/^Портфельдің (\d+)%-ы$/, "$1% портфеля", "$1% of portfolio"],
   [/^(\d+) күн қалды$/, "Осталось дней: $1", "$1 days left"],
   [/^Осы қарқынмен (.+) шамасында$/, "При таком темпе примерно $1", "At this pace, around $1"],
-  [/^(\d+) операция шығарылды$/, "Выгружено операций: $1", "$1 transactions exported"]
+  [/^(\d+) операция шығарылды$/, "Выгружено операций: $1", "$1 transactions exported"],
+  [/^Операцияларын көру \((\d+)\)$/, "Показать операции ($1)", "View transactions ($1)"]
 ];
 
 function tr(str){
@@ -3200,9 +3301,18 @@ function drawTrend(){
        'stroke-linejoin="round" stroke-linecap="round"/>';
   s += '<path class="line" d="' + path('out') + '" fill="none" stroke="url(#gNegL)" stroke-width="1.7" ' +
        'stroke-linejoin="round" stroke-linecap="round" style="animation-delay:.15s"/>';
+  /* екі сызықтың да нүктелері — қайсысын басқаныңыз көрінсін */
   months.forEach(function(x, i){
+    s += '<circle cx="' + px(i).toFixed(1) + '" cy="' + py(x.out).toFixed(1) +
+         '" r="1.0" fill="#FF4D67" style="animation-delay:' + (0.5 + i * 0.05).toFixed(2) + 's"/>';
     s += '<circle cx="' + px(i).toFixed(1) + '" cy="' + py(x.in).toFixed(1) +
          '" r="1.1" fill="#00BE86" style="animation-delay:' + (0.5 + i * 0.05).toFixed(2) + 's"/>';
+  });
+  /* басуға ыңғайлы болу үшін әр ай бойымен көрінбейтін кең жолақ */
+  months.forEach(function(x, i){
+    var w = (W - pad * 2) / 11;
+    s += '<rect class="tr-hit" data-mi="' + i + '" x="' + Math.max(0, px(i) - w / 2).toFixed(1) +
+         '" y="0" width="' + w.toFixed(1) + '" height="' + (bot + 4) + '"/>';
   });
   s += '</svg>';
 
@@ -3233,6 +3343,56 @@ function drawTrend(){
        '<div class="kv"><span>Ең табысты ай</span><b>' + MONTHS[best.m] + ' ' + best.y + '</b></div>';
 
   box.innerHTML = s;
+
+  /* --- нүктені (немесе ай бағанын) басқанда сол айдың сандары --- */
+  var info = document.getElementById('trend-info');
+  function showMonth(i){
+    if(!info) return;
+    var x = months[i], prev = i > 0 ? months[i - 1] : null;
+    var net = x.in - x.out;
+    var diff = prev ? (x.out - prev.out) : 0;
+    info.className = 'on';
+    info.innerHTML =
+      '<div class="m">' + MONTHS[x.m] + ' ' + x.y + '</div>' +
+      '<div class="kv"><span>Кіріс</span><b class="gpos">' + money(x.in) + '</b></div>' +
+      '<div class="kv"><span>Шығын</span><b class="gneg">' + money(x.out) + '</b></div>' +
+      '<div class="kv"><span>Нәтиже</span><b style="color:' + (net >= 0 ? 'var(--pos)' : 'var(--neg)') + '">' +
+        (net >= 0 ? '+' : '−') + nf(Math.abs(net)) + ' ₸</b></div>' +
+      (prev && prev.out > 0
+        ? '<div class="kv"><span>Өткен айға қарағанда</span><b style="color:' +
+          (diff <= 0 ? 'var(--pos)' : 'var(--neg)') + '">' + (diff <= 0 ? '−' : '+') +
+          nf(Math.abs(diff)) + ' ₸ (' + Math.abs(Math.round(diff / prev.out * 100)) + '%)</b></div>'
+        : '') +
+      '<button class="btn line sm" style="margin-top:10px" data-mo="' + x.key + '">Осы айдың операцияларын көру</button>';
+    var b = info.querySelector('[data-mo]');
+    if(b) b.onclick = function(){ monthOps(x.key); };
+    /* таңдалған айды графикте белгілеп қою */
+    var svg = box.querySelector('svg');
+    var old = svg && svg.querySelector('.tr-sel');
+    if(old) old.parentNode.removeChild(old);
+    if(svg){
+      var ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      ln.setAttribute('class', 'tr-sel');
+      ln.setAttribute('x1', px(i).toFixed(1)); ln.setAttribute('x2', px(i).toFixed(1));
+      ln.setAttribute('y1', top - 2); ln.setAttribute('y2', bot);
+      svg.insertBefore(ln, svg.firstChild);
+    }
+  }
+  var hits = box.querySelectorAll('.tr-hit');
+  for(var hi = 0; hi < hits.length; hi++){
+    (function(el){
+      el.onclick = function(){ showMonth(parseInt(el.getAttribute('data-mi'), 10)); };
+    })(hits[hi]);
+  }
+}
+
+/* графиктен сол айдың операцияларына өту */
+function monthOps(key){
+  opsMonth = key;
+  opsAcc = 'all'; opsFilter = 'all';
+  var q = document.getElementById('ops-q'); if(q) q.value = '';
+  go('ops');
+  setTimeout(function(){ jumpTo('ops-card'); }, 60);
 }
 
 
@@ -4168,6 +4328,96 @@ function buildReport(){
       '<span>Qarzhy · жеке қаржы есебі</span>' +
       '<span>Дерек тек құрылғыда сақталады</span></div>' +
   '</div>';
+}
+
+/* ================= КАЛЬКУЛЯТОР ЕСЕБІН ЖІБЕРУ ================= */
+/* Экранда тұрған нәтижені сол күйінде PDF немесе Excel файлы етіп жасайды.
+   Ешқандай қайта есептеу жоқ — көріп отырған сандарыңыз. */
+var CALC_SRC = {
+  inv:  ['i-res',  'Инвестиция калькуляторы'],
+  loan: ['l-res',  'Несие калькуляторы'],
+  dep:  ['dp-res', 'Депозит калькуляторы'],
+  tax:  ['tx-res', 'Салық калькуляторы']
+};
+
+function calcHTML(kind){
+  var src = CALC_SRC[kind]; if(!src) return null;
+  var el = document.getElementById(src[0]);
+  if(!el || !el.innerHTML.trim()) return null;
+  return '<div style="width:760px;padding:38px;background:#fff;color:#0B1020;' +
+    'font-family:Inter,Arial,sans-serif">' +
+    '<div style="font-size:12px;letter-spacing:.12em;color:#5B6480">ҚАРЖЫ</div>' +
+    '<div style="font-size:26px;font-weight:800;margin:4px 0 2px">' + tr(src[1]) + '</div>' +
+    '<div style="font-size:13px;color:#5B6480;margin-bottom:20px">' + fullDate(todayISO()) + '</div>' +
+    '<div style="border-top:2px solid #021CF5;padding-top:18px">' + el.innerHTML + '</div>' +
+    '<div style="margin-top:26px;font-size:11.5px;color:#8892AB">' +
+    tr('Бұл есеп шамамен берілген, шарт банкке қарай өзгеруі мүмкін.') + '</div></div>';
+}
+
+/* нәтиженің «атауы — мәні» жолдарын кестеге жинау */
+function calcRows(kind){
+  var src = CALC_SRC[kind];
+  var el = src && document.getElementById(src[0]);
+  if(!el) return [];
+  var rows = [], i;
+  var kv = el.querySelectorAll('.kv');
+  for(i = 0; i < kv.length; i++){
+    var sp = kv[i].querySelector('span'), b = kv[i].querySelector('b');
+    if(sp && b) rows.push([sp.textContent.trim(), b.textContent.trim()]);
+  }
+  /* өтеу кестесі болса — оны да қосамыз */
+  var tr2 = el.querySelectorAll('table tr');
+  if(tr2.length){
+    rows.push(['', '']);
+    for(i = 0; i < tr2.length; i++){
+      var cells = tr2[i].querySelectorAll('td,th'), r = [];
+      for(var j = 0; j < cells.length; j++) r.push(cells[j].textContent.trim());
+      if(r.length) rows.push(r);
+    }
+  }
+  return rows;
+}
+
+function calcCSV(kind){
+  var rows = calcRows(kind);
+  if(!rows.length) return false;
+  var src = CALC_SRC[kind];
+  var head = [[tr(src[1])], [fullDate(todayISO())], []];
+  var csv = '\ufeff' + head.concat(rows)
+    .map(function(r){ return r.map(csvCell).join(';'); }).join('\r\n');
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  var name = 'qarzhy-' + kind + '-' + todayISO() + '.csv';
+  var f = null;
+  try { f = new File([blob], name, { type: 'text/csv' }); } catch(e){}
+  if(f && navigator.canShare && navigator.canShare({ files: [f] }) && navigator.share){
+    navigator.share({ files: [f], title: tr(src[1]) }).catch(function(){});
+    return true;
+  }
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  return true;
+}
+
+function shareCalc(kind){
+  var html = calcHTML(kind);
+  if(!html){ toast('Алдымен есептеңіз'); return; }
+  askCalcFmt(kind, html);
+}
+
+/* қай пішімде — қарапайым сұрақ терезесі */
+function askCalcFmt(kind, html){
+  var sc = document.getElementById('fmt-sheet');
+  if(!sc) return exportPdf(html, 'qarzhy-' + kind + '-' + todayISO() + '.pdf');
+  document.getElementById('fmt-pdf').onclick = function(){
+    closeSheets();
+    exportPdf(html, 'qarzhy-' + kind + '-' + todayISO() + '.pdf');
+  };
+  document.getElementById('fmt-csv').onclick = function(){
+    closeSheets();
+    if(!calcCSV(kind)) toast('Кесте табылмады');
+  };
+  openSheet('fmt-sheet');
 }
 
 function exportPdf(html, fname){

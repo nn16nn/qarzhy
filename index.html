@@ -255,6 +255,33 @@
   .gbrand{background:linear-gradient(92deg,var(--g-bright),var(--g-mid));
     -webkit-background-clip:text;background-clip:text;color:transparent}
 
+  /* ---------- Тенденция белгісі ---------- */
+  .tr-hit{fill:transparent;cursor:pointer}
+  .tr-sel{stroke:var(--ink-2);stroke-width:.4;stroke-dasharray:1.5 1.5}
+  #trend-info{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:none}
+  #trend-info.on{display:block}
+  #trend-info .m{font-weight:750;font-size:14.5px;margin-bottom:6px}
+
+  /* ---------- Жабысқақ тақырып ---------- */
+  /* Төмен түскенде беттің аты төбеде қалады — қай жерде тұрғаныңыз жоғалмайды */
+  .topbar{position:fixed;top:0;left:0;right:0;z-index:45;
+    padding:calc(env(safe-area-inset-top)) 10px 0;
+    background:var(--tabbar);backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+    transform:translateY(-102%);transition:transform .22s ease;}
+  .topbar.on{transform:none}
+  .topbar .in{display:flex;align-items:center;gap:8px;height:52px}
+  .topbar .tt{flex:1;min-width:0;font-weight:750;font-size:16px;letter-spacing:-.02em;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topbar .bk{width:38px;height:38px;border:0;border-radius:12px;background:var(--g-soft);
+    color:var(--g-mid);font-size:18px;line-height:1;flex:none;padding:0}
+  .topbar .up{width:38px;height:38px;border:1px solid var(--line);border-radius:12px;
+    background:var(--surface);color:var(--ink-2);font-size:15px;line-height:1;flex:none;padding:0}
+
+  /* ---------- Тізімге секіру ---------- */
+  .jump{position:sticky;top:calc(env(safe-area-inset-top) + 58px);z-index:20}
+  .anchor{scroll-margin-top:calc(env(safe-area-inset-top) + 66px)}
+
   /* ---------- Tabbar ---------- */
   .tabbar{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));
     background:var(--tabbar);backdrop-filter:blur(14px);border:1px solid var(--line);
@@ -645,7 +672,8 @@
   </div>
   <div class="wrap">
     <p class="muted" style="padding:0 6px 8px">Операцияны солға сырғытсаңыз — өшіріледі, оңға сырғытсаңыз — түзетіледі.</p>
-    <div class="card">
+    <button class="btn line sm hide" id="ops-clear" onclick="opsClear()" style="margin-bottom:10px">✕ Сүзгіні алу — барлық операция</button>
+    <div class="card anchor" id="ops-card">
       <h2>Тізім <small class="act" onclick="selStart('tx')">Таңдау</small></h2>
       <div id="ops-list"></div>
     </div>
@@ -700,8 +728,9 @@
       <div class="c"><div class="ico" style="margin:0 auto" data-i="stats"></div><div class="l">Нәтиже</div><div class="v" id="s-net">0 ₸</div></div>
     </div>
     <div class="card">
-      <h2>12 айлық тенденция</h2>
+      <h2>12 айлық тенденция <small class="muted" style="font-weight:500">нүктені басыңыз</small></h2>
       <div id="trend-chart"></div>
+      <div id="trend-info"></div>
     </div>
     <div class="card">
       <h2>Кіріс / Шығын</h2>
@@ -827,6 +856,7 @@
     </div>
 
     <div id="i-res" style="margin-top:16px"></div>
+    <button class="btn line" onclick="shareCalc('inv')">Есепті жіберу (PDF · Excel)</button>
   </div>
 </section>
 
@@ -883,6 +913,7 @@
     </div>
 
     <div id="l-res"></div>
+    <button class="btn line" onclick="shareCalc('loan')">Есепті жіберу (PDF · Excel)</button>
     <button class="btn line" onclick="exportLoanPdf()" style="margin-top:10px">Кестені PDF-ке шығару</button>
   </div>
 </section>
@@ -957,7 +988,7 @@
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Қаржы · 3.3</div>
+        <div class="ver">Қаржы · 3.4</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
@@ -1058,6 +1089,7 @@
         <div class="muted" id="dp-sw-txt">Ай сайын капитализация — пайызға пайыз</div></div>
     </div>
     <div id="dp-res" style="margin-top:6px"></div>
+    <button class="btn line" onclick="shareCalc('dep')">Есепті жіберу (PDF · Excel)</button>
   </div>
 </section>
 
@@ -1084,6 +1116,7 @@
         <input class="inp soft" id="tx-mzp" type="number" inputmode="decimal" value="85000" oninput="calcTax()" style="margin:0;width:150px"></div>
     </div>
     <div id="tx-res"></div>
+    <button class="btn line" onclick="shareCalc('tax')">Есепті жіберу (PDF · Excel)</button>
   </div>
 </section>
 
@@ -1109,8 +1142,9 @@
       <button onclick="startBrokerImport()"><span class="qi" data-i="inbox"></span> Файл жүктеу</button>
       <button onclick="openAcc('broker', brId)"><span class="qi" data-i="gear"></span> Түзету</button>
     </div>
+    <button class="btn line sm" onclick="jumpTo('br-ops')" style="margin-bottom:12px">↓ Операциялар тізіміне</button>
     <div class="card"><h2>Есеп</h2><div id="br-info"></div></div>
-    <div class="card">
+    <div class="card anchor" id="br-ops">
       <h2>Операциялар <span><small id="br-count"></small>
         <small class="act" style="margin-left:10px" onclick="selStart('btx')">Таңдау</small></span></h2>
       <div id="br-list"></div></div>
@@ -1141,6 +1175,14 @@
 </section>
 
 <!-- ============ TABBAR ============ -->
+<div class="topbar" id="topbar">
+  <div class="in">
+    <button class="bk" id="tb-back" onclick="topBack()">←</button>
+    <div class="tt" id="tb-title">Қаржы</div>
+    <button class="up" onclick="scrollTop()">↑</button>
+  </div>
+</div>
+
 <nav class="tabbar">
   <button class="on" data-tab="home" onclick="go('home')"><span class="g" data-i="home"></span>Басты</button>
   <button data-tab="accounts" onclick="go('accounts')"><span class="g" data-i="wallet"></span>Қаржы</button>
@@ -1328,6 +1370,16 @@
   <label class="f">Қазір жиналған, ₸</label>
   <input class="inp" id="g-saved" type="number" inputmode="decimal" placeholder="0">
   <button class="btn" onclick="saveGoal()">Сақтау</button>
+  <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
+</div>
+
+<!-- Sheet: есеп пішімі -->
+<div class="sheet" id="fmt-sheet">
+  <div class="grab"></div>
+  <h3>Есепті қалай жіберейін?</h3>
+  <p class="muted" style="margin:0 0 14px">Экранда тұрған нәтиже сол күйінде файлға айналады.</p>
+  <button class="btn" id="fmt-pdf">PDF — оқуға және басып шығаруға</button>
+  <button class="btn line" id="fmt-csv">Excel (CSV) — сандармен жұмыс істеуге</button>
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
 </div>
 
