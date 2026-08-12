@@ -273,9 +273,10 @@
   .topbar .in{display:flex;align-items:center;gap:8px;height:52px}
   .topbar .tt{flex:1;min-width:0;font-weight:750;font-size:16px;letter-spacing:-.02em;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .topbar .up{width:38px;height:38px;border:0;border-radius:12px;
-    background:var(--g-soft);color:var(--g-mid);font-size:17px;font-weight:700;
-    line-height:1;flex:none;padding:0}
+  .topbar .up{height:38px;min-width:38px;border:0;border-radius:12px;
+    background:var(--g-soft);color:var(--g-mid);font-size:13px;font-weight:700;
+    line-height:1;flex:none;padding:0 11px;white-space:nowrap}
+  .topbar .up:disabled{opacity:.32}
   .topbar .tt{padding-left:4px}
 
   /* ---------- Тізімге секіру ---------- */
@@ -484,9 +485,7 @@
       <button onclick="go('ops')"><span class="qi" data-i="receipt"></span> Операциялар</button>
       <button onclick="go('goals')"><span class="qi" data-i="flag"></span> Мақсаттар</button>
       <button onclick="go('calc')"><span class="qi" data-i="calc"></span> Калькулятор</button>
-      <button onclick="go('debts')"><span class="qi" data-i="swap"></span> Қарыздар</button>
-      <button onclick="go('budget')"><span class="qi" data-i="budget"></span> Бюджет</button>
-      <button onclick="go('recur')" style="grid-column:1/-1"><span class="qi" data-i="clock"></span> Тұрақты операциялар</button>
+      <button onclick="go('debts')" style="grid-column:1/-1"><span class="qi" data-i="swap"></span> Қарыздар</button>
     </div>
     </div>
 
@@ -520,13 +519,6 @@
       </div>
       <div id="w-fc-box"></div>
       <p class="muted" style="margin:10px 0 0;font-size:12.4px">Осы айдағы қарқын мен әлі келмеген тұрақты төлемдер бойынша шамалау.</p>
-    </div>
-    </div>
-
-    <div class="w" data-w="budget">
-    <div class="card">
-      <h2>Бюджет <small class="act" onclick="go('budget')">Барлығы →</small></h2>
-      <div id="w-budget-box"></div>
     </div>
     </div>
 
@@ -639,7 +631,10 @@
     </div>
   </div>
   <div class="wrap">
-    <div class="card"><h2>Банк шоттары <small id="a-sum-bank"></small></h2><div id="a-list-asset"></div></div>
+    <div class="card"><h2>Банк шоттары <small id="a-sum-bank"></small></h2>
+      <p class="muted" style="margin:-6px 0 10px">Сандар банктегімен сәйкес пе?
+        <a class="lnk" onclick="go('sync')">Салыстыру →</a></p>
+      <div id="a-list-asset"></div></div>
     <div class="card"><h2>Брокерлік шоттар <small id="a-sum-broker"></small></h2>
       <p class="muted" style="margin:-6px 0 10px">Жеке есептеледі — таза капиталға қосылмайды.
         <a class="lnk" onclick="go('invest')">Барлығын салыстыру →</a></p>
@@ -918,6 +913,27 @@
 </section>
 
 <!-- ============ БАПТАУ ============ -->
+<!-- ============ ШОТТЫ САЛЫСТЫРУ ============ -->
+<section class="page" id="p-sync">
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('accounts')">←</button>
+      <div style="flex:1"><h1 style="font-size:24px">Шотты салыстыру</h1>
+        <div class="sub">Банктегі нақты сан мен қосымшадағы санды сәйкестендіру</div></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="muted" style="padding:0 6px 10px">Банк қосымшасын ашып, әр шоттың нақты қалдығын жазыңыз. Айырма шықса, қосымша оны түзете алады — операциялар тарихы бұзылмайды.</p>
+    <div id="sync-list"></div>
+    <div class="card" id="sync-sum" style="display:none">
+      <h2>Қорытынды</h2>
+      <div id="sync-sum-box"></div>
+    </div>
+    <button class="btn" id="sync-apply" onclick="applySync()" style="display:none">Айырманы түзету</button>
+    <p class="muted" style="padding:8px 6px">Түзету «Түзету операциясы» деген жазба ретінде қосылады, сондықтан кейін қайдан шыққанын көресіз.</p>
+  </div>
+</section>
+
 <section class="page" id="p-set">
   <div class="hero flat">
     <div class="hero-top">
@@ -987,7 +1003,7 @@
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Қаржы · 3.7</div>
+        <div class="ver">Қаржы · 3.8</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
@@ -996,29 +1012,6 @@
 </section>
 
 <!-- ============ ТҰРАҚТЫ ОПЕРАЦИЯЛАР ============ -->
-<section class="page" id="p-recur">
-  <div class="hero flat">
-    <div class="hero-top">
-      <button class="back" onclick="go('home')">←</button>
-      <div style="flex:1"><h1 style="font-size:24px">Тұрақты</h1>
-        <div class="sub" id="rc-count">0 жазба</div></div>
-      <button class="plus" onclick="openRecur()">+</button>
-    </div>
-    <div class="two">
-      <div class="mini"><div class="t">Ай сайынғы кіріс</div><div class="v" id="rc-in-sum">0 ₸</div></div>
-      <div class="mini"><div class="t">Ай сайынғы шығын</div><div class="v" id="rc-out-sum">0 ₸</div></div>
-    </div>
-  </div>
-  <div class="wrap">
-    <p class="muted" style="padding:0 6px 8px">Бір рет жазсаңыз, ай сайын белгіленген күні өзі қосылады.
-    Қосымшаны ашқанда өтіп кеткен айлар да толтырылады.</p>
-    <div class="card">
-      <h2>Тізім <small class="act" onclick="selStart('recur')">Таңдау</small></h2>
-      <div id="rc-list"></div></div>
-    <button class="btn dashed" onclick="openRecur()">+ Тұрақты операция қосу</button>
-  </div>
-</section>
-
 <!-- ============ ҚАРЫЗДАР ============ -->
 <section class="page" id="p-debts">
   <div class="hero flat">
@@ -1049,24 +1042,6 @@
 </section>
 
 <!-- ============ БЮДЖЕТ ============ -->
-<section class="page" id="p-budget">
-  <div class="hero flat">
-    <div class="hero-top">
-      <button class="back" onclick="go('home')">←</button>
-      <div style="flex:1"><h1 style="font-size:24px">Бюджет</h1><div class="sub" id="bd-sub">Айлық шығын шектеуі</div></div>
-    </div>
-    <div class="two">
-      <div class="mini"><div class="t">Шектелген</div><div class="v" id="bd-limit">0 ₸</div></div>
-      <div class="mini"><div class="t">Жұмсалды</div><div class="v" id="bd-spent">0 ₸</div></div>
-    </div>
-  </div>
-  <div class="wrap">
-    <p class="muted" style="padding:0 4px 8px">Санатқа айлық шек қойыңыз. 80%-ға жеткенде ескертеміз. 0 деп қойсаңыз — шек жоқ.</p>
-    <div class="card" id="bd-list"></div>
-  </div>
-</section>
-
-
 <section class="page" id="p-calc-dep">
   <div style="background:var(--surface);padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;gap:13px">
     <button class="back dark" onclick="go('calc')">←</button>
@@ -1177,8 +1152,8 @@
 <div class="topbar" id="topbar">
   <div class="in">
     <div class="tt" id="tb-title">Қаржы</div>
-    <button class="up hide" id="tb-up" onclick="scrollTop()" aria-label="Төбеге">↑</button>
-    <button class="up hide" id="tb-down" onclick="scrollBottom()" aria-label="Астыға">↓</button>
+    <button class="up" id="tb-up" onclick="scrollTop()" aria-label="Төбеге">↑ Төбе</button>
+    <button class="up" id="tb-down" onclick="scrollBottom()" aria-label="Астыға">↓ Асты</button>
   </div>
 </div>
 
@@ -1278,29 +1253,6 @@
   <label class="f">Түсініктеме</label>
   <input class="inp" id="bo-note" type="text" placeholder="Міндетті емес">
   <button class="btn" onclick="saveBOp()">Сақтау</button>
-  <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
-</div>
-
-<!-- Sheet: recurring -->
-<div class="sheet" id="sheet-recur">
-  <div class="grab"></div>
-  <h3 id="rc-title">Тұрақты операция</h3>
-  <div class="seg">
-    <button id="rc-out" class="on" onclick="setRType('out')">Шығын</button>
-    <button id="rc-in" onclick="setRType('in')">Кіріс</button>
-  </div>
-  <label class="f">Сома, ₸</label>
-  <input class="inp big" id="rc-amt" type="number" inputmode="decimal" placeholder="0">
-  <label class="f">Санат</label>
-  <div class="chips" id="rc-cats"></div>
-  <label class="f">Қай шот</label>
-  <div class="chips" id="rc-accs"></div>
-  <label class="f">Айдың қай күні</label>
-  <input class="inp" id="rc-day" type="number" inputmode="numeric" min="1" max="31" value="1">
-  <label class="f">Түсініктеме</label>
-  <input class="inp" id="rc-note" type="text" placeholder="Мысалы: пәтер жалдау">
-  <button class="btn" onclick="saveRecur()">Сақтау</button>
-  <button class="btn danger hide" id="rc-del" onclick="delRecur()">Өшіру</button>
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
 </div>
 
