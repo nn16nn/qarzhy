@@ -45,7 +45,7 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   :focus-visible{outline:2.5px solid var(--g-bright);outline-offset:2px;border-radius:10px}
-  html,body{margin:0;padding:0}
+  html,body{margin:0;padding:0;overflow-x:hidden}
   body{
     font-family:"Inter","Inter Fallback",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans",
     "Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji",sans-serif;
@@ -91,7 +91,8 @@
   .mini .t{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#DDE3FF}
   .dot{width:26px;height:26px;border-radius:9px;display:grid;place-items:center;font-size:13px}
   .dot.in{background:rgba(0,190,134,.5)} .dot.out{background:rgba(255,77,103,.45)}
-  .mini .v{font-size:19px;font-weight:800;margin-top:7px}
+  .mini .v{font-size:19px;font-weight:800;margin-top:7px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .wide{display:flex;align-items:center;gap:13px;background:rgba(255,255,255,.13);
     border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:14px;margin-top:12px}
   .wide .ic{width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:19px}
@@ -114,6 +115,11 @@
   .trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;background:var(--g-soft);border-radius:16px;padding:14px 8px;text-align:center}
   .trio .l{font-size:11.5px;color:var(--ink-2);font-weight:600;line-height:1.35}
   .trio .v{font-size:15.5px;font-weight:800;margin-top:5px;letter-spacing:-.02em}
+  @media (max-width:390px){
+    .mini .v{font-size:16.5px}
+    .trio .v{font-size:14px}
+    .trio{padding:14px 6px}
+  }
   .stat3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
   .stat3 .c{background:var(--surface);border-radius:18px;padding:14px 8px;text-align:center;box-shadow:0 2px 14px var(--shadow)}
   .stat3 .l{font-size:11.5px;color:var(--ink-2);margin-top:7px;font-weight:600}
@@ -175,6 +181,13 @@
   .seg.glass button{color:#DDE3FF}
   .seg.glass button.on{background:#fff;color:var(--g-mid)}
   .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  /* Шот тізімі көп болса, hero-ны созбай, бір жолда сырғысын */
+  .chips.rail{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;margin-left:-16px;margin-right:-16px;
+    padding:2px 16px 4px;scroll-padding-left:16px}
+  .chips.rail::-webkit-scrollbar{display:none}
+  .chips.rail .chip{flex:none;max-width:190px}
+  .chips.rail .chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .chip{border:1px solid var(--line);background:var(--surface);border-radius:14px;
     padding:8px 13px;font-size:14px;color:var(--ink);font-weight:500;
     display:inline-flex;align-items:center;gap:8px;line-height:1.15}
@@ -327,15 +340,16 @@
       transition-duration:.01ms !important}
   }
   /* ---------- Анимациялар ---------- */
-  @keyframes rise{from{opacity:0;transform:translateY(12px)}}
   @keyframes fadein{from{opacity:0}}
   @keyframes grow{from{width:0}}
   @keyframes pop{from{opacity:0;transform:scale(.94)}}
-  .page.on{animation:pgIn .3s cubic-bezier(.22,.75,.3,1)}
-  .page.on.back{animation:pgBack .3s cubic-bezier(.22,.75,.3,1)}
-  @keyframes pgIn{from{opacity:0;transform:translate3d(26px,0,0)}}
-  @keyframes pgBack{from{opacity:0;transform:translate3d(-22px,0,0)}}
+  .page.on>.hero{animation:fadein .26s ease}
+  @keyframes rise{from{opacity:0;transform:translate3d(0,12px,0)}}
+  @keyframes riseIn{from{opacity:0;transform:translate3d(20px,6px,0)}}
+  @keyframes riseBack{from{opacity:0;transform:translate3d(-16px,6px,0)}}
   .wrap>*{animation:rise .34s cubic-bezier(.2,.8,.3,1) backwards}
+  .page.on>.wrap>*{animation-name:riseIn}
+  .page.on.back>.wrap>*{animation-name:riseBack}
   .wrap>*:nth-child(1){animation-delay:.02s}
   .wrap>*:nth-child(2){animation-delay:.06s}
   .wrap>*:nth-child(3){animation-delay:.10s}
@@ -348,7 +362,7 @@
   /* Басқанда затты «басып тұрғандай» сезілуі керек — бұрынғы .995 көрінбейтін */
   .row,.quad button,.chip,.btn,.plus,.back,.topbar .up,.topbar .tt{
     transition:transform .13s cubic-bezier(.3,.8,.4,1),opacity .13s,background .15s,color .15s,border-color .15s}
-  .row:active{background:var(--g-soft);border-radius:14px}
+  .row:active{opacity:.62}
   .quad button:active{transform:scale(.955)}
   .card[onclick]:active{transform:scale(.985)}
   .btn:active{transform:scale(.975)}
@@ -696,8 +710,8 @@
       <button data-of="out" onclick="setOpsFilter('out')">Шығын</button>
       <button data-of="tr" onclick="setOpsFilter('tr')">Аударым</button>
     </div>
-    <input class="search" id="ops-q" placeholder="Іздеу: атау, санат, сома…" oninput="render()">
-    <div class="chips glass" id="ops-accs" style="margin-top:10px;margin-bottom:0"></div>
+    <input class="search" id="ops-q" placeholder="Іздеу: атау, санат, сома…" oninput="opsSearch()">
+    <div class="chips glass rail" id="ops-accs" style="margin-top:10px;margin-bottom:0"></div>
   </div>
   <div class="wrap">
     <p class="muted" style="padding:0 6px 8px">Операцияны солға сырғытсаңыз — өшіріледі, оңға сырғытсаңыз — түзетіледі.</p>
@@ -1039,7 +1053,7 @@
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Қаржы · 4.1</div>
+        <div class="ver">Қаржы · 4.3</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>

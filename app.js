@@ -468,8 +468,9 @@ function go(v, silent){
   var btns = document.querySelectorAll('.tabbar button');
   for(var j=0;j<btns.length;j++) btns[j].classList.toggle('on', btns[j].dataset.tab===v);
   window.scrollTo(0,0);
-  render();
   syncTopbar();
+  if(same) render();
+  else requestAnimationFrame(function(){ render(); syncTopbar(); });
 
   saveView();
   /* Android-тың «артқа» түймесі қосымшадан шығармай, алдыңғы бетке қайтсын */
@@ -971,7 +972,7 @@ function openAccView(id){
 /* Шот бетінен бірден сол шоттың операцияларына өту.
    Бұрын Операциялар бетіне барып, шот белгісін өзің тауып басу керек болатын. */
 function accOps(id){
-  opsAcc = id; opsFilter = 'all'; opsMonth = null;
+  opsAcc = id; opsFilter = 'all'; opsMonth = null; opsShown = OPS_PAGE;
   var q = document.getElementById('ops-q'); if(q) q.value = '';
   closeSheets();
   go('ops');
@@ -979,11 +980,11 @@ function accOps(id){
     jumpTo('ops-card');
     var chip = document.querySelector('#ops-accs .chip.on');
     if(chip && chip.scrollIntoView) chip.scrollIntoView({ block:'nearest', inline:'center' });
-  }, 60);
+  }, 120);
 }
 
 function opsClear(){
-  opsAcc = 'all'; opsFilter = 'all'; opsMonth = null;
+  opsAcc = 'all'; opsFilter = 'all'; opsMonth = null; opsShown = OPS_PAGE;
   var q = document.getElementById('ops-q'); if(q) q.value = '';
   var segs = document.querySelectorAll('[data-of]');
   for(var i = 0; i < segs.length; i++) segs[i].classList.toggle('on', segs[i].dataset.of === 'all');
@@ -1424,12 +1425,21 @@ function wipe(){
 /* ================= FILTERS ================= */
 var opsFilter='all', opsAcc='all', statFilter='all', period='month';
 var range={from:null,to:null};
+var OPS_PAGE = 35, opsShown = 35;
 var opsMonth = null;   /* 'YYYY-MM' — тек сол айды көрсету, null болса бәрі */
 function setOpsFilter(f){
-  opsFilter=f;
+  opsFilter=f; opsShown=OPS_PAGE;
   document.querySelectorAll('[data-of]').forEach(function(b){ b.classList.toggle('on', b.dataset.of===f); });
   render();
 }
+/* Іздеу өрісі: әр әріпте бүкіл бетті қайта сызбай, теруді тоқтатқанда бір рет */
+var opsQT = null;
+function opsSearch(){
+  opsShown = OPS_PAGE;
+  if(opsQT) clearTimeout(opsQT);
+  opsQT = setTimeout(function(){ render(); }, 180);
+}
+
 function setStatFilter(f){
   statFilter=f;
   document.querySelectorAll('[data-sf]').forEach(function(b){ b.classList.toggle('on', b.dataset.sf===f); });
@@ -1597,22 +1607,40 @@ function render(){
       ? svgIcon('grid','chip-ic')
       : (obr ? '<span class="brand sm" style="background:'+obr[1]+(obr[2]?';color:'+obr[2]:'')+'">'+obr[0]+'</span>'
              : accIconHtml(a,'chip-ic')))+'<span>'+esc(a.name)+'</span>';
-    b.onclick=function(){ opsAcc=a.id; render(); };
+    b.onclick=function(){ opsAcc=a.id; opsShown=OPS_PAGE; render(); };
     oab.appendChild(b);
   });
   OPS_IDS = ops.map(function(t){ return t.id; });
   var ol=document.getElementById('ops-list'); ol.innerHTML='';
   if(!ops.length) ol.innerHTML='<div class="empty">Операция табылмады.</div>';
   else {
-    var byDay={};
-    ops.forEach(function(t){ (byDay[t.date]=byDay[t.date]||[]).push(t); });
-    Object.keys(byDay).sort().reverse().forEach(function(d){
+    /* Бәрін бірден салмаймыз: әр жолда сырғыту тыңдаушылары бар, мыңдаған жол
+       ашылған сайын беттің кідіруіне әкелетін. Алдымен жақындағысы, қалғаны сұраныспен. */
+    if(opsShown > ops.length) opsShown = OPS_PAGE;
+    var shown = ops.slice(0, opsShown);
+    var byDay={}, order=[];
+    shown.forEach(function(t){
+      if(!byDay[t.date]){ byDay[t.date]=[]; order.push(t.date); }
+      byDay[t.date].push(t);
+    });
+    var frag = document.createDocumentFragment();
+    order.forEach(function(d){
       var sum=0; byDay[d].forEach(function(t){ if(t.type==='in') sum+=t.amt; else if(t.type==='out') sum-=t.amt; });
       var hd=document.createElement('div'); hd.className='dayhead';
       hd.innerHTML='<span>'+dayTitle(d)+'</span><span>'+money(sum)+'</span>';
-      ol.appendChild(hd);
-      byDay[d].forEach(function(t){ ol.appendChild(txRow(t)); });
+      frag.appendChild(hd);
+      byDay[d].forEach(function(t){ frag.appendChild(txRow(t)); });
     });
+    ol.appendChild(frag);
+    var rest = ops.length - shown.length;
+    if(rest > 0){
+      var more = document.createElement('button');
+      more.className = 'btn line sm';
+      more.style.marginTop = '12px';
+      more.textContent = tr('Тағы көрсету') + ' (' + rest + ')';
+      more.onclick = function(){ opsShown += OPS_PAGE; render(); };
+      ol.appendChild(more);
+    }
   }
 
   }
@@ -2758,6 +2786,7 @@ var TR = [
 ["Қаржылық есептеулер","Финансовые расчёты","Financial calculations"],
 ["Инвестиция калькуляторы","Инвестиционный калькулятор","Investment calculator"],
 ["Статистика есебі","Отчёт по статистике","Statistics report"],
+["Тағы көрсету","Показать ещё","Show more"],
 ["Шотты салыстыру","Сверка счетов","Reconcile accounts"],
 ["Салыстыру →","Сверка →","Reconcile →"],
 ["Сандар банктегімен сәйкес пе?","Цифры сходятся с банком?","Do the numbers match your bank?"],
@@ -3521,10 +3550,10 @@ function drawTrend(){
 /* графиктен сол айдың операцияларына өту */
 function monthOps(key){
   opsMonth = key;
-  opsAcc = 'all'; opsFilter = 'all';
+  opsAcc = 'all'; opsFilter = 'all'; opsShown = OPS_PAGE;
   var q = document.getElementById('ops-q'); if(q) q.value = '';
   go('ops');
-  setTimeout(function(){ jumpTo('ops-card'); }, 60);
+  setTimeout(function(){ jumpTo('ops-card'); }, 120);
 }
 
 
@@ -3607,13 +3636,21 @@ function toastUndo(msg, cb){
   t._tm = setTimeout(function(){ t.classList.remove('on'); t.textContent = ''; }, 4500);
 }
 
+var SWIPE_BG = null;
+function swipeBg(){
+  if(!SWIPE_BG){
+    SWIPE_BG = document.createElement('div');
+    SWIPE_BG.className = 'swipe-bg';
+    SWIPE_BG.innerHTML = '<span class="sw-i" style="color:var(--blue)">' + svgIcon('edit') +
+      '</span><span class="sw-i" style="color:var(--neg)">' + svgIcon('trash') + '</span>';
+  }
+  return SWIPE_BG.cloneNode(true);
+}
+
 function swipeWrap(row, onLeft, onRight){
   var wrap = document.createElement('div');
   wrap.className = 'swipe';
-  var bg = document.createElement('div');
-  bg.className = 'swipe-bg';
-  bg.innerHTML = '<span class="sw-i" style="color:var(--blue)">' + svgIcon('edit') +
-    '</span><span class="sw-i" style="color:var(--neg)">' + svgIcon('trash') + '</span>';
+  var bg = swipeBg();
   wrap.appendChild(bg);
   wrap.appendChild(row);
 
