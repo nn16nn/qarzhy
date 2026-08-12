@@ -271,13 +271,18 @@
     transform:translateY(-102%);transition:transform .22s ease;}
   .topbar.on{transform:none}
   .topbar .in{display:flex;align-items:center;gap:8px;height:52px}
-  .topbar .tt{flex:1;min-width:0;font-weight:750;font-size:16px;letter-spacing:-.02em;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .topbar .up{height:38px;min-width:38px;border:0;border-radius:12px;
-    background:var(--g-soft);color:var(--g-mid);font-size:13px;font-weight:700;
-    line-height:1;flex:none;padding:0 11px;white-space:nowrap}
+  .topbar .tt{flex:1;min-width:0;display:flex;align-items:center;gap:7px;
+    font-weight:750;font-size:16px;letter-spacing:-.02em;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    background:0;border:0;padding:0 0 0 2px;color:var(--ink);text-align:left;height:38px}
+  .topbar .tt .ar{width:26px;height:26px;border-radius:9px;background:var(--g-soft);
+    color:var(--g-mid);font-size:14px;font-weight:700;flex:none;
+    display:inline-flex;align-items:center;justify-content:center}
+  .topbar .tt:active{opacity:.6}
+  .topbar .up{width:38px;height:38px;border:0;border-radius:12px;
+    background:var(--g-soft);color:var(--g-mid);font-size:17px;font-weight:700;
+    line-height:1;flex:none;padding:0}
   .topbar .up:disabled{opacity:.32}
-  .topbar .tt{padding-left:4px}
 
   /* ---------- Тізімге секіру ---------- */
   .jump{position:sticky;top:calc(env(safe-area-inset-top) + 58px);z-index:20}
@@ -1003,7 +1008,7 @@
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Қаржы · 3.8</div>
+        <div class="ver">Қаржы · 3.9</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
@@ -1151,9 +1156,8 @@
 <!-- ============ TABBAR ============ -->
 <div class="topbar" id="topbar">
   <div class="in">
-    <div class="tt" id="tb-title">Қаржы</div>
-    <button class="up" id="tb-up" onclick="scrollTop()" aria-label="Төбеге">↑ Төбе</button>
-    <button class="up" id="tb-down" onclick="scrollBottom()" aria-label="Астыға">↓ Асты</button>
+    <button class="tt" id="tb-title" onclick="scrollTop()" aria-label="Беттің басына">Қаржы</button>
+    <button class="up" id="tb-down" onclick="scrollBottom()" aria-label="Астыға">↓</button>
   </div>
 </div>
 

@@ -391,7 +391,7 @@ function sheetOpen(){ return !!document.querySelector('.sheet.on'); }
 
 /* ================= ЖАБЫСҚАҚ ТАҚЫРЫП ЖӘНЕ СЕКІРУ ================= */
 var PAGE_TITLE = {
-  home:'Басты', accounts:'Менің қаржым', ops:'Операциялар', overview:'Шолу',
+  home:'Қаржы', accounts:'Қаржы', ops:'Операциялар', overview:'Шолу',
   stat:'Статистика', goals:'Мақсаттар', calc:'Калькулятор',
   'calc-inv':'Инвестиция калькуляторы', 'calc-loan':'Несие калькуляторы',
   'calc-dep':'Депозит калькуляторы', 'calc-tax':'Салық калькуляторы',
@@ -429,16 +429,18 @@ function syncTopbar(){
   if(t){
     var nm = PAGE_TITLE[view] || 'Қаржы';
     if(view === 'broker'){ var ba = acc(brId); if(ba) nm = ba.name; }
-    if(t.textContent !== nm) t.textContent = tr(nm);
+    nm = tr(nm);
+    if(t.getAttribute('data-nm') !== nm){
+      t.setAttribute('data-nm', nm);
+      t.innerHTML = '<span class="ar">↑</span>' + esc(nm);
+    }
   }
   var y = scrollY();
   bar.classList.toggle('on', y > 96);
 
-  /* Екі түйме де әрқашан тұрады — қайсысы не істейтіні жазуымен айқын.
-     Барар жері жоқ болса ғана өшіп қалады. */
+  /* Тақырыпты бассаң — беттің басына. Оң жақтағы ↓ — түбіне. */
   var max = Math.max(0, pageHeight() - window.innerHeight);
-  var up = document.getElementById('tb-up'), dn = document.getElementById('tb-down');
-  if(up) up.disabled = y < 40;
+  var dn = document.getElementById('tb-down');
   if(dn) dn.disabled = (max - y) < 40;
 }
 var scrollSaveT = null;

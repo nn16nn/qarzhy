@@ -1,5 +1,5 @@
-/* Қаржы — офлайн кэш (v13) */
-const CACHE = 'qarzhy-v13';
+/* Қаржы — офлайн кэш (v14) */
+const CACHE = 'qarzhy-v14';
 const FILES = [
   './', './index.html', './app.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable.png'
