@@ -44,6 +44,7 @@
     --shadow-2:rgba(0,0,0,.5);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :focus-visible{outline:2.5px solid var(--g-bright);outline-offset:2px;border-radius:10px}
   html,body{margin:0;padding:0}
   body{
     font-family:"Inter","Inter Fallback",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans",
@@ -295,25 +296,42 @@
   .tabbar button{flex:1;background:0;border:0;padding:6px 0;color:var(--ink-2);font-size:10.5px;font-weight:600;border-radius:15px}
   .tabbar button .g{display:flex;justify-content:center;margin-bottom:3px}
   .tabbar button .g .svi{width:23px;height:23px}
+  .tabbar button{transition:color .18s,background .18s}
   .tabbar button.on{background:var(--g-soft);color:var(--g-mid)}
+  .tabbar button .g{transition:transform .28s cubic-bezier(.2,1.2,.35,1)}
+  .tabbar button.on .g{transform:translateY(-1px) scale(1.08)}
+  .tabbar button:active .g{transform:scale(.86)}
 
   /* ---------- Sheets ---------- */
   .scrim{position:fixed;inset:0;background:rgba(4,10,50,.55);opacity:0;pointer-events:none;transition:.22s;z-index:50}
   .scrim.on{opacity:1;pointer-events:auto}
-  .sheet{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-radius:26px 26px 0 0;
+  .sheet{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-radius:28px 28px 0 0;
     padding:10px 16px calc(34px + env(safe-area-inset-bottom));transform:translateY(102%);
-    transition:transform .26s cubic-bezier(.3,.8,.4,1);z-index:60;max-height:92vh;overflow:auto}
+    transition:transform .34s cubic-bezier(.16,.9,.28,1);z-index:60;max-height:92vh;overflow:auto;
+    box-shadow:0 -10px 40px var(--shadow-2);overscroll-behavior:contain}
   .sheet.on{transform:none}
+  .sheet.drag{transition:none}
   body.locked{overflow:hidden}
   .sheet-back{background:none;border:0;color:var(--ink-2);font-size:14px;font-weight:600;padding:0 0 10px;display:block}
-  .grab{width:42px;height:4px;background:var(--line);border-radius:9px;margin:6px auto 14px}
+  /* тұтқа — жай сызық емес, саусақпен сүйрейтін нақты аймақ */
+  .grab-zone{margin:-10px -16px 4px;padding:12px 16px 8px;cursor:grab;touch-action:none}
+  .grab{width:40px;height:4.5px;background:var(--line);border-radius:9px;margin:0 auto;
+    transition:width .18s,background .18s}
+  .grab-zone:active .grab{width:56px;background:var(--ink-2)}
   .sheet h3{margin:0 0 14px;font-size:19px}
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+      transition-duration:.01ms !important}
+  }
   /* ---------- Анимациялар ---------- */
   @keyframes rise{from{opacity:0;transform:translateY(12px)}}
   @keyframes fadein{from{opacity:0}}
   @keyframes grow{from{width:0}}
   @keyframes pop{from{opacity:0;transform:scale(.94)}}
-  .page.on{animation:fadein .2s ease}
+  .page.on{animation:pgIn .3s cubic-bezier(.22,.75,.3,1)}
+  .page.on.back{animation:pgBack .3s cubic-bezier(.22,.75,.3,1)}
+  @keyframes pgIn{from{opacity:0;transform:translate3d(26px,0,0)}}
+  @keyframes pgBack{from{opacity:0;transform:translate3d(-22px,0,0)}}
   .wrap>*{animation:rise .34s cubic-bezier(.2,.8,.3,1) backwards}
   .wrap>*:nth-child(1){animation-delay:.02s}
   .wrap>*:nth-child(2){animation-delay:.06s}
@@ -324,9 +342,15 @@
   .wrap>*:nth-child(n+7){animation-delay:.26s}
   .fill{animation:grow .65s cubic-bezier(.2,.85,.3,1)}
   svg.donut{transform-origin:50% 50%}
-  .row:active{opacity:.7}
-  .quad button:active,.card:active{transform:scale(.995)}
-  .chip{transition:background .15s,color .15s,border-color .15s}
+  /* Басқанда затты «басып тұрғандай» сезілуі керек — бұрынғы .995 көрінбейтін */
+  .row,.quad button,.chip,.btn,.plus,.back,.topbar .up,.topbar .tt{
+    transition:transform .13s cubic-bezier(.3,.8,.4,1),opacity .13s,background .15s,color .15s,border-color .15s}
+  .row:active{background:var(--g-soft);border-radius:14px}
+  .quad button:active{transform:scale(.955)}
+  .card[onclick]:active{transform:scale(.985)}
+  .btn:active{transform:scale(.975)}
+  .chip:active{transform:scale(.93)}
+  .plus:active,.back:active,.topbar .up:active,.topbar .tt:active{transform:scale(.9);opacity:.85}
   /* --- қозғалатын белгішелер --- */
   @keyframes bobDown{0%,100%{transform:translateY(-1.5px)}50%{transform:translateY(2px)}}
   @keyframes bobUp{0%,100%{transform:translateY(1.5px)}50%{transform:translateY(-2px)}}
@@ -379,9 +403,12 @@
   .sel-off{background:transparent;color:var(--ink-2)}
   h2 small.act{color:var(--g-mid);font-weight:700}
 
-  .toast{position:fixed;left:50%;transform:translate(-50%,20px);bottom:100px;background:var(--ink);color:#fff;
-    padding:11px 18px;border-radius:14px;font-size:14px;opacity:0;transition:.25s;z-index:80;pointer-events:none}
-  .toast.on{opacity:1;transform:translate(-50%,0)}
+  .toast{position:fixed;left:50%;transform:translate(-50%,14px) scale(.94);bottom:100px;
+    background:var(--ink);color:var(--surface);
+    padding:12px 20px;border-radius:16px;font-size:14px;font-weight:600;opacity:0;
+    transition:transform .34s cubic-bezier(.16,1.1,.3,1),opacity .2s;
+    z-index:80;pointer-events:none;box-shadow:0 10px 30px var(--shadow-2);max-width:88vw;text-align:center}
+  .toast.on{opacity:1;transform:translate(-50%,0) scale(1)}
 
   .search{width:100%;border:0;border-radius:14px;padding:12px 14px;background:rgba(255,255,255,.16);
     color:#fff;font-size:15px;margin-top:12px}
@@ -1008,7 +1035,7 @@
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Қаржы · 3.9</div>
+        <div class="ver">Қаржы · 4.0</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
@@ -1173,7 +1200,7 @@
 
 <!-- Sheet: transaction -->
 <div class="sheet" id="sheet-tx">
-  <div class="grab"></div>
+  <div class="grab-zone"><div class="grab"></div></div>
   <h3 id="tx-title">Операция қосу</h3>
   <div class="seg tight">
     <button id="seg-out" class="on danger" onclick="setType('out')">Шығын</button>
@@ -1207,7 +1234,7 @@
 
 <!-- Sheet: account -->
 <div class="sheet" id="sheet-acc">
-  <div class="grab"></div>
+  <div class="grab-zone"><div class="grab"></div></div>
   <button class="sheet-back" id="ac-back" onclick="backToAcc()">‹ Артқа</button>
   <h3 id="acc-title">Шот қосу</h3>
   <div id="ac-bank-box" class="hide">
@@ -1244,7 +1271,7 @@
 
 <!-- Sheet: broker operation -->
 <div class="sheet" id="sheet-bop">
-  <div class="grab"></div>
+  <div class="grab-zone"><div class="grab"></div></div>
   <h3>Брокерлік операция</h3>
   <label class="f">Түрі</label>
   <div class="chips" id="bo-types"></div>
@@ -1262,7 +1289,7 @@
 
 <!-- Sheet: debt -->
 <div class="sheet" id="sheet-debt">
-  <div class="grab"></div>
+  <div class="grab-zone"><div class="grab"></div></div>
   <h3>Қарыз жазу</h3>
   <div class="seg">
     <button id="de-out" class="on" onclick="setDebtDir('out')">Мен бердім</button>
@@ -1286,7 +1313,7 @@
 
 <!-- Sheet: debt detail -->
 <div class="sheet" id="sheet-dview">
-  <div class="grab"></div>
+  <div class="grab-zone"><div class="grab"></div></div>
   <h3 id="dv-title">Қарыз</h3>
   <div class="res" id="dv-sum" style="margin-bottom:14px"></div>
   <div id="dv-payrow">
@@ -1303,7 +1330,7 @@
 
 <!-- Sheet: broker value -->
 <div class="sheet" id="sheet-bval">
-  <div class="grab"></div>
+  <div class="grab-zone"><div class="grab"></div></div>
   <h3 id="bv-title">Шот құнын жаңарту</h3>
   <p class="muted" style="margin:0 0 14px">Брокерлік қосымшада қазір көрініп тұрған жалпы портфель құнын жазыңыз. Табыс автоматты есептеледі.</p>
   <label class="f">Доллармен, $</label>
@@ -1316,7 +1343,7 @@
 
 <!-- Sheet: goal -->
 <div class="sheet" id="sheet-goal">
-  <div class="grab"></div>
+  <div class="grab-zone"><div class="grab"></div></div>
   <h3>Мақсат қосу</h3>
   <label class="f">Атауы</label>
   <input class="inp" id="g-name" type="text" placeholder="Мысалы: 100 мың доллар жинау">
@@ -1330,7 +1357,7 @@
 
 <!-- Sheet: есеп пішімі -->
 <div class="sheet" id="fmt-sheet">
-  <div class="grab"></div>
+  <div class="grab-zone"><div class="grab"></div></div>
   <h3>Есепті қалай жіберейін?</h3>
   <p class="muted" style="margin:0 0 14px">Экранда тұрған нәтиже сол күйінде файлға айналады.</p>
   <button class="btn" id="fmt-pdf">PDF — оқуға және басып шығаруға</button>
@@ -1340,7 +1367,7 @@
 
 <!-- Sheet: detail -->
 <div class="sheet" id="sheet-view">
-  <div class="grab"></div>
+  <div class="grab-zone"><div class="grab"></div></div>
   <h3 id="v-title">Операция</h3>
   <div class="res" id="v-body"></div>
   <div id="v-extra"></div>
@@ -1350,7 +1377,7 @@
 
 <!-- Sheet: goal detail -->
 <div class="sheet" id="sheet-gview">
-  <div class="grab"></div>
+  <div class="grab-zone"><div class="grab"></div></div>
   <h3 id="gv-title">Мақсат</h3>
   <div class="res" id="gv-sum" style="margin-bottom:14px"></div>
   <label class="f">Салым қосу, ₸</label>

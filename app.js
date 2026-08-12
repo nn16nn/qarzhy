@@ -450,13 +450,21 @@ window.addEventListener('scroll', function(){
   scrollSaveT = setTimeout(saveView, 400);
 }, { passive:true });
 
+var NAV_DEPTH = { home:0, accounts:1, ops:1, overview:1, stat:1, goals:1, calc:1, set:1, debts:1,
+  invest:2, broker:2, sync:2, homeset:1, import:2,
+  'calc-inv':2, 'calc-loan':2, 'calc-dep':2, 'calc-tax':2 };
+
 function go(v, silent){
   var same = (v === view);
+  var back = (NAV_DEPTH[v] || 0) < (NAV_DEPTH[view] || 0);
   view = v;
   var pages = document.querySelectorAll('.page');
-  for(var i=0;i<pages.length;i++) pages[i].classList.remove('on');
+  for(var i=0;i<pages.length;i++) pages[i].classList.remove('on','back');
   var el = document.getElementById('p-'+v);
-  if(el) el.classList.add('on');
+  if(el){
+    if(back) el.classList.add('back');
+    el.classList.add('on');
+  }
   var btns = document.querySelectorAll('.tabbar button');
   for(var j=0;j<btns.length;j++) btns[j].classList.toggle('on', btns[j].dataset.tab===v);
   window.scrollTo(0,0);
@@ -473,6 +481,58 @@ function go(v, silent){
 }
 
 /* ================= SHEETS ================= */
+/* ================= ТЕРЕЗЕНІ СҮЙРЕП ЖАБУ ================= */
+/* Тұтқадан ұстап төмен тартсаң, терезе саусақпен бірге жүреді.
+   Жарты жолдан асса немесе жылдам сілтесең — жабылады, әйтпесе орнына қайтады. */
+function bindSheetDrag(){
+  var zones = document.querySelectorAll('.grab-zone');
+  for(var i = 0; i < zones.length; i++){
+    (function(z){
+      var sheet = z.closest ? z.closest('.sheet') : null;
+      if(!sheet || z.__bound) return;
+      z.__bound = 1;
+      var y0 = 0, t0 = 0, dy = 0, on = false;
+
+      function start(e){
+        var p = e.touches ? e.touches[0] : e;
+        y0 = p.clientY; t0 = Date.now(); dy = 0; on = true;
+        sheet.classList.add('drag');
+      }
+      function move(e){
+        if(!on) return;
+        var p = e.touches ? e.touches[0] : e;
+        dy = Math.max(0, p.clientY - y0);
+        sheet.style.transform = 'translateY(' + dy + 'px)';
+        if(dy > 2 && e.cancelable) e.preventDefault();
+      }
+      function end(){
+        if(!on) return;
+        on = false;
+        sheet.classList.remove('drag');
+        sheet.style.transform = '';
+        var fast = (Date.now() - t0) < 320 && dy > 60;
+        if(dy > sheet.offsetHeight * 0.32 || fast){ buzz(10); closeSheets(); }
+      }
+      z.addEventListener('touchstart', function(e){ start(e); buzz(6); }, { passive:true });
+      z.addEventListener('touchmove', move, { passive:false });
+      z.addEventListener('touchend', end);
+      z.addEventListener('touchcancel', end);
+      z.addEventListener('mousedown', function(e){
+        start(e);
+        function mm(ev){ move(ev); }
+        function mu(){ end(); document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); }
+        document.addEventListener('mousemove', mm);
+        document.addEventListener('mouseup', mu);
+      });
+    })(zones[i]);
+  }
+}
+
+/* Қысқа дірілмен растау — қолдамайтын құрылғыда үнсіз өтеді */
+function buzz(ms){
+  try { if(navigator.vibrate) navigator.vibrate(ms || 8); } catch(e){}
+}
+
 function openSheet(id){
   var wasOpen = sheetOpen();
   // алдымен барлық ашық терезелерді жабамыз — үстіне-үсті ашылмасын
@@ -483,6 +543,7 @@ function openSheet(id){
   document.getElementById('scrim').classList.add('on');
   var el = document.getElementById(id);
   el.scrollTop = 0;
+  el.style.transform = '';
   el.classList.add('on');
   if(typeof translateDom==='function') translateDom(el);
   document.body.classList.add('locked');
@@ -498,7 +559,7 @@ function closeSheets(fromPop){
   var had = sheetOpen();
   document.getElementById('scrim').classList.remove('on');
   var s = document.querySelectorAll('.sheet');
-  for(var i=0;i<s.length;i++) s[i].classList.remove('on');
+  for(var i=0;i<s.length;i++){ s[i].classList.remove('on','drag'); s[i].style.transform = ''; }
   document.body.classList.remove('locked');
   if(!fromPop && had && history && history.state && history.state.sheet){
     history.back();
@@ -4965,7 +5026,7 @@ function applySync(){
   });
   SYNC = {};
   recalcBal();
-  save(); render();
+  save(); render(); buzz([8, 40, 14]);
   toast(r.list.length + ' түзету жазылды');
 }
 
@@ -5271,6 +5332,7 @@ function boot(){
   bindExitSave();
   applyTheme();
   watchSystemTheme();
+  bindSheetDrag();
   LANG = DB.lang || 'kk';
   document.documentElement.lang = LANG;
   if(navigator.onLine !== false){
