@@ -649,7 +649,6 @@
     <button class="btn dashed" onclick="openAcc('broker')">+ Брокерлік шот қосу</button>
     <button class="btn dashed" onclick="openAcc('debt')">+ Несие қосу</button>
     <button class="btn line" onclick="startBrokerImportAll()"><span class="qi" data-i="inbox" style="display:inline-flex;vertical-align:-6px;margin-right:8px"></span>Брокер есебін жүктеу (шоттарға бөледі)</button>
-    <button class="btn line" onclick="quickSetup()">Дайын үлгі: Kaspi + Freedom + брокерлік шоттар</button>
   </div>
 </section>
 
@@ -737,7 +736,7 @@
       <div id="s-chart"></div>
       <div class="legend"><span><i style="background:linear-gradient(92deg,#7CF2CE,#00BE86)"></i>Кіріс</span><span><i style="background:linear-gradient(92deg,#FFA8B3,#FF4D67)"></i>Шығын</span></div>
     </div>
-    <button class="btn" onclick="exportPdf()">PDF есеп жасау</button>
+    <button class="btn line" onclick="shareStat()">Есепті жіберу (PDF · Excel)</button>
     <div class="card" id="s-card-out">
       <h2>Шығын санаттары</h2>
       <div id="s-donut-out"></div>
@@ -988,7 +987,7 @@
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Қаржы · 3.4</div>
+        <div class="ver">Қаржы · 3.6</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
@@ -1067,7 +1066,7 @@
   </div>
 </section>
 
-<!-- ============ ДЕПОЗИТ КАЛЬКУЛЯТОРЫ ============ -->
+
 <section class="page" id="p-calc-dep">
   <div style="background:var(--surface);padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;gap:13px">
     <button class="back dark" onclick="go('calc')">←</button>

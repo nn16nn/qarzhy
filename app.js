@@ -1104,26 +1104,7 @@ function saveBVal(){
 }
 
 /* ---- жылдам баптау ---- */
-function quickSetup(){
-  var want=[
-    {name:'Kaspi Bank', kind:'asset', icon:'card'},
-    {name:'Freedom SuperApp', kind:'asset', icon:'bank'},
-    {name:'Брокерлік шот 1', kind:'broker', icon:'invest'},
-    {name:'Брокерлік шот 2', kind:'broker', icon:'chart'}
-  ];
-  var added=0;
-  want.forEach(function(w){
-    var exists=false;
-    DB.accounts.forEach(function(a){ if(a.name.toLowerCase()===w.name.toLowerCase()) exists=true; });
-    if(exists) return;
-    var na = { id:newId(), name:w.name, kind:w.kind, icon:w.icon, bal:0, cur:'KZT' };
-    if(w.kind==='broker'){ na.vals={KZT:0,USD:0}; na.invested=0; na.valSet=false; }
-    DB.accounts.push(na);
-    added++;
-  });
-  save(); render();
-  toast(added? added+' шот қосылды — қалдықтарын жазыңыз' : 'Бұл шоттар бар');
-}
+
 
 /* ---- goals ---- */
 var goalId=null;
@@ -1235,6 +1216,41 @@ function checkBackup(d){
 }
 
 /* ---- Excel үшін CSV ---- */
+/* статистика есебінің жолдары — экрандағы сандардан жиналады */
+function statRows(){
+  var TYPE = { in: 'Кіріс', out: 'Шығын' };
+  var list = DB.tx.filter(function(t){ return inRange(t.date) && t.type !== 'tr'; });
+  var sIn = 0, sOut = 0, sums = { in: {}, out: {} };
+  list.forEach(function(t){
+    if(t.type === 'in') sIn += t.amt; else sOut += t.amt;
+    sums[t.type][t.cat] = (sums[t.type][t.cat] || 0) + t.amt;
+  });
+  var rows = [
+    ['Кезең', (range.from || '') + ' — ' + (range.to || '')],
+    ['Кіріс', Math.round(sIn)],
+    ['Шығын', Math.round(sOut)],
+    ['Нәтиже', Math.round(sIn - sOut)],
+    []
+  ];
+  ['out', 'in'].forEach(function(ty){
+    var ks = Object.keys(sums[ty]).sort(function(a, b){ return sums[ty][b] - sums[ty][a]; });
+    if(!ks.length) return;
+    rows.push([TYPE[ty] + ' санаттары', 'Сома', 'Үлесі']);
+    var tot = ty === 'in' ? sIn : sOut;
+    ks.forEach(function(k){
+      rows.push([k, Math.round(sums[ty][k]), (tot ? Math.round(sums[ty][k] / tot * 100) : 0) + '%']);
+    });
+    rows.push([]);
+  });
+  rows.push(['Операциялар', '', '', '', '']);
+  rows.push(['Күні', 'Түрі', 'Санат', 'Сома', 'Шот']);
+  list.slice().sort(function(a, b){ return a.date < b.date ? -1 : 1; }).forEach(function(t){
+    var a = acc(t.acc);
+    rows.push([t.date, TYPE[t.type], t.cat || '', Math.round(t.amt), a ? a.name : '']);
+  });
+  return rows;
+}
+
 function csvCell(v){
   v = (v === null || v === undefined) ? '' : String(v);
   return /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
@@ -2612,7 +2628,6 @@ var TR = [
 ["+ Банк шотын қосу","+ Добавить банковский счёт","+ Add bank account"],
 ["+ Брокерлік шот қосу","+ Добавить брокерский счёт","+ Add brokerage account"],
 ["+ Несие қосу","+ Добавить кредит","+ Add loan"],
-["Дайын үлгі: Kaspi + Freedom + брокерлік шоттар","⚡ Готовый набор: Kaspi + Freedom + брокерские счета","⚡ Quick setup: Kaspi + Freedom + brokerage"],
 ["Банк шоты жоқ. Төмендегі түймемен қосыңыз.","Банковских счетов нет. Добавьте кнопкой ниже.","No bank accounts. Add one below."],
 ["Брокерлік шот жоқ. Инвестицияңызды осында қосыңыз.","Брокерских счетов нет. Добавьте инвестиции здесь.","No brokerage accounts. Add your investments here."],
 ["Несие жоқ — тамаша.","Кредитов нет — отлично.","No loans — excellent."],
@@ -2664,6 +2679,15 @@ var TR = [
 /* --- калькулятор --- */
 ["Қаржылық есептеулер","Финансовые расчёты","Financial calculations"],
 ["Инвестиция калькуляторы","Инвестиционный калькулятор","Investment calculator"],
+["Статистика есебі","Отчёт по статистике","Statistics report"],
+["Депозит калькуляторы","Депозитный калькулятор","Deposit calculator"],
+["Салық калькуляторы","Налоговый калькулятор","Tax calculator"],
+["Кезең","Период","Period"],
+["Кіріс санаттары","Категории доходов","Income categories"],
+["Үлесі","Доля","Share"],
+["Сома","Сумма","Amount"],
+["Түрі","Тип","Type"],
+["Күні","Дата","Date"],
 ["Табыс · Мерзім · Күрделі пайыз","Доход · Срок · Сложный процент","Return · Term · Compound interest"],
 ["Несие калькуляторы","Кредитный калькулятор","Loan calculator"],
 ["Ай төлем · Ерте өтеу · Кесте","Платёж · Досрочное · График","Payment · Early payoff · Schedule"],
@@ -2870,7 +2894,6 @@ var TR = [
 ["Бердім","Дал","Lent"],["Алдым","Взял","Borrowed"],["Қайтарылды","Возвращено","Repaid"],
 ["Қарыз мерзімі өтті","Просроченные долги","Overdue debts"],["қарыз","долг","debt"],
 
-["Депозит калькуляторы","Депозитный калькулятор","Deposit calculator"],
 ["Банк салымының табысы","Доход по вкладу","Deposit return"],
 ["Капитализация · Толықтыру","Капитализация · Пополнение","Compounding · Top-ups"],
 ["Салым сомасы, ₸","Сумма вклада, ₸","Deposit amount, ₸"],["Мерзімі, ай","Срок, мес.","Term, months"],
@@ -2881,7 +2904,6 @@ var TR = [
 ["Тиімді жылдық өсім","Эффективная годовая доходность","Effective annual return"],
 ["Айына орташа табыс","Средний доход в месяц","Average monthly return"],
 
-["Салық калькуляторы","Налоговый калькулятор","Tax calculator"],
 ["ЖК · оңайлатылған декларация","ИП · упрощённая декларация","Sole trader · simplified"],
 ["ЖК · оңайлатылған декларация (910-форма)","ИП · упрощённая декларация (форма 910)","Sole trader · simplified (form 910)"],
 ["Кезеңдегі табыс, ₸","Доход за период, ₸","Income for the period, ₸"],
@@ -3025,8 +3047,6 @@ var TR = [
 ["Бұл есеп шамамен берілген, шарт банкке қарай өзгеруі мүмкін.","Расчёт примерный, условия банка могут отличаться.","This is an estimate; bank terms may differ."],
 ["Инвестиция калькуляторы","Инвестиционный калькулятор","Investment calculator"],
 ["Несие калькуляторы","Кредитный калькулятор","Loan calculator"],
-["Депозит калькуляторы","Депозитный калькулятор","Deposit calculator"],
-["Салық калькуляторы","Налоговый калькулятор","Tax calculator"],
 ["Тұрақты операциялар","Регулярные операции","Recurring transactions"],
 ["Брокерлік шот","Брокерский счёт","Brokerage account"],
 ["Файл жүктеу","Загрузка файла","File import"],
@@ -3950,59 +3970,8 @@ function drawDebts(){
 
 /* ================= ДЕПОЗИТ КАЛЬКУЛЯТОРЫ ================= */
 var depCap = true;
-function toggleDepCap(){
-  depCap = !depCap;
-  document.getElementById('dp-sw').classList.toggle('on', depCap);
-  document.getElementById('dp-sw-txt').textContent = depCap
-    ? 'Ай сайын капитализация — пайызға пайыз'
-    : 'Пайыз мерзім соңында бір рет төленеді';
-  calcDep();
-}
-function calcDep(){
-  var P = num('dp-sum'), M = num('dp-add'), r = num('dp-rate') / 100, n = Math.round(num('dp-term'));
-  var box = document.getElementById('dp-res');
-  if(!box) return;
-  if(P <= 0 || n <= 0){ box.innerHTML = '<div class="empty">Мәндерді толтырыңыз.</div>'; return; }
 
-  var i = r / 12, bal, invested = P + M * n, interest;
-  if(depCap){
-    bal = P;
-    for(var k = 0; k < n; k++){ bal = bal * (1 + i) + M; }
-  } else {
-    var base = P, acc2 = 0;
-    for(var j = 0; j < n; j++){ acc2 += base * i; base += M; }
-    bal = base + acc2;
-  }
-  interest = bal - invested;
-  var years = n / 12;
-  var eff = invested > 0 && years > 0 ? (Math.pow(bal / invested, 1 / years) - 1) * 100 : 0;
 
-  var rows = '';
-  if(n >= 12){
-    var b2 = P, base2 = P, a2 = 0;
-    rows = '<div class="card"><h2>Жыл сайынғы өсім</h2><table class="sched">' +
-           '<tr><th>Жыл</th><th>Салынған</th><th>Сома</th></tr>';
-    for(var m = 1; m <= n; m++){
-      if(depCap) b2 = b2 * (1 + i) + M;
-      else { a2 += base2 * i; base2 += M; b2 = base2 + a2; }
-      if(m % 12 === 0 || m === n){
-        rows += '<tr><td>' + Math.ceil(m / 12) + '</td><td>' + nf(P + M * m) + '</td><td><b>' + nf(b2) + '</b></td></tr>';
-      }
-    }
-    rows += '</table></div>';
-  }
-
-  box.innerHTML =
-    '<div class="res"><div class="lab">Мерзім соңындағы сома</div><div class="big">' + money(bal) + '</div></div>' +
-    '<div class="card">' +
-      '<div class="kv"><span>Салынған қаражат</span><b>' + money(invested) + '</b></div>' +
-      '<div class="kv"><span>Пайыздық табыс</span><b style="color:var(--pos)">' + money(interest) + '</b></div>' +
-      '<div class="kv"><span>Мерзім</span><b>' + n + ' ай (' + years.toFixed(1) + ' жыл)</b></div>' +
-      '<div class="kv"><span>Тиімді жылдық өсім</span><b>' + eff.toFixed(2) + '%</b></div>' +
-      '<div class="kv"><span>Айына орташа табыс</span><b>' + money(interest / n) + '</b></div>' +
-    '</div>' + rows +
-    '<p class="muted" style="padding:0 4px">Есеп шамамен. Банктің нақты шарттарын (толықтыру шегі, мерзімінен бұрын алу кезінде пайыздың жоғалуы) тексеріңіз.</p>';
-}
 
 /* --- несие кестесін PDF ретінде --- */
 function exportLoanPdf(){
@@ -4080,7 +4049,60 @@ function exportLoanPdf(){
   exportPdf(html, 'qarzhy-nesie-' + todayISO() + '.pdf');
 }
 
-/* ================= САЛЫҚ КАЛЬКУЛЯТОРЫ (ЖК, оңайлатылған) ================= */
+/* ================= ДЕПОЗИТ ЖӘНЕ САЛЫҚ КАЛЬКУЛЯТОРЛАРЫ ================= */
+function calcDep(){
+  var P = num('dp-sum'), M = num('dp-add'), r = num('dp-rate') / 100, n = Math.round(num('dp-term'));
+  var box = document.getElementById('dp-res');
+  if(!box) return;
+  if(P <= 0 || n <= 0){ box.innerHTML = '<div class="empty">Мәндерді толтырыңыз.</div>'; return; }
+
+  var i = r / 12, bal, invested = P + M * n, interest;
+  if(depCap){
+    bal = P;
+    for(var k = 0; k < n; k++){ bal = bal * (1 + i) + M; }
+  } else {
+    var base = P, acc2 = 0;
+    for(var j = 0; j < n; j++){ acc2 += base * i; base += M; }
+    bal = base + acc2;
+  }
+  interest = bal - invested;
+  var years = n / 12;
+  var eff = invested > 0 && years > 0 ? (Math.pow(bal / invested, 1 / years) - 1) * 100 : 0;
+
+  var rows = '';
+  if(n >= 12){
+    var b2 = P, base2 = P, a2 = 0;
+    rows = '<div class="card"><h2>Жыл сайынғы өсім</h2><table class="sched">' +
+           '<tr><th>Жыл</th><th>Салынған</th><th>Сома</th></tr>';
+    for(var m = 1; m <= n; m++){
+      if(depCap) b2 = b2 * (1 + i) + M;
+      else { a2 += base2 * i; base2 += M; b2 = base2 + a2; }
+      if(m % 12 === 0 || m === n){
+        rows += '<tr><td>' + Math.ceil(m / 12) + '</td><td>' + nf(P + M * m) + '</td><td><b>' + nf(b2) + '</b></td></tr>';
+      }
+    }
+    rows += '</table></div>';
+  }
+
+  box.innerHTML =
+    '<div class="res"><div class="lab">Мерзім соңындағы сома</div><div class="big">' + money(bal) + '</div></div>' +
+    '<div class="card">' +
+      '<div class="kv"><span>Салынған қаражат</span><b>' + money(invested) + '</b></div>' +
+      '<div class="kv"><span>Пайыздық табыс</span><b style="color:var(--pos)">' + money(interest) + '</b></div>' +
+      '<div class="kv"><span>Мерзім</span><b>' + n + ' ай (' + years.toFixed(1) + ' жыл)</b></div>' +
+      '<div class="kv"><span>Тиімді жылдық өсім</span><b>' + eff.toFixed(2) + '%</b></div>' +
+      '<div class="kv"><span>Айына орташа табыс</span><b>' + money(interest / n) + '</b></div>' +
+    '</div>' + rows +
+    '<p class="muted" style="padding:0 4px">Есеп шамамен. Банктің нақты шарттарын (толықтыру шегі, мерзімінен бұрын алу кезінде пайыздың жоғалуы) тексеріңіз.</p>';
+}
+function toggleDepCap(){
+  depCap = !depCap;
+  document.getElementById('dp-sw').classList.toggle('on', depCap);
+  document.getElementById('dp-sw-txt').textContent = depCap
+    ? 'Ай сайын капитализация — пайызға пайыз'
+    : 'Пайыз мерзім соңында бір рет төленеді';
+  calcDep();
+}
 function calcTax(){
   var box = document.getElementById('tx-res');
   if(!box) return;
@@ -4132,6 +4154,8 @@ function calcTax(){
     '<p class="muted" style="padding:0 4px">Бұл — шамамен есеп, ресми құжат емес. Мөлшерлемелер мен МРП/МЗП жыл сайын өзгереді, ' +
     'жеңілдіктер мен ерекше жағдайлар ескерілмеген. Нақты сомасын salyk.kz немесе бухгалтерден растаңыз.</p>';
 }
+
+
 
 /* ================= PDF ЕСЕП ================= */
 var CDN_H2C = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
@@ -4337,7 +4361,8 @@ var CALC_SRC = {
   inv:  ['i-res',  'Инвестиция калькуляторы'],
   loan: ['l-res',  'Несие калькуляторы'],
   dep:  ['dp-res', 'Депозит калькуляторы'],
-  tax:  ['tx-res', 'Салық калькуляторы']
+  tax:  ['tx-res', 'Салық калькуляторы'],
+  stat: [null, 'Статистика есебі']   /* бұл экрандағы блоктан емес, buildReport-тан жиналады */
 };
 
 function calcHTML(kind){
@@ -4356,6 +4381,7 @@ function calcHTML(kind){
 
 /* нәтиженің «атауы — мәні» жолдарын кестеге жинау */
 function calcRows(kind){
+  if(kind === 'stat') return statRows();
   var src = CALC_SRC[kind];
   var el = src && document.getElementById(src[0]);
   if(!el) return [];
@@ -4381,7 +4407,7 @@ function calcRows(kind){
 function calcCSV(kind){
   var rows = calcRows(kind);
   if(!rows.length) return false;
-  var src = CALC_SRC[kind];
+  var src = CALC_SRC[kind] || ['', 'Есеп'];
   var head = [[tr(src[1])], [fullDate(todayISO())], []];
   var csv = '\ufeff' + head.concat(rows)
     .map(function(r){ return r.map(csvCell).join(';'); }).join('\r\n');
@@ -4399,6 +4425,11 @@ function calcCSV(kind){
   return true;
 }
 
+/* Статистика бетінің есебі — бұрын тек PDF болатын, енді CSV де бар */
+function shareStat(){
+  askCalcFmt('stat', buildReport());
+}
+
 function shareCalc(kind){
   var html = calcHTML(kind);
   if(!html){ toast('Алдымен есептеңіз'); return; }
@@ -4407,11 +4438,12 @@ function shareCalc(kind){
 
 /* қай пішімде — қарапайым сұрақ терезесі */
 function askCalcFmt(kind, html){
+  var name = 'qarzhy-' + kind + '-' + todayISO();
   var sc = document.getElementById('fmt-sheet');
-  if(!sc) return exportPdf(html, 'qarzhy-' + kind + '-' + todayISO() + '.pdf');
+  if(!sc) return exportPdf(html, name + '.pdf');
   document.getElementById('fmt-pdf').onclick = function(){
     closeSheets();
-    exportPdf(html, 'qarzhy-' + kind + '-' + todayISO() + '.pdf');
+    exportPdf(html, name + '.pdf');
   };
   document.getElementById('fmt-csv').onclick = function(){
     closeSheets();
