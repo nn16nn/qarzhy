@@ -224,7 +224,7 @@
   svg.chart{width:100%;height:150px;display:block}
   .donut-wrap{display:flex;align-items:center;gap:14px}
   svg.donut{width:44%;max-width:170px;height:auto;display:block;flex:none;margin:0}
-  svg.trend{width:100%;height:150px;display:block}
+  svg.trend{width:100%;height:auto;display:block;overflow:visible}
   .tr-x{position:relative;height:20px;margin:4px 0 2px}
   .tr-x span{position:absolute;transform:translateX(-50%);white-space:nowrap;
     font-size:12px;font-weight:600;color:var(--ink-2);letter-spacing:0}
@@ -257,7 +257,7 @@
 
   /* ---------- Тенденция белгісі ---------- */
   .tr-hit{fill:transparent;cursor:pointer}
-  .tr-sel{stroke:var(--ink-2);stroke-width:.4;stroke-dasharray:1.5 1.5}
+  .tr-sel{stroke:var(--ink-2);stroke-width:.25;stroke-dasharray:1 1}
   #trend-info{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:none}
   #trend-info.on{display:block}
   #trend-info .m{font-weight:750;font-size:14.5px;margin-bottom:6px}
@@ -273,10 +273,10 @@
   .topbar .in{display:flex;align-items:center;gap:8px;height:52px}
   .topbar .tt{flex:1;min-width:0;font-weight:750;font-size:16px;letter-spacing:-.02em;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .topbar .bk{width:38px;height:38px;border:0;border-radius:12px;background:var(--g-soft);
-    color:var(--g-mid);font-size:18px;line-height:1;flex:none;padding:0}
-  .topbar .up{width:38px;height:38px;border:1px solid var(--line);border-radius:12px;
-    background:var(--surface);color:var(--ink-2);font-size:15px;line-height:1;flex:none;padding:0}
+  .topbar .up{width:38px;height:38px;border:0;border-radius:12px;
+    background:var(--g-soft);color:var(--g-mid);font-size:17px;font-weight:700;
+    line-height:1;flex:none;padding:0}
+  .topbar .tt{padding-left:4px}
 
   /* ---------- Тізімге секіру ---------- */
   .jump{position:sticky;top:calc(env(safe-area-inset-top) + 58px);z-index:20}
@@ -343,7 +343,7 @@
   .brand::after{content:"";position:absolute;inset:0;
     background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.45) 50%,transparent 65%);
     background-size:220% 100%;animation:shine 5.5s ease-in-out infinite}
-  svg.trend path.line{stroke-dasharray:420;stroke-dashoffset:420;animation:draw 1.2s cubic-bezier(.3,.9,.4,1) forwards}
+  svg.trend path.line{stroke-dasharray:200;stroke-dashoffset:200;animation:draw 1.2s cubic-bezier(.3,.9,.4,1) forwards}
   svg.trend circle{animation:popIn .4s backwards}
   svg.trend text{animation:fadein .5s backwards}
   svg.trend text.cur{font-weight:700}
@@ -987,7 +987,7 @@
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Қаржы · 3.6</div>
+        <div class="ver">Қаржы · 3.7</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
@@ -1176,9 +1176,9 @@
 <!-- ============ TABBAR ============ -->
 <div class="topbar" id="topbar">
   <div class="in">
-    <button class="bk" id="tb-back" onclick="topBack()">←</button>
     <div class="tt" id="tb-title">Қаржы</div>
-    <button class="up" onclick="scrollTop()">↑</button>
+    <button class="up hide" id="tb-up" onclick="scrollTop()" aria-label="Төбеге">↑</button>
+    <button class="up hide" id="tb-down" onclick="scrollBottom()" aria-label="Астыға">↓</button>
   </div>
 </div>
 

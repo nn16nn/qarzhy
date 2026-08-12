@@ -407,6 +407,9 @@ var PAGE_BACK = {
 };
 
 function scrollTop(){ window.scrollTo({ top:0, behavior:'smooth' }); }
+function scrollBottom(){
+  window.scrollTo({ top: document.body.scrollHeight, behavior:'smooth' });
+}
 function topBack(){ go(PAGE_BACK[view] || 'home'); }
 function jumpTo(id){
   var el = document.getElementById(id);
@@ -421,10 +424,21 @@ function syncTopbar(){
     if(view === 'broker'){ var ba = acc(brId); if(ba) nm = ba.name; }
     if(t.textContent !== nm) t.textContent = tr(nm);
   }
-  document.getElementById('tb-back').style.visibility = (view === 'home') ? 'hidden' : '';
   bar.classList.toggle('on', window.scrollY > 96);
+
+  /* ↑ мен ↓ — қажет болғанда ғана көрінеді */
+  var y = window.scrollY || 0;
+  var max = Math.max(0, document.body.scrollHeight - window.innerHeight);
+  var up = document.getElementById('tb-up'), dn = document.getElementById('tb-down');
+  if(up) up.classList.toggle('hide', y < 200);
+  if(dn) dn.classList.toggle('hide', max - y < 200);
 }
-window.addEventListener('scroll', syncTopbar, { passive:true });
+var scrollSaveT = null;
+window.addEventListener('scroll', function(){
+  syncTopbar();
+  if(scrollSaveT) clearTimeout(scrollSaveT);
+  scrollSaveT = setTimeout(saveView, 400);
+}, { passive:true });
 
 function go(v, silent){
   var same = (v === view);
@@ -3297,7 +3311,7 @@ function drawTrend(){
   var max = 1;
   months.forEach(function(x){ max = Math.max(max, x.in, x.out); });
 
-  var W = 100, H = 100, pad = 6, top = 8, bot = 84;
+  var W = 100, H = 46, pad = 6, top = 4, bot = 38;
   function px(i){ return pad + i * ((W - pad * 2) / 11); }
   function py(v){ return bot - (v / max) * (bot - top); }
 
@@ -3306,33 +3320,36 @@ function drawTrend(){
     months.forEach(function(x, i){ p += (i ? ' L' : 'M') + px(i).toFixed(1) + ' ' + py(x[field]).toFixed(1); });
     return p;
   }
-  function area(field){
-    return path(field) + ' L' + px(11).toFixed(1) + ' ' + bot + ' L' + px(0).toFixed(1) + ' ' + bot + ' Z';
-  }
-
-  var s = '<svg viewBox="0 0 100 100" class="trend" preserveAspectRatio="none">';
-  [0.25, 0.5, 0.75].forEach(function(f){
+  var s = '<svg viewBox="0 0 100 46" class="trend">' +
+    '<defs>' +
+      '<linearGradient id="gPosL" x1="0" y1="0" x2="1" y2="0">' +
+        '<stop offset="0" stop-color="#7CF2CE"/><stop offset="1" stop-color="#00BE86"/></linearGradient>' +
+      '<linearGradient id="gNegL" x1="0" y1="0" x2="1" y2="0">' +
+        '<stop offset="0" stop-color="#FFA8B3"/><stop offset="1" stop-color="#FF4D67"/></linearGradient>' +
+    '</defs>';
+  [0, 0.25, 0.5, 0.75, 1].forEach(function(f){
     var y = bot - f * (bot - top);
-    s += '<line x1="' + pad + '" y1="' + y + '" x2="' + (W - pad) + '" y2="' + y +
-         '" stroke="var(--line)" stroke-width="0.3"/>';
+    s += '<line x1="' + pad + '" y1="' + y.toFixed(1) + '" x2="' + (W - pad) + '" y2="' + y.toFixed(1) +
+         '" stroke="var(--line)" stroke-width="0.25"/>';
   });
-  s += '<path d="' + area('in') + '" fill="url(#gPosA)"/>';
-  s += '<path class="line" d="' + path('in') + '" fill="none" stroke="url(#gPosL)" stroke-width="1.7" ' +
+  /* екі таза сызық — толтырусыз, сондықтан қиылысқан жері анық көрінеді */
+  s += '<path class="line" d="' + path('in') + '" fill="none" stroke="url(#gPosL)" stroke-width="0.9" ' +
        'stroke-linejoin="round" stroke-linecap="round"/>';
-  s += '<path class="line" d="' + path('out') + '" fill="none" stroke="url(#gNegL)" stroke-width="1.7" ' +
+  s += '<path class="line" d="' + path('out') + '" fill="none" stroke="url(#gNegL)" stroke-width="0.9" ' +
        'stroke-linejoin="round" stroke-linecap="round" style="animation-delay:.15s"/>';
-  /* екі сызықтың да нүктелері — қайсысын басқаныңыз көрінсін */
+  /* әр айда — екі нүкте. Ақ жиегі бар, сондықтан сызықтың үстінде айқын тұрады */
   months.forEach(function(x, i){
+    var dly = 'style="animation-delay:' + (0.5 + i * 0.05).toFixed(2) + 's"';
     s += '<circle cx="' + px(i).toFixed(1) + '" cy="' + py(x.out).toFixed(1) +
-         '" r="1.0" fill="#FF4D67" style="animation-delay:' + (0.5 + i * 0.05).toFixed(2) + 's"/>';
+         '" r="0.95" fill="#FF4D67" stroke="var(--surface)" stroke-width="0.4" ' + dly + '/>';
     s += '<circle cx="' + px(i).toFixed(1) + '" cy="' + py(x.in).toFixed(1) +
-         '" r="1.1" fill="#00BE86" style="animation-delay:' + (0.5 + i * 0.05).toFixed(2) + 's"/>';
+         '" r="0.95" fill="#00BE86" stroke="var(--surface)" stroke-width="0.4" ' + dly + '/>';
   });
   /* басуға ыңғайлы болу үшін әр ай бойымен көрінбейтін кең жолақ */
   months.forEach(function(x, i){
     var w = (W - pad * 2) / 11;
     s += '<rect class="tr-hit" data-mi="' + i + '" x="' + Math.max(0, px(i) - w / 2).toFixed(1) +
-         '" y="0" width="' + w.toFixed(1) + '" height="' + (bot + 4) + '"/>';
+         '" y="0" width="' + w.toFixed(1) + '" height="' + (bot + 3) + '"/>';
   });
   s += '</svg>';
 
@@ -3394,8 +3411,15 @@ function drawTrend(){
       var ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       ln.setAttribute('class', 'tr-sel');
       ln.setAttribute('x1', px(i).toFixed(1)); ln.setAttribute('x2', px(i).toFixed(1));
-      ln.setAttribute('y1', top - 2); ln.setAttribute('y2', bot);
+      ln.setAttribute('y1', top - 1.5); ln.setAttribute('y2', bot);
       svg.insertBefore(ln, svg.firstChild);
+      /* таңдалған айдың нүктелерін ірілетіп қоямыз */
+      var dots = svg.querySelectorAll('circle'), cx = px(i).toFixed(1);
+      for(var q = 0; q < dots.length; q++){
+        var sel = dots[q].getAttribute('cx') === cx;
+        dots[q].setAttribute('r', sel ? '1.6' : '0.95');
+        dots[q].setAttribute('stroke-width', sel ? '0.5' : '0.4');
+      }
     }
   }
   var hits = box.querySelectorAll('.tr-hit');
@@ -4971,18 +4995,21 @@ function cleanDups(){
 
 /* ================= АРТҚА ҚАЙТУ ================= */
 /* қай бетте тұрғанымызды есте сақтау — жаңартқанда сол жерде қаламыз */
+var BOOT_HASH = '';
 function saveView(){
   try{
     localStorage.setItem('qarzhy_view', JSON.stringify({
       v: view, br: (typeof brId !== 'undefined' ? brId : null),
-      y: Math.round(window.scrollY || 0)
+      y: Math.round(window.scrollY || 0),
+      oa: opsAcc, of: opsFilter, om: opsMonth
     }));
   }catch(e){}
 }
 function restoreView(){
   var st = null;
   try{ st = JSON.parse(localStorage.getItem('qarzhy_view') || 'null'); }catch(e){}
-  var h = (location.hash || '').replace('#','');
+  /* жаңартқанда: алдымен сақталған бет, сосын hash */
+  var h = BOOT_HASH;
   var v = h || (st && st.v) || 'home';
 
   if(v === 'broker'){
@@ -4991,17 +5018,27 @@ function restoreView(){
   }
   if(!document.getElementById('p-' + v)) v = 'home';
 
-  if(v !== 'home') go(v, true);
+  /* операциялар бетінің сүзгісін де қалпына келтіреміз */
+  if(st && st.v === v && v === 'ops'){
+    if(st.oa) opsAcc = st.oa;
+    if(st.of) opsFilter = st.of;
+    opsMonth = st.om || null;
+    var segs = document.querySelectorAll('[data-of]');
+    for(var i2 = 0; i2 < segs.length; i2++)
+      segs[i2].classList.toggle('on', segs[i2].dataset.of === opsFilter);
+  }
+
+  if(v !== 'home') go(v, true); else render();
   try{ history.replaceState({ v: v }, '', '#' + v); }catch(e){}
 
   if(st && st.y && st.v === v){
-    setTimeout(function(){ window.scrollTo(0, st.y); }, 60);
+    setTimeout(function(){ window.scrollTo(0, st.y); syncTopbar(); }, 60);
   }
+  syncTopbar();
 }
 
 function initHistory(){
   if(!(history && history.replaceState)) return;
-  history.replaceState({ v: 'home' }, '', '#home');
   window.addEventListener('popstate', function(e){
     var st = e.state || { v: 'home' };
     if(!st.sheet && sheetOpen()) closeSheets(true);
@@ -5321,6 +5358,7 @@ if('serviceWorker' in navigator){
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 }
 function boot(){
+  BOOT_HASH = (location.hash || '').replace('#', '');
   initHistory();
   migrateBal();          /* ескі деректі есептелетін қалдық моделіне көшіру */
   var recAdded = runRecurring();
