@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#021cf5">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-512.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -397,35 +397,49 @@
 
   .brand{animation:floatY 5s ease-in-out infinite}
 
-  /* ---------- қазақи өрнек (қошқар мүйіз мотиві) ---------- */
+  /* ---------- қазақи өрнек: тұмарша (hero фоны) ---------- */
   .hero{position:relative;overflow:hidden}
   .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
     background-image:url("data:image/svg+xml;utf8,\
 <svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'>\
-<g fill='none' stroke='%23ffffff' stroke-width='1.6' stroke-linecap='round' opacity='0.5'>\
-<path d='M60 22c-11 0-19 8-19 18 0 7 5 12 11 12 5 0 8-3 8-7 0-3-2-5-5-5'/>\
-<path d='M60 22c11 0 19 8 19 18 0 7-5 12-11 12-5 0-8-3-8-7 0-3 2-5 5-5'/>\
-<path d='M60 60v16'/>\
-<path d='M60 98c-11 0-19-8-19-18 0-7 5-12 11-12 5 0 8 3 8 7 0 3-2 5-5 5'/>\
-<path d='M60 98c11 0 19-8 19-18 0-7-5-12-11-12-5 0-8 3-8 7 0 3 2 5 5 5'/>\
-<circle cx='60' cy='60' r='3.2'/>\
+<g fill='none' stroke='%23ffffff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' opacity='0.55'>\
+<path d='M60 12 108 60 60 108 12 60Z'/>\
+<path d='M60 32 88 60 60 88 32 60Z'/>\
+<path d='M60 52 68 60 60 68 52 60Z'/>\
+<path d='M0 12 12 0'/><path d='M0 108 12 120'/><path d='M108 0 120 12'/><path d='M108 120 120 108'/>\
+<circle cx='60' cy='4' r='2.6'/><circle cx='60' cy='116' r='2.6'/>\
+<circle cx='4' cy='60' r='2.6'/><circle cx='116' cy='60' r='2.6'/>\
 </g></svg>");
-    background-size:118px 118px;background-position:center -14px;
+    background-size:120px 120px;background-position:center -10px;
     opacity:.085;mix-blend-mode:overlay}
   .hero>*{position:relative;z-index:1}
   html[data-theme="dark"] .hero::before{opacity:.13}
 
-  /* жіңішке өрнекті бөлгіш */
-  .ornament{height:16px;margin:2px 0 14px;opacity:.30;
+  /* жіңішке өрнекті бөлгіш — қошқар мүйіз */
+  .ornament{height:22px;margin:2px 0 14px;opacity:.34;
     background-image:url("data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' width='56' height='16' viewBox='0 0 56 16'>\
-<g fill='none' stroke='%23021CF5' stroke-width='1.5' stroke-linecap='round'>\
-<path d='M4 8h6'/><path d='M46 8h6'/>\
-<path d='M14 8c0-4 3-6 6-6s6 2 6 6-3 6-6 6-6-2-6-6'/>\
-<path d='M42 8c0-4-3-6-6-6s-6 2-6 6 3 6 6 6 6-2 6-6'/>\
-<circle cx='28' cy='8' r='2'/></g></svg>");
+<svg xmlns='http://www.w3.org/2000/svg' width='72' height='20' viewBox='0 0 72 20'>\
+<g fill='none' stroke='%23021CF5' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'>\
+<path d='M0 15.5H72'/>\
+<path d='M36 15.5V7.2'/>\
+<path d='M36 7.2C31 2.6 25 1.4 19.2 3.8C17 4.2 16.5 6.6 16.4 8.3C16.3 9.9 18.3 10.4 19.3 10.7C20.4 11 20.7 9.5 21 9.1'/>\
+<path d='M36 7.2C41 2.6 47 1.4 52.8 3.8C55 4.2 55.5 6.6 55.6 8.3C55.7 9.9 53.7 10.4 52.7 10.7C51.6 11 51.3 9.5 51 9.1'/>\
+<path d='M36 15.4 38.2 17.4 36 19.4 33.8 17.4Z'/>\
+</g></svg>");
     background-repeat:repeat-x;background-position:center}
-  html[data-theme="dark"] .ornament{filter:invert(1) brightness(1.6);opacity:.22}
+  html[data-theme="dark"] .ornament{filter:invert(1) brightness(1.6);opacity:.24}
+
+
+  /* ---------- ашылу экраны (Q) ---------- */
+  #splash{position:fixed;inset:0;z-index:9999;background:#021CF5;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+    animation:splashOut .45s ease 1.05s forwards}
+  #splash img{width:112px;height:112px;border-radius:28px;display:block;
+    animation:splashIn .5s cubic-bezier(.2,.9,.25,1) both}
+  #splash .nm{color:#fff;font-size:17px;font-weight:800;letter-spacing:.4px;opacity:.9;
+    animation:splashIn .5s cubic-bezier(.2,.9,.25,1) .1s both}
+  @keyframes splashIn{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:none}}
+  @keyframes splashOut{to{opacity:0;visibility:hidden;pointer-events:none}}
 
   /* ---------- көлеңке жүйесі ---------- */
   .card{box-shadow:0 1px 2px var(--sh1), 0 6px 18px -6px var(--sh2)}
@@ -497,6 +511,7 @@
 </style>
 </head>
 <body>
+<div id="splash"><img src="icon-512.png" alt="Q"><div class="nm">Қаржы</div></div>
 
 <!-- ============ БАСТЫ ============ -->
 <section class="page on" id="p-home">
@@ -551,7 +566,7 @@
       <button onclick="go('ops')"><span class="qi" data-i="receipt"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.2h12v17.6l-3-1.8-3 1.8-3-1.8-3 1.8V3.2Z"/><path d="M9.2 8.2h5.6"/><path d="M9.2 12h5.6"/></svg></span> Операциялар</button>
       <button onclick="go('goals')"><span class="qi" data-i="flag"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V3.8"/><path d="M6 4.4h11.5l-2.2 3.8 2.2 3.8H6"/></svg></span> Мақсаттар</button>
       <button onclick="go('calc')"><span class="qi" data-i="calc"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="2.8" width="15" height="18.4" rx="2.6"/><path d="M8 7h8"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15h.01M8.5 18.3h.01M12 18.3h.01M15.5 18.3h.01"/></svg></span> Есептегіш</button>
-      <button onclick="go('debts')" style="grid-column:1/-1"><span class="qi" data-i="swap"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h13"/><path d="M13.6 5 17 8.5 13.6 12"/><path d="M20 15.5H7"/><path d="M10.4 12 7 15.5 10.4 19"/></svg></span> Қарыздар</button>
+      <button onclick="go('debts')"><span class="qi" data-i="swap"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h13"/><path d="M13.6 5 17 8.5 13.6 12"/><path d="M20 15.5H7"/><path d="M10.4 12 7 15.5 10.4 19"/></svg></span> Қарыздар</button>
     </div>
     <div id="home-warn"></div>
 
@@ -667,11 +682,6 @@
       <h2>12 айлық өзгеріс</h2>
       <div id="trend-chart"></div>
     </div>
-    <div class="card">
-      <h2>Кіріс / Шығын</h2>
-      <div id="s-chart"></div>
-      <div class="legend"><span><i style="background:linear-gradient(92deg,#7CF2CE,#00BE86)"></i>Кіріс</span><span><i style="background:linear-gradient(92deg,#FFA8B3,#FF4D67)"></i>Шығын</span></div>
-    </div>
     <div class="row2" style="gap:10px;margin-bottom:12px">
       <button class="btn" onclick="exportPdf()" style="margin:0">PDF есеп</button>
       <button class="btn line" onclick="exportOpsXlsx()" style="margin:0">Excel</button>
@@ -681,12 +691,6 @@
       <div id="s-donut-out"></div>
       <div class="cat-sep"></div>
       <div id="s-cat-out"></div>
-    </div>
-    <div class="card" id="s-card-in">
-      <h2>Кіріс көздері</h2>
-      <div id="s-donut-in"></div>
-      <div class="cat-sep"></div>
-      <div id="s-cat-in"></div>
     </div>
   </div>
 </section>
