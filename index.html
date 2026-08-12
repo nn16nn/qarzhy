@@ -262,6 +262,9 @@
   #trend-info{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:none}
   #trend-info.on{display:block}
   #trend-info .m{font-weight:750;font-size:14.5px;margin-bottom:6px}
+  .tr-sum{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+  .tr-sum .ttl{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--ink-2);margin-bottom:6px}
 
   /* ---------- Жабысқақ тақырып ---------- */
   /* Төмен түскенде беттің аты төбеде қалады — қай жерде тұрғаныңыз жоғалмайды */
@@ -757,6 +760,7 @@
       <h2>12 айлық тенденция <small class="muted" style="font-weight:500">нүктені басыңыз</small></h2>
       <div id="trend-chart"></div>
       <div id="trend-info"></div>
+      <div class="tr-sum"><div class="ttl">12 айдың жиынтығы</div><div id="trend-sum"></div></div>
     </div>
     <div class="card">
       <h2>Кіріс / Шығын</h2>
@@ -1035,7 +1039,7 @@
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Қаржы · 4.0</div>
+        <div class="ver">Қаржы · 4.1</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>

@@ -3122,7 +3122,9 @@ var TR = [
 ["✕ Сүзгіні алу — барлық операция","✕ Снять фильтр — все операции","✕ Clear filter — all transactions"],
 ["нүктені басыңыз","нажмите на точку","tap a point"],
 ["Осы айдың операцияларын көру","Показать операции этого месяца","View this month's transactions"],
-["Өткен айға қарағанда","По сравнению с прошлым месяцем","Compared with last month"],
+["Өткен айдан үнемделді","Сэкономлено против прошлого месяца","Saved vs last month"],
+["Өткен айдан артық жұмсалды","Потрачено больше, чем в прошлом месяце","Spent more than last month"],
+["12 айдың жиынтығы","Итог за 12 месяцев","12-month summary"],
 ["Есепті жіберу (PDF · Excel)","Отправить расчёт (PDF · Excel)","Send the result (PDF · Excel)"],
 ["Есепті қалай жіберейін?","В каком виде отправить?","How should I send it?"],
 ["Экранда тұрған нәтиже сол күйінде файлға айналады.","Результат с экрана станет файлом как есть.","The result on screen becomes a file as it is."],
@@ -3366,6 +3368,7 @@ function catItems(list, type){
 }
 
 /* --- 12 айлық тенденция --- */
+var TREND_SEL = null;
 function drawTrend(){
   var box = document.getElementById('trend-chart');
   if(!box) return;
@@ -3448,15 +3451,17 @@ function drawTrend(){
        '<span><i style="background:linear-gradient(92deg,#FFA8B3,#FF4D67)"></i>Шығын' +
        '<b class="gneg">' + nf(last.out) + ' ₸</b></span></div>';
 
+  box.innerHTML = s;
+
+  /* 12 айдың жиынтығы — ең астында, таңдалған айдың сандарынан кейін */
   var best = months.slice().sort(function(a,b){ return (b.in-b.out) - (a.in-a.out); })[0];
   var avgIn = 0, avgOut = 0;
   months.forEach(function(x){ avgIn += x.in; avgOut += x.out; });
-  s += '<div class="kv" style="margin-top:10px"><span>Айлық орташа кіріс</span><b>' +
-       money(avgIn / 12) + '</b></div>' +
-       '<div class="kv"><span>Айлық орташа шығын</span><b>' + money(avgOut / 12) + '</b></div>' +
-       '<div class="kv"><span>Ең табысты ай</span><b>' + MONTHS[best.m] + ' ' + best.y + '</b></div>';
-
-  box.innerHTML = s;
+  var sum = document.getElementById('trend-sum');
+  if(sum) sum.innerHTML =
+    '<div class="kv"><span>Айлық орташа кіріс</span><b>' + money(avgIn / 12) + '</b></div>' +
+    '<div class="kv"><span>Айлық орташа шығын</span><b>' + money(avgOut / 12) + '</b></div>' +
+    '<div class="kv"><span>Ең табысты ай</span><b>' + MONTHS[best.m] + ' ' + best.y + '</b></div>';
 
   /* --- нүктені (немесе ай бағанын) басқанда сол айдың сандары --- */
   var info = document.getElementById('trend-info');
@@ -3473,8 +3478,8 @@ function drawTrend(){
       '<div class="kv"><span>Нәтиже</span><b style="color:' + (net >= 0 ? 'var(--pos)' : 'var(--neg)') + '">' +
         (net >= 0 ? '+' : '−') + nf(Math.abs(net)) + ' ₸</b></div>' +
       (prev && prev.out > 0
-        ? '<div class="kv"><span>Өткен айға қарағанда</span><b style="color:' +
-          (diff <= 0 ? 'var(--pos)' : 'var(--neg)') + '">' + (diff <= 0 ? '−' : '+') +
+        ? '<div class="kv"><span>' + (diff <= 0 ? 'Өткен айдан үнемделді' : 'Өткен айдан артық жұмсалды') +
+          '</span><b style="color:' + (diff <= 0 ? 'var(--pos)' : 'var(--neg)') + '">' +
           nf(Math.abs(diff)) + ' ₸ (' + Math.abs(Math.round(diff / prev.out * 100)) + '%)</b></div>'
         : '') +
       '<button class="btn line sm" style="margin-top:10px" data-mo="' + x.key + '">Осы айдың операцияларын көру</button>';
@@ -3502,9 +3507,15 @@ function drawTrend(){
   var hits = box.querySelectorAll('.tr-hit');
   for(var hi = 0; hi < hits.length; hi++){
     (function(el){
-      el.onclick = function(){ showMonth(parseInt(el.getAttribute('data-mi'), 10)); };
+      el.onclick = function(){
+        buzz(6);
+        TREND_SEL = parseInt(el.getAttribute('data-mi'), 10);
+        showMonth(TREND_SEL);
+      };
     })(hits[hi]);
   }
+  /* блок бос тұрмасын — әдепкіде осы ай ашық */
+  showMonth(TREND_SEL === null ? 11 : Math.min(11, TREND_SEL));
 }
 
 /* графиктен сол айдың операцияларына өту */
