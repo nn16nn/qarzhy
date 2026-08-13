@@ -268,7 +268,8 @@ function rateAgo(){
 /* ================= HELPERS ================= */
 var CATS = {
   out:[["Тамақ","🍜"],["Көлік","🚌"],["Тұрғын үй","🏠"],["Байланыс","📱"],["Киім","👕"],
-       ["Денсаулық","🩺"],["Несие төлемі","💳"],["Ойын-сауық","🎬"],["Білім","📚"],["Сыйлық","🎁"],["Басқа","✦"]],
+       ["Денсаулық","🩺"],["Несие төлемі","💳"],["Инвестиция","📊"],["Ойын-сауық","🎬"],["Білім","📚"],
+       ["Сыйлық","🎁"],["Басқа","✦"]],
   in:[["Жалақы","💼"],["Бизнес","📈"],["Фриланс","💻"],["Инвестиция","📊"],["Несие алу","💳"],["Сыйлық","🎁"],["Басқа","✦"]]
 };
 var ACC_ICONS = ["card","bank","wallet","phone","invest","chart","coin","house"];
@@ -947,27 +948,6 @@ function saveBVal(){
 }
 
 /* ---- жылдам баптау ---- */
-function quickSetup(){
-  var want=[
-    {name:'Kaspi Bank', kind:'asset', icon:'card'},
-    {name:'Freedom SuperApp', kind:'asset', icon:'bank'},
-    {name:'Брокерлік шот 1', kind:'broker', icon:'invest'},
-    {name:'Брокерлік шот 2', kind:'broker', icon:'chart'}
-  ];
-  var added=0;
-  want.forEach(function(w){
-    var exists=false;
-    DB.accounts.forEach(function(a){ if(a.name.toLowerCase()===w.name.toLowerCase()) exists=true; });
-    if(exists) return;
-    var na = { id:newId(), name:w.name, kind:w.kind, icon:w.icon, bal:0, cur:'KZT' };
-    if(w.kind==='broker'){ na.vals={KZT:0,USD:0}; na.invested=0; na.valSet=false; }
-    DB.accounts.push(na);
-    added++;
-  });
-  save(); render();
-  toast(added? added+' шот қосылды — қалдықтарын жазыңыз' : 'Бұл шоттар бар');
-}
-
 /* ---- goals ---- */
 var goalId=null;
 function openGoal(){
@@ -2269,7 +2249,6 @@ var TR = [
 ["Банк шотын қосу","Добавить банковский счёт","Add bank account"],
 ["Брокерлік шот қосу","Добавить брокерский счёт","Add brokerage account"],
 ["Несие қосу","Добавить кредит","Add loan"],
-["Дайын үлгі: Kaspi + Freedom + брокерлік шоттар","⚡ Готовый набор: Kaspi + Freedom + брокерские счета","⚡ Quick setup: Kaspi + Freedom + brokerage"],
 ["Банк шоты жоқ. Төмендегі түймемен қосыңыз.","Банковских счетов нет. Добавьте кнопкой ниже.","No bank accounts. Add one below."],
 ["Брокерлік шот жоқ. Инвестицияңызды осында қосыңыз.","Брокерских счетов нет. Добавьте инвестиции здесь.","No brokerage accounts. Add your investments here."],
 ["Несие жоқ — тамаша.","Кредитов нет — отлично.","No loans — excellent."],
