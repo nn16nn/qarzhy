@@ -447,13 +447,19 @@ function closeSheets(fromPop){
 var fType='out', fCat='Тамақ', fAcc=null, fLoan=null, fTo=null, fEdit=null;
 function setType(t){
   fType=t;
+  var moves = (t==='tr' || t==='inv');   // шоттар арасындағы қозғалыс
   document.getElementById('seg-out').classList.toggle('on', t==='out');
   document.getElementById('seg-in').classList.toggle('on', t==='in');
   document.getElementById('seg-tr').classList.toggle('on', t==='tr');
-  document.getElementById('f-cat-box').classList.toggle('hide', t==='tr');
-  document.getElementById('f-to-box').classList.toggle('hide', t!=='tr');
-  document.getElementById('f-acc-lab').textContent = t==='tr' ? 'Қай шоттан' : (t==='in'?'Қай шотқа түсті':'Қай шоттан');
-  if(t!=='tr'){ fCat = CATS[t][0][0]; drawCats(); }
+  var si=document.getElementById('seg-inv');
+  if(si) si.classList.toggle('on', t==='inv'), si.classList.toggle('blue', t==='inv');
+  document.getElementById('f-cat-box').classList.toggle('hide', moves);
+  document.getElementById('f-to-box').classList.toggle('hide', !moves);
+  var tl=document.getElementById('f-to-lab');
+  if(tl) tl.textContent = (t==='inv') ? 'Қай брокер шотына' : 'Қай шотқа';
+  document.getElementById('f-acc-lab').textContent =
+    t==='inv' ? 'Қай шоттан саласыз' : (t==='tr' ? 'Қай шоттан' : (t==='in'?'Қай шотқа түсті':'Қай шоттан'));
+  if(!moves){ fCat = CATS[t][0][0]; drawCats(); }
   drawAccs();
 }
 function drawCats(){
@@ -468,7 +474,7 @@ function drawCats(){
 }
 function drawAccs(){
   var box=document.getElementById('f-accs'); box.innerHTML='';
-  var src = fType==='tr' ? spendable() : accsOf('asset');
+  var src = fType==='tr' ? spendable() : accsOf('asset');   // 'inv' үшін де тек банк шоттары
   if(!src.length){ box.innerHTML='<div class="muted">Алдымен шот қосыңыз</div>'; }
   var ok=false; src.forEach(function(a){ if(a.id===fAcc) ok=true; });
   if(!ok) fAcc = src.length? src[0].id : null;
@@ -484,18 +490,21 @@ function drawAccs(){
 
   var ah=document.getElementById('f-cur-hint');
   var sel=acc(fAcc), selTo=acc(fTo);
-  var usd = (sel&&sel.cur==='USD') || (fType==='tr'&&selTo&&selTo.cur==='USD');
+  var usd = (sel&&sel.cur==='USD') || ((fType==='tr'||fType==='inv')&&selTo&&selTo.cur==='USD');
   ah.classList.toggle('hide', !usd);
   if(usd) ah.textContent = rateV()
     ? 'Сома ₸-мен енгізіледі, доллар шотына '+rateV().toFixed(2).replace('.',',')+' курсымен аударылады'
     : 'Курс белгісіз — алдымен Баптаудан курсты жаңартыңыз';
 
-  if(fType==='tr'){
+  if(fType==='tr' || fType==='inv'){
     var tb=document.getElementById('f-tos'); tb.innerHTML='';
-    var dst = spendable().filter(function(a){ return a.id!==fAcc; });
+    var dst = (fType==='inv')
+      ? accsOf('broker')
+      : spendable().filter(function(a){ return a.id!==fAcc; });
     var ok2=false; dst.forEach(function(a){ if(a.id===fTo) ok2=true; });
     if(!ok2) fTo = dst.length? dst[0].id : null;
-    if(!dst.length) tb.innerHTML='<div class="muted">Кемінде екі шот керек</div>';
+    if(!dst.length) tb.innerHTML='<div class="muted">'+
+      (fType==='inv' ? 'Алдымен брокерлік шот қосыңыз' : 'Кемінде екі шот керек')+'</div>';
     dst.forEach(function(a){
       var b=document.createElement('button');
       b.className='chip'+(a.id===fTo?' on':'');
@@ -531,7 +540,9 @@ function openTx(editId){
   fAcc = t ? t.acc : fAcc;
   fTo  = t ? t.to : null;
   fLoan= t ? t.loan : null;
-  setType(t ? t.type : 'out');
+  var mode = t ? t.type : 'out';
+  if(t && t.type==='tr'){ var dt=acc(t.to); if(dt && dt.kind==='broker') mode='inv'; }
+  setType(mode);
   if(t && t.type!=='tr'){ fCat = t.cat; drawCats(); drawAccs(); }
   openSheet('sheet-tx');
 }
@@ -539,11 +550,17 @@ function saveTx(){
   var amt=parseFloat(document.getElementById('f-amt').value);
   if(!amt || amt<=0){ toast('Соманы жазыңыз'); return; }
   if(!fAcc){ toast('Алдымен шот қосыңыз'); return; }
-  if(fType==='tr' && !fTo){ toast('Қай шотқа екенін таңдаңыз'); return; }
-  var t={ id:newId(), type:fType, cat:(fType==='tr'?'Аударым':fCat), amt:Math.abs(amt),
+  var isMove = (fType==='tr' || fType==='inv');
+  if(isMove && !fTo){
+    toast(fType==='inv' ? 'Брокер шотын таңдаңыз' : 'Қай шотқа екенін таңдаңыз'); return;
+  }
+  /* инвестиция — банктен брокерге көшетін аударым (кіріс те, шығын да емес) */
+  var t={ id:newId(), type:(isMove?'tr':fType),
+    cat:(fType==='inv' ? 'Инвестиция' : (fType==='tr' ? 'Аударым' : fCat)),
+    amt:Math.abs(amt),
     date:document.getElementById('f-date').value||todayISO(),
     note:document.getElementById('f-note').value.trim(), acc:fAcc, loan:fLoan,
-    to:(fType==='tr'?fTo:null) };
+    to:(isMove?fTo:null) };
 
   if(fEdit){
     var old=null; DB.tx.forEach(function(x){ if(x.id===fEdit) old=x; });
@@ -561,7 +578,7 @@ function saveTx(){
   DB.tx.push(t);
   applyTx(t, 1);
   save(); closeSheets(); render();
-  toast(fType==='in'?'Кіріс қосылды':(fType==='tr'?'Аударым жасалды':'Шығын қосылды'));
+  toast(fType==='in'?'Кіріс қосылды':(fType==='inv'?'Инвестиция қосылды':(fType==='tr'?'Аударым жасалды':'Шығын қосылды')));
 }
 function applyTx(t, sign){
   var a=acc(t.acc);
@@ -583,7 +600,7 @@ function openView(id){
   var t=null; DB.tx.forEach(function(x){ if(x.id===id) t=x; });
   if(!t) return;
   document.getElementById('v-title').textContent=
-    (t.type==='in'?'Кіріс: ':(t.type==='tr'?'Аударым: ':'Шығын: '))+money(t.amt);
+    (t.type==='in'?'Кіріс: ':(t.type==='tr'?((acc(t.to)&&acc(t.to).kind==='broker')?'Инвестиция: ':'Аударым: '):'Шығын: '))+money(t.amt);
   var a=acc(t.acc);
   var h='';
   if(t.type==='tr'){
@@ -1322,8 +1339,9 @@ function txRow(t){
   var a=acc(t.acc);
   if(t.type==='tr'){
     var to=acc(t.to);
-    row.innerHTML='<div class="ico blue">⇄</div>'+
-      '<div><div class="name">Аударым</div><div class="sub2">'+
+    var isInv = !!(to && to.kind==='broker');
+    row.innerHTML='<div class="ico blue">'+(isInv ? svgIcon('invest') : '⇄')+'</div>'+
+      '<div><div class="name">'+(isInv ? 'Инвестиция' : 'Аударым')+'</div><div class="sub2">'+
       (a?esc(a.name):'—')+' → '+(to?esc(to.name):'—')+'</div></div>'+
       '<div class="amt" style="color:var(--blue)">'+nf(t.amt)+' ₸</div>';
     return pick ? row : swipeWrap(row, function(){ deleteTxWithUndo(t); }, function(){ openTx(t.id); });
@@ -2544,6 +2562,11 @@ var TR = [
 ["12 айлық өзгеріс","Динамика за 12 месяцев","12-month trend"],
 ["Барлық шығын","Все расходы","All expenses"],["Барлық кіріс","Все доходы","All income"],
 ["Басқалары","Прочее","Other"],
+["Қай брокер шотына","На какой брокерский счёт","To which brokerage account"],
+["Қай шоттан саласыз","С какого счёта","From which account"],
+["Брокер шотын таңдаңыз","Выберите брокерский счёт","Choose a brokerage account"],
+["Инвестиция қосылды","Инвестиция добавлена","Investment added"],
+["Алдымен брокерлік шот қосыңыз","Сначала добавьте брокерский счёт","Add a brokerage account first"],
 ["Айлық орташа кіріс","Средний доход в месяц","Average monthly income"],
 ["Айлық орташа шығын","Средний расход в месяц","Average monthly expense"],
 ["Ең табысты ай","Самый прибыльный месяц","Best month"],
@@ -2783,13 +2806,18 @@ function catItems(list, type){
   var sums = {};
   list.filter(function(t){ return t.type === type; })
       .forEach(function(t){ sums[t.cat] = (sums[t.cat] || 0) + t.amt; });
-  var keys = Object.keys(sums).sort(function(a,b){ return sums[b] - sums[a]; });
-  var out = [], rest = 0;
+  /* «Басқа» санаты мен тізім құйрығы бір ұяшыққа біріктіріледі */
+  var rest = sums['Басқа'] || 0;
+  var keys = Object.keys(sums).filter(function(k){ return k !== 'Басқа'; })
+                  .sort(function(a,b){ return sums[b] - sums[a]; });
+  var out = [];
   keys.forEach(function(k, i){
-    if(i < 6) out.push({ label: k, value: sums[k], color: PIE_COLORS[i] });
+    if(i < 6) out.push({ label: k, value: sums[k] });
     else rest += sums[k];
   });
-  if(rest) out.push({ label: 'Басқалары', value: rest, color: PIE_COLORS[9] });
+  if(rest) out.push({ label: 'Басқа', value: rest });
+  out.sort(function(a,b){ return b.value - a.value; });
+  out.forEach(function(it, i){ it.color = PIE_COLORS[i % PIE_COLORS.length]; });
   return out;
 }
 
@@ -4544,7 +4572,14 @@ function restoreView(){
 
 function initHistory(){
   if(!(history && history.replaceState)) return;
-  history.replaceState({ v: 'home' }, '', '#home');
+  /* бетті жаңартқанда ағымдағы бет сақталсын — хэшті «home»-ға ауыстырмаймыз */
+  var h0 = (location.hash || '').replace('#','');
+  if(!h0 || !document.getElementById('p-' + h0)){
+    var st0 = null;
+    try{ st0 = JSON.parse(localStorage.getItem('qarzhy_view') || 'null'); }catch(e){}
+    h0 = (st0 && st0.v && document.getElementById('p-' + st0.v)) ? st0.v : 'home';
+  }
+  history.replaceState({ v: h0 }, '', '#' + h0);
   window.addEventListener('popstate', function(e){
     var st = e.state || { v: 'home' };
     if(!st.sheet && sheetOpen()) closeSheets(true);

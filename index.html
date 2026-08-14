@@ -49,6 +49,8 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
+  html{background:var(--bg);min-height:100%}
+  body{min-height:100dvh}
   body{
     font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
     background:var(--bg);color:var(--ink);
@@ -79,6 +81,12 @@
   .hero.flat{background:linear-gradient(160deg,#1E38FF,#021CF5);border-radius:0 0 22px 22px}
   .hero h1{margin:0;font-size:27px;font-weight:800;letter-spacing:-.032em;line-height:1.15}
   .hero-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .hero-top.center{position:relative;justify-content:center;text-align:center;min-height:50px}
+  .hero-top.center .ht{max-width:78%}
+  .hero-top.center .ht h1{font-size:21px;letter-spacing:-.03em}
+  .hero-top.center .ht .sub{margin-top:2px}
+  .hero-top.center .plus{position:absolute;right:0;top:50%;transform:translateY(-50%)}
+  .hero-top.center .back{position:absolute;left:0;top:50%;transform:translateY(-50%)}
   .sub{font-size:13px;color:#C3CCFF;margin-top:3px;line-height:1.4;letter-spacing:0}
   .plus{width:50px;height:50px;border:0;border-radius:17px;background:#fff;color:var(--g-mid);
     font-size:27px;font-weight:700;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.18);flex:none}
@@ -201,6 +209,9 @@
   .seg button.on{background:var(--surface);color:var(--g-mid);box-shadow:0 2px 6px rgba(0,0,0,.07)}
   .seg button.on.danger{color:var(--red)}
   .seg.tight button{padding:9px 4px;font-size:13.5px}
+  .seg.seg4{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+  .seg.seg4 button{font-size:13.5px;padding:10px 4px}
+  .seg.seg4 button.on.blue{color:var(--blue)}
   .seg.glass{background:rgba(255,255,255,.16)}
   .seg.glass button{color:#DDE3FF}
   .seg.glass button.on{background:#fff;color:var(--g-mid)}
@@ -567,8 +578,8 @@
 <!-- ============ БАСТЫ ============ -->
 <section class="page on" id="p-home">
   <div class="hero">
-    <div class="hero-top">
-      <div><h1>Қаржы</h1></div>
+    <div class="hero-top center">
+      <div class="ht"><h1>Қаржы</h1></div>
       <button class="plus" onclick="openTx()">+</button>
     </div>
     <div class="cap-label">Таза капитал</div>
@@ -631,9 +642,8 @@
 <!-- ============ ШОТТАР ============ -->
 <section class="page" id="p-accounts">
   <div class="hero flat">
-    <div class="hero-top">
-      <button class="back" onclick="go('home')">←</button>
-      <div style="flex:1"><h1 style="font-size:24px">Менің қаржым</h1><div class="sub" id="a-count">0 шот</div></div>
+    <div class="hero-top center">
+      <div class="ht"><h1>Менің қаржым</h1><div class="sub" id="a-count">0 шот</div></div>
     </div>
     <div class="cap-label">Таза капитал</div>
     <div class="cap" id="a-net">0 ₸</div>
@@ -659,9 +669,8 @@
 <!-- ============ ОПЕРАЦИЯЛАР ============ -->
 <section class="page" id="p-ops">
   <div class="hero flat">
-    <div class="hero-top">
-      <button class="back" onclick="go('home')">←</button>
-      <div style="flex:1"><h1 style="font-size:24px">Операциялар</h1><div class="sub" id="o-count">0 операция</div></div>
+    <div class="hero-top center">
+      <div class="ht"><h1>Операциялар</h1><div class="sub" id="o-count">0 операция</div></div>
       <button class="plus" onclick="openTx()">+</button>
     </div>
     <div class="seg glass" style="margin-top:14px;margin-bottom:0">
@@ -688,9 +697,8 @@
 <!-- ============ СТАТИСТИКА ============ -->
 <section class="page" id="p-stat">
   <div class="hero flat">
-    <div class="hero-top">
-      <button class="back" onclick="go('home')">←</button>
-      <div style="flex:1"><h1 style="font-size:24px">Нәтиже</h1><div class="sub" id="s-count">0 операция</div></div>
+    <div class="hero-top center">
+      <div class="ht"><h1>Нәтиже</h1><div class="sub" id="s-count">0 операция</div></div>
     </div>
     <div class="chips glass" style="margin-top:14px;margin-bottom:10px">
       <button class="chip" data-per="day" onclick="setPeriod('day')">Бүгін</button>
@@ -915,9 +923,8 @@
 <!-- ============ БАПТАУ ============ -->
 <section class="page" id="p-set">
   <div class="hero flat">
-    <div class="hero-top">
-      <button class="back" onclick="go('home')">←</button>
-      <div style="flex:1"><h1 style="font-size:24px">Баптау</h1><div class="sub">Дерек және көшірме</div></div>
+    <div class="hero-top center">
+      <div class="ht"><h1>Баптау</h1><div class="sub">Дерек және көшірме</div></div>
     </div>
   </div>
   <div class="wrap">
@@ -1137,10 +1144,11 @@
 <div class="sheet" id="sheet-tx">
   <div class="grab"></div>
   <h3 id="tx-title">Операция қосу</h3>
-  <div class="seg tight">
+  <div class="seg tight seg4">
     <button id="seg-out" class="on danger" onclick="setType('out')">Шығын</button>
     <button id="seg-in" onclick="setType('in')">Кіріс</button>
     <button id="seg-tr" onclick="setType('tr')">Аударым</button>
+    <button id="seg-inv" onclick="setType('inv')">Инвестиция</button>
   </div>
   <label class="f">Сома</label>
   <input class="inp big" id="f-amt" type="number" inputmode="decimal" placeholder="0">
@@ -1152,7 +1160,7 @@
   <div class="chips" id="f-accs"></div>
   <div class="muted hide" id="f-cur-hint" style="margin:-6px 0 12px 3px"></div>
   <div id="f-to-box" class="hide">
-    <label class="f">Қай шотқа</label>
+    <label class="f" id="f-to-lab">Қай шотқа</label>
     <div class="chips" id="f-tos"></div>
   </div>
   <div id="f-loan-box" class="hide">
