@@ -900,11 +900,27 @@ function renderBroker(){
         (df[c].div ? '<div class="kv"><span>Дивиденд · купон</span><b style="color:var(--pos)">+' + nf(df[c].div) + ' ' + sg + '</b></div>' : '') +
         (df[c].fee ? '<div class="kv"><span>Комиссия · салық</span><b style="color:var(--neg)">−' + nf(df[c].fee) + ' ' + sg + '</b></div>' : '');
     });
+    /* «Қосымша» орнына — шынымен пайдалы көрсеткіштер */
+    var ag = bDepStat(brId);
+    var yrly = (invT > 0 && ag.years >= 0.16) ? (Math.pow(a.bal / invT, 1 / ag.years) - 1) * 100 : null;
+    var allBr = 0; accsOf('broker').forEach(function(x){ allBr += x.bal || 0; });
+    var share = allBr > 0 ? Math.round(a.bal / allBr * 100) : 0;
+
     info.innerHTML = block +
-      '<label class="f" style="margin-top:14px">Қосымша</label>' +
-      '<div class="kv"><span>Курс</span><b>' + (rateV() ? '1 $ = ' + rateV().toFixed(2).replace('.', ',') + ' ₸' : '—') + '</b></div>' +
-      '<div class="kv"><span>Құн көзі</span><b>' +
-        (a.valSet ? tr('қолмен қойылған') + (a.valAt ? ' · ' + fullDate(a.valAt) : '') : tr('жазбалардан есептелген')) +
+      '<label class="f" style="margin-top:14px">Талдау</label>' +
+      '<div class="kv"><span>Жылдық табыстылық</span><b style="color:' +
+        (yrly === null ? 'var(--ink)' : (yrly >= 0 ? 'var(--pos)' : 'var(--neg)')) + '">' +
+        (yrly === null ? 'әлі ерте' : (yrly >= 0 ? '+' : '−') + Math.abs(yrly).toFixed(1).replace('.', ',') + '%') +
+      '</b></div>' +
+      '<div class="kv"><span>Орташа ұстау мерзімі</span><b>' +
+        (ag.years > 0 ? (ag.years >= 1
+            ? ag.years.toFixed(1).replace('.', ',') + ' жыл'
+            : Math.round(ag.years * 12) + ' ай')
+          : '—') +
+      '</b></div>' +
+      '<div class="kv"><span>Барлық инвестициядағы үлесі</span><b>' + share + '%</b></div>' +
+      '<div class="kv"><span>Соңғы салым</span><b>' +
+        (ag.last ? fullDate(ag.last) + ' · ' + money(ag.lastAmt) : '—') +
       '</b></div>';
   }
 
@@ -2357,6 +2373,12 @@ var TR = [
 ["Доллармен, $","В долларах, $","In dollars, $"],["Теңгемен, ₸","В тенге, ₸","In tenge, ₸"],
 ["Доллар","Доллар","Dollars"],["Теңге","Тенге","Tenge"],
 ["Барлығы теңгемен","Итого в тенге","Total in tenge"],["Құн көзі","Источник стоимости","Value source"],
+["Талдау","Аналитика","Insights"],
+["Жылдық табыстылық","Годовая доходность","Annualized return"],
+["Орташа ұстау мерзімі","Средний срок вложений","Average holding period"],
+["Барлық инвестициядағы үлесі","Доля во всех инвестициях","Share of all investments"],
+["Соңғы салым","Последнее пополнение","Last deposit"],
+["әлі ерте","пока рано","too early"],
 ["Портфель құны жазбалардан қайта есептеледі, қолмен қойылған сома жойылады. Жалғастырасыз ба?","Стоимость будет пересчитана по записям, введённая вручную сумма удалится. Продолжить?","The value will be recalculated from records; the manual amount will be discarded. Continue?"],
 ["Құнды жазбалардан қайта есептеу","Пересчитать стоимость по записям","Recalculate value from records"],
 ["Курс","Курс","Rate"],
@@ -2614,6 +2636,7 @@ var TR_RULES = [
   [/^(\d+) сағат бұрын$/, "$1 ч. назад", "$1 h ago"],
   [/^(\d+) күн бұрын$/, "$1 дн. назад", "$1 d ago"],
   [/^([\d,\.]+) ай$/, "$1 мес.", "$1 months"],
+  [/^([\d,\.]+) жыл$/, "$1 г.", "$1 years"],
   [/^Табылды: (\d+) операция$/, "Найдено: $1 операций", "Found: $1 transactions"],
   [/^Табылды: (\d+) жазба$/, "Найдено: $1 записей", "Found: $1 records"],
   [/^(\d+) операцияны қосу$/, "Добавить $1 операций", "Add $1 transactions"],
@@ -4472,6 +4495,25 @@ function bDivFee(id){
 }
 
 function kztOf(m){ return (m.KZT || 0) + (m.USD || 0) * (rateV() || 0); }
+
+/* салымдардың орташа «жасы» (жылмен), соңғы салым күні мен сомасы */
+function bDepStat(id){
+  var now = Date.now(), sum = 0, wsum = 0, last = null, lastAmt = 0;
+  function add(amt, date){
+    if(!(amt > 0) || !date) return;
+    var yrs = (now - new Date(date).getTime()) / (365.25 * 864e5);
+    if(yrs < 0) yrs = 0;
+    sum += amt; wsum += amt * yrs;
+    if(!last || date > last){ last = date; lastAmt = amt; }
+  }
+  (DB.btx || []).forEach(function(b){
+    if(b.acc === id && b.t === 'dep') add(b.cur === 'USD' ? b.amt * (rateV() || 0) : b.amt, b.date);
+  });
+  (DB.tx || []).forEach(function(t){
+    if(t.type === 'tr' && t.to === id) add(t.amt, t.date);
+  });
+  return { years: sum > 0 ? wsum / sum : 0, last: last, lastAmt: lastAmt };
+}
 
 /* туынды өрістерді (bal, invested) қайта есептеу — қалған код солармен жұмыс істейді */
 function syncBroker(a){
