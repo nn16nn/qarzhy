@@ -221,6 +221,10 @@
   .bud-row .track{height:9px;border-radius:6px;background:var(--g-soft);overflow:hidden}
   .bud-row .fill{height:100%;border-radius:6px;transition:width .7s cubic-bezier(.2,.9,.25,1)}
 
+  .gpace{margin-top:8px;font-size:12.5px;font-weight:700;color:var(--g-mid);
+    background:var(--g-soft);border-radius:10px;padding:7px 10px}
+  .gpace.late{color:#C22F45;background:var(--neg-soft)}
+  .gpace.done{color:#00815C;background:var(--pos-soft)}
   .tot-row{font-size:15px;font-weight:800}
   .tot-row b{font-size:17px;font-variant-numeric:tabular-nums}
   .seg.seg3 button{font-size:13.5px;padding:10px 4px}
@@ -691,7 +695,7 @@
       <div class="trio" style="grid-template-columns:1fr 1fr;row-gap:14px">
         <div><div class="l">Банктердегі ақша</div><div class="v" id="h-banks" style="color:var(--pos-light)">0 ₸</div></div>
         <div><div class="l">Несие қалдығы</div><div class="v" id="h-debts" style="color:var(--red)">0 ₸</div></div>
-        <div><div class="l">Салынған инвестиция</div><div class="v" id="h-inv" style="color:var(--blue)">0 ₸</div></div>
+        <div><div class="l">Мақсатқа жиналған</div><div class="v" id="h-goals" style="color:var(--blue)">0 ₸</div></div>
         <div><div class="l">Қарыз · маған / мен</div><div class="v" id="h-pdebt">0 ₸</div></div>
       </div>
     </div>
@@ -724,7 +728,7 @@
     <div class="cap" id="a-net">0 ₸</div>
     <div class="two sm3">
       <div class="mini"><div class="t">Банктер</div><div class="v" id="a-banks">0 ₸</div></div>
-      <div class="mini"><div class="t">Инвестиция</div><div class="v" id="a-inv">0 ₸</div></div>
+      <div class="mini"><div class="t">Мақсаттар</div><div class="v" id="a-goals">0 ₸</div></div>
       <div class="mini"><div class="t">Несие</div><div class="v" id="a-debts">0 ₸</div></div>
     </div>
   </div>
@@ -790,10 +794,9 @@
       <div id="s-stage"></div>
     </div>
 
-    <div class="seg seg3" id="s-kind">
+    <div class="seg" id="s-kind">
       <button class="on danger" data-k="out" onclick="setStatKind('out')">Шығын</button>
       <button data-k="in" onclick="setStatKind('in')">Кіріс</button>
-      <button data-k="inv" onclick="setStatKind('inv')">Инвестиция</button>
     </div>
 
     <div class="card" id="s-card-out">
@@ -1306,6 +1309,8 @@
   <input class="inp" id="g-target" type="number" inputmode="decimal" placeholder="0">
   <label class="f">Қазір жиналған, ₸</label>
   <input class="inp" id="g-saved" type="number" inputmode="decimal" placeholder="0">
+  <label class="f">Қашанға жинау керек (міндетті емес)</label>
+  <input class="inp" id="g-due" type="date">
   <button class="btn" onclick="saveGoal()">Сақтау</button>
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
 </div>

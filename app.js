@@ -281,9 +281,8 @@ function rateAgo(){
 
 /* ================= HELPERS ================= */
 var CATS = {
-  out:[["Тамақ","🍜"],["Көлік","🚌"],["Тұрғын үй","🏠"],["Байланыс","📱"],["Киім","👕"],
-       ["Денсаулық","🩺"],["Несие төлемі","💳"],["Инвестиция","📊"],["Ойын-сауық","🎬"],["Білім","📚"],
-       ["Сыйлық","🎁"],["Басқа","✦"]],
+  out:[["Тамақ","🍜"],["Ойын-сауық","🎬"],["Байланыс","📱"],["Әке-шешеме","🏠"],
+       ["Көлік","🚌"],["Киім","👕"],["Инвестиция","📊"],["Несие төлемі","💳"],["Басқа","✦"]],
   in:[["Жалақы","💼"],["Бизнес","📈"],["Фриланс","💻"],["Инвестиция","📊"],["Несие алу","💳"],["Сыйлық","🎁"],["Басқа","✦"]]
 };
 var ACC_ICONS = ["card","bank","wallet","phone","invest","chart","coin","house"];
@@ -774,6 +773,7 @@ function openGoal(){
   document.getElementById('g-name').value='';
   document.getElementById('g-target').value='';
   document.getElementById('g-saved').value='';
+  document.getElementById('g-due').value='';
   openSheet('sheet-goal');
 }
 function saveGoal(){
@@ -781,10 +781,22 @@ function saveGoal(){
   var t=parseFloat(document.getElementById('g-target').value);
   if(!n){ toast('Атауын жазыңыз'); return; }
   if(!t||t<=0){ toast('Мақсат сомасын жазыңыз'); return; }
-  DB.goals.push({id:newId(),name:n,target:t,saved:parseFloat(document.getElementById('g-saved').value)||0});
+  DB.goals.push({id:newId(),name:n,target:t,
+    saved:parseFloat(document.getElementById('g-saved').value)||0,
+    due:document.getElementById('g-due').value||null});
   save(); closeSheets(); render(); toast('Мақсат қосылды');
 }
 var gvAcc=null;
+/* мақсатқа жету қарқыны: қалған ай саны мен айына қажет сома */
+function goalPace(g){
+  var left = Math.max(0, (g.target||0) - (g.saved||0));
+  if(!g.due) return { left: left, months: 0, need: 0, days: 0, late: false };
+  var now = new Date(), d = new Date(g.due);
+  var days = Math.ceil((d - now) / 864e5);
+  var months = Math.max(0, days / 30.44);
+  return { left: left, months: months, days: days, late: days < 0 && left > 0,
+           need: (months > 0.1 && left > 0) ? left / months : left };
+}
 function goal(id){ var r=null; DB.goals.forEach(function(x){ if(x.id===id) r=x; }); return r; }
 
 function openGview(id){
@@ -797,7 +809,15 @@ function openGview(id){
   document.getElementById('gv-sum').innerHTML=
     '<div class="kv"><span>Жиналған</span><b>'+money(g.saved)+' / '+money(g.target)+'</b></div>'+
     '<div class="kv"><span>Орындалды</span><b>'+pct+'%</b></div>'+
-    '<div class="kv"><span>Қалды</span><b>'+money(Math.max(0,g.target-g.saved))+'</b></div>';
+    '<div class="kv"><span>Қалды</span><b>'+money(Math.max(0,g.target-g.saved))+'</b></div>'+
+    (function(){
+      var p=goalPace(g);
+      if(!g.due || p.left<=0) return '';
+      return '<div class="kv"><span>Мерзімі</span><b>'+fullDate(g.due)+'</b></div>'+
+             '<div class="kv"><span>Айына салу керек</span><b style="color:'+
+             (p.late?'var(--neg)':'var(--g-mid)')+'">'+
+             (p.late ? 'мерзімі өтті' : money(Math.round(p.need)))+'</b></div>';
+    })();
   drawGvAccs(); drawGvHist();
   openSheet('sheet-gview');
 }
@@ -912,8 +932,9 @@ function render(){
   document.getElementById('h-in').textContent=money(mIn);
   document.getElementById('h-out').textContent=money(mOut);
   document.getElementById('h-banks').textContent=money(T.banks);
-  var hi=document.getElementById('h-inv');
-  if(hi) hi.textContent=money(T.invested);
+  var gsum=0; (DB.goals||[]).forEach(function(g){ gsum+=g.saved||0; });
+  var hi=document.getElementById('h-goals');
+  if(hi) hi.textContent=money(gsum);
   document.getElementById('h-debts').textContent=money(T.debts);
   var hpd=document.getElementById('h-pdebt');
   if(hpd){
@@ -945,8 +966,8 @@ function render(){
   document.getElementById('a-count').textContent=DB.accounts.length+' шот';
   animNum(document.getElementById('a-net'), T.net);
   document.getElementById('a-banks').textContent=moneyShort(T.banks);
-  var ai=document.getElementById('a-inv');
-  if(ai) ai.textContent=moneyShort(T.invested);
+  var ai=document.getElementById('a-goals');
+  if(ai) ai.textContent=moneyShort(gsum);
   document.getElementById('a-debts').textContent=moneyShort(T.debts);
   renderAccList('asset','a-list-asset','Банк шоты жоқ. Төмендегі түймемен қосыңыз.');
   renderAccList('debt','a-list-debt','Несие жоқ — тамаша.');
@@ -1098,10 +1119,21 @@ function render(){
       '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;color:var(--ink-2)">'+
       '<span>'+money(g.saved)+' / '+money(g.target)+'</span><b style="color:var(--ink)">'+pct+'%</b></div>'+
       (function(){
-        if(!g.hist || !g.hist.length) return '';
-        var last=g.hist[g.hist.length-1], la=last.acc?acc(last.acc):null;
-        return '<div class="muted" style="margin-top:6px">Соңғы салым: '+fullDate(last.date)+
+        var p=goalPace(g), h='';
+        if(g.due && p.left>0){
+          h += '<div class="gpace'+(p.late?' late':'')+'">'+
+               (p.late ? 'Мерзімі өтті · ' + fullDate(g.due)
+                       : 'Айына ' + money(Math.round(p.need)) + ' салсаң, ' + fullDate(g.due) + '-ге жетесің')+
+               '</div>';
+        } else if(p.left<=0){
+          h += '<div class="gpace done">Мақсат орындалды 🎉</div>';
+        }
+        if(g.hist && g.hist.length){
+          var last=g.hist[g.hist.length-1], la=last.acc?acc(last.acc):null;
+          h += '<div class="muted" style="margin-top:6px">Соңғы салым: '+fullDate(last.date)+
                ' · '+(la?esc(la.name)+' шотынан':'шотсыз')+'</div>';
+        }
+        return h;
       })();
     gl.appendChild(el);
   });
@@ -1188,22 +1220,9 @@ function setStatMode(m){ statMode = m; renderStats(); }
 
 /* кезеңдегі жазбалар мен олардың бөлінісі */
 function statList(){
-  if(statKind === 'inv'){
-    return DB.tx.filter(function(t){
-      return inRange(t.date) && t.type === 'out' && t.cat === 'Инвестиция';
-    });
-  }
   return DB.tx.filter(function(t){ return inRange(t.date) && t.type === statKind; });
 }
-function statItems(list){
-  if(statKind === 'inv'){
-    var sums = {};
-    list.forEach(function(t){ var d = acc(t.acc); var k = d ? d.name : 'Шот'; sums[k] = (sums[k] || 0) + t.amt; });
-    return Object.keys(sums).sort(function(a, b){ return sums[b] - sums[a]; })
-      .map(function(k, i){ return { label: k, value: sums[k], color: PIE_COLORS[i % PIE_COLORS.length] }; });
-  }
-  return catItems(list, statKind);
-}
+function statItems(list){ return catItems(list, statKind); }
 
 var STAT_MODES = [
   { id: 'bubbles', name: 'Көпіршік' },
@@ -1392,8 +1411,8 @@ function renderStats(){
   var items = statItems(list);
 
   document.getElementById('s-count').textContent = list.length + ' операция';
-  var name = statKind === 'in' ? 'Кіріс' : (statKind === 'inv' ? 'Инвестиция' : 'Шығын');
-  var col  = statKind === 'in' ? 'var(--pos)' : (statKind === 'inv' ? 'var(--blue)' : 'var(--neg)');
+  var name = statKind === 'in' ? 'Кіріс' : 'Шығын';
+  var col  = statKind === 'in' ? 'var(--pos)' : 'var(--neg)';
   var st = document.getElementById('s-stage-title'); st.textContent = tr(name);
   var sb = document.getElementById('s-stage-sub');
   sb.textContent = STAT_MODES.filter(function(m){ return m.id === statMode; })
@@ -1407,8 +1426,7 @@ function renderStats(){
   else if(statMode === 'budget') drawBudget();
   else drawBubbles(items, tot);
 
-  document.getElementById('s-list-title').textContent =
-    statKind === 'inv' ? tr('Шот бойынша') : tr('Санаттар бойынша');
+  document.getElementById('s-list-title').textContent = tr('Санаттар бойынша');
   var totEl = document.getElementById('s-total');
   totEl.textContent = money(tot); totEl.style.color = tot ? col : '';
   drawCatList('s-cat-out', items, tot);
@@ -2536,6 +2554,14 @@ var TR = [
 ["12 айлық өзгеріс","Динамика за 12 месяцев","12-month trend"],
 ["Барлық шығын","Все расходы","All expenses"],["Барлық кіріс","Все доходы","All income"],
 ["Басқалары","Прочее","Other"],
+["Әке-шешеме","Родителям","To parents"],
+["Мақсаттар","Цели","Goals"],
+["Мақсатқа жиналған","Накоплено на цели","Saved for goals"],
+["Қашанға жинау керек (міндетті емес)","К какой дате накопить (необязательно)","Target date (optional)"],
+["Мерзімі","Срок","Deadline"],
+["Айына салу керек","Нужно в месяц","Needed per month"],
+["мерзімі өтті","срок прошёл","overdue"],
+["Мақсат орындалды 🎉","Цель достигнута 🎉","Goal reached 🎉"],
 ["Салынған инвестиция","Вложено в инвестиции","Total invested"],
 ["Салынған инвестиция (барлық уақыт)","Вложено в инвестиции (за всё время)","Total invested (all time)"],
 ["Шот бойынша","По счетам","By account"],
@@ -2601,6 +2627,8 @@ var TR_RULES = [
   [/^([\d\s]+) ₸ · шек жоқ$/, "$1 ₸ · без лимита", "$1 ₸ · no limit"],
   [/^(\d+) жазба$/, "Записей: $1", "$1 records"],
   [/^(\d+) мақсат$/, "Целей: $1", "$1 goals"],
+  [/^Айына (.+) салсаң, (.+)-ге жетесің$/, "По $1 в месяц — успеете к $2", "$1 per month gets you there by $2"],
+  [/^Мерзімі өтті · (.+)$/, "Срок прошёл · $1", "Overdue · $1"],
   [/^(\d+) сағат бұрын$/, "$1 ч. назад", "$1 h ago"],
   [/^(\d+) күн бұрын$/, "$1 дн. назад", "$1 d ago"],
   [/^([\d,\.]+) ай$/, "$1 мес.", "$1 months"],
