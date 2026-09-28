@@ -12,20 +12,22 @@ Deploy and manage projects on Vercel using the CLI with token-based authenticati
 
 ## Step 1: Locate the Vercel Token
 
-Before running any Vercel CLI commands, identify where the token is coming from. Work through these scenarios in order:
+Before running any Vercel CLI commands, identify where the token is coming from. Work through these scenarios in order.
+
+**Never print a token value.** Commands below check whether a token exists or list variable *names* only, so secrets never land in the transcript or logs.
 
 ### A) `VERCEL_TOKEN` is already set in the environment
 
 ```bash
-printenv VERCEL_TOKEN
+[ -n "$VERCEL_TOKEN" ] && echo "VERCEL_TOKEN is set" || echo "VERCEL_TOKEN is not set"
 ```
 
-If this returns a value, you're ready. Skip to Step 2.
+If it is set, you're ready. Skip to Step 2.
 
 ### B) Token is in a `.env` file under `VERCEL_TOKEN`
 
 ```bash
-grep '^VERCEL_TOKEN=' .env 2>/dev/null
+grep -q '^VERCEL_TOKEN=' .env 2>/dev/null && echo "found in .env" || echo "not in .env"
 ```
 
 If found, export it:
@@ -36,13 +38,13 @@ export VERCEL_TOKEN=$(grep '^VERCEL_TOKEN=' .env | cut -d= -f2-)
 
 ### C) Token is in a `.env` file under a different name
 
-Look for any variable that looks like a Vercel token (Vercel tokens typically start with `vca_`):
+Look for any variable that looks like a Vercel token (Vercel tokens typically start with `vca_`). List names only:
 
 ```bash
-grep -i 'vercel' .env 2>/dev/null
+grep -i 'vercel' .env 2>/dev/null | cut -d= -f1
 ```
 
-Inspect the output to identify which variable holds the token, then export it as `VERCEL_TOKEN`:
+Pick the variable that holds the token, then export it as `VERCEL_TOKEN`:
 
 ```bash
 export VERCEL_TOKEN=$(grep '^<VARIABLE_NAME>=' .env | cut -d= -f2-)
@@ -74,8 +76,8 @@ Similarly, check for the project ID and team scope. These let the CLI target the
 printenv VERCEL_PROJECT_ID
 printenv VERCEL_ORG_ID
 
-# Or check .env
-grep -i 'vercel' .env 2>/dev/null
+# Or check .env (names only; IDs are not secrets, but the file may also hold the token)
+grep -i 'vercel' .env 2>/dev/null | cut -d= -f1
 ```
 
 **If you have a project URL** (e.g. `https://vercel.com/my-team/my-project`), extract the team slug:
@@ -300,6 +302,7 @@ Full details: https://vercel.com/docs/plans/pro-plan
 
 - **Never pass `VERCEL_TOKEN` as a `--token` flag.** Export it as an environment variable and let the CLI read it natively.
 - **Check the environment for tokens before asking the user.** Look in the current env and `.env` files first.
+- **Never print token values.** Check presence with `[ -n "$VERCEL_TOKEN" ]` and list variable names with `cut -d= -f1`; never `printenv VERCEL_TOKEN`, `echo $VERCEL_TOKEN`, or `cat .env`.
 - **Default to preview deployments.** Only deploy to production when explicitly asked.
 - **Ask before pushing to git.** Never push commits without the user's approval.
 - **Do not modify `.vercel/` files directly.** The CLI manages this directory. Reading them (e.g. to verify `orgId`) is fine.
@@ -314,8 +317,9 @@ Full details: https://vercel.com/docs/plans/pro-plan
 Check the environment and any `.env` files present:
 
 ```bash
-printenv | grep -i vercel
-grep -i vercel .env 2>/dev/null
+# Names only, never values
+printenv | grep -i vercel | cut -d= -f1
+grep -i vercel .env 2>/dev/null | cut -d= -f1
 ```
 
 ### Authentication error

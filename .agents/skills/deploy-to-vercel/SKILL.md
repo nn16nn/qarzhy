@@ -10,6 +10,8 @@ metadata:
 
 Deploy any project to Vercel. **Always deploy as preview** (not production) unless the user explicitly asks for production.
 
+**Confirm before every deploy, link, or push.** A deploy publishes the project to a public URL. Before running any command that uploads, links, or pushes, tell the user the method, target team, and directory, and wait for an explicit yes. A phrase like "push this live" is a request to start this flow, not approval to publish.
+
 The goal is to get the user into the best long-term setup: their project linked to Vercel with git-push deploys. Every method below tries to move the user closer to that state.
 
 ## Step 1: Gather Project State
@@ -32,7 +34,7 @@ vercel teams list --format json 2>/dev/null
 
 ### Team selection
 
-If the user belongs to multiple teams, present all available team slugs as a bulleted list and ask which one to deploy to. Once the user picks a team, proceed immediately to the next step — do not ask for additional confirmation.
+If the user belongs to multiple teams, present all available team slugs as a bulleted list and ask which one to deploy to. The user's pick can double as the deploy confirmation if you stated the method and directory in the same question.
 
 Pass the team slug via `--scope` on all subsequent CLI commands (`vercel deploy`, `vercel link`, `vercel inspect`, etc.):
 
@@ -62,9 +64,10 @@ This is the ideal state. The project is linked and has git integration.
    trigger a deployment. Want me to proceed?
    ```
 
-2. **Commit and push:**
+2. **Commit and push.** Review `git status` first and stage only files that belong in the deploy (never secrets or local data):
    ```bash
-   git add .
+   git status --short
+   git add <files>
    git commit -m "deploy: <description of changes>"
    git push
    ```
@@ -108,7 +111,7 @@ The CLI is working but the project isn't linked yet. This is the opportunity to 
 
 1. **Ask the user which team to deploy to.** Present the team slugs from Step 1 as a bulleted list. If there's only one team (or just a personal account), skip this step.
 
-2. **Once a team is selected, proceed directly to linking.** Tell the user what will happen but do not ask for separate confirmation:
+2. **Confirm linking before running it.** Tell the user what will happen and wait for a yes (this can be the same question as the team pick):
    ```
    Linking this project to <team name> on Vercel. This will create a Vercel
    project to deploy to and enable automatic deployments on future git pushes.
@@ -162,6 +165,8 @@ The Vercel CLI isn't set up at all.
 ### No-Auth Fallback — claude.ai sandbox
 
 **When to use:** Last resort when the CLI can't be installed or authenticated in the claude.ai sandbox. This requires no authentication — it returns a **Preview URL** (live site) and a **Claim URL** (transfer to your Vercel account).
+
+**Before running either fallback script:** it uploads the whole directory (minus `node_modules`, `.git`, `.env*`) to a Vercel deploy endpoint and the result is publicly reachable. List the top-level contents, check for secrets, keys, backups, or personal data files that the exclusions miss, tell the user what will be uploaded, and get an explicit yes.
 
 ```bash
 bash /mnt/skills/user/deploy-to-vercel/resources/deploy.sh [path]
@@ -230,11 +235,12 @@ The script handles framework detection, packaging, and deployment. It waits for 
 
 You have full shell access. Do NOT use the `/mnt/skills/` path. Follow the decision flow above using the CLI directly.
 
-For the no-auth fallback, run the deploy script from the skill's installed location:
+For the no-auth fallback, run the deploy script from the skill's installed location. Project-level installs live under the repo; user-level installs under `~/.claude`:
 ```bash
-bash ~/.claude/skills/deploy-to-vercel/resources/deploy.sh [path]
+skill_dir=".claude/skills/deploy-to-vercel"
+[ -f "$skill_dir/resources/deploy.sh" ] || skill_dir="$HOME/.claude/skills/deploy-to-vercel"
+bash "$skill_dir/resources/deploy.sh" [path]
 ```
-The path may vary depending on where the user installed the skill.
 
 ### Sandboxed environments (claude.ai)
 
