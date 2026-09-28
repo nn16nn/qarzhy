@@ -2,7 +2,7 @@
 <html lang="kk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#021cf5">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -19,6 +19,7 @@
     --g-deep:#010B4D; --g-mid:#021CF5; --g-bright:#3F5CFF; --g-soft:#E9ECFF;
     --ink:#0D1226; --ink-2:#5D6480; --line:#DCE1F5; --bg:#F4F6FF; --red:#FF4D67;
     --blue:#6D3FE8;
+    --accent:#021CF5;
     --pos:#00BE86; --pos-soft:#DFF7EF; --pos-light:#5CE6BC;
     --neg:#FF4D67; --neg-soft:#FFE7EA; --neg-light:#FF9AA8;
     --surface:#ffffff;
@@ -35,6 +36,7 @@
     --g-deep:#04061C; --g-mid:#1B34F0; --g-bright:#5A72FF; --g-soft:#1A1F3D;
     --ink:#E9EBF7; --ink-2:#98A0C0; --line:#262C4F; --bg:#080B1C; --red:#FF6B7E;
     --blue:#8B63FF;
+    --accent:#8FA0FF;
     --pos:#2FE0A8; --pos-soft:#0F3A2E; --pos-light:#7CF2CE;
     --neg:#FF6B7E; --neg-soft:#3A1A20; --neg-light:#FFA8B3;
     --surface:#121732;
@@ -49,7 +51,7 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
-  html{background:var(--bg);min-height:100%}
+  html{background:var(--bg);min-height:100%;touch-action:manipulation}
   body{min-height:100dvh}
   body{
     font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
@@ -92,7 +94,7 @@
     font-size:27px;font-weight:700;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.18);flex:none}
   .back{width:44px;height:44px;border:0;border-radius:14px;background:rgba(255,255,255,.18);
     color:#fff;font-size:20px;line-height:1;flex:none}
-  .back.dark{background:var(--g-soft);color:var(--g-mid)}
+  .back.dark{background:var(--g-soft);color:var(--accent)}
   .cap-label{margin:18px 0 2px;font-size:14px;color:#C3CCFF}
   .cap{font-size:36px;font-weight:800;letter-spacing:-1px}
   .cap-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
@@ -120,7 +122,7 @@
   .card > p.muted{font-size:12.7px;line-height:1.62;margin-top:-2px}
   .about{font-size:12.7px;color:var(--ink-2);line-height:1.62}
   .ver{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.04em;
-    background:var(--g-soft);color:var(--g-mid);border-radius:8px;padding:5px 10px;margin-bottom:9px}
+    background:var(--g-soft);color:var(--accent);border-radius:8px;padding:5px 10px;margin-bottom:9px}
   .empty{text-align:center;padding:26px 12px;color:var(--ink-2);font-size:13.2px;line-height:1.65}
 
   .trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;background:var(--g-soft);border-radius:16px;padding:14px 8px;text-align:center}
@@ -174,7 +176,7 @@
   .modestrip .mcard .mi{height:42px;display:grid;place-items:center;margin-bottom:5px}
   .modestrip .mcard .mt{font-size:11.5px;font-weight:700;color:var(--ink-2);
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .modestrip .mcard.on .mt{color:var(--g-mid)}
+  .modestrip .mcard.on .mt{color:var(--accent)}
 
   /* ---------- сахна ---------- */
   .card.stage{padding-bottom:10px}
@@ -221,7 +223,7 @@
   .bud-row .track{height:9px;border-radius:6px;background:var(--g-soft);overflow:hidden}
   .bud-row .fill{height:100%;border-radius:6px;transition:width .7s cubic-bezier(.2,.9,.25,1)}
 
-  .gpace{margin-top:8px;font-size:12.5px;font-weight:700;color:var(--g-mid);
+  .gpace{margin-top:8px;font-size:12.5px;font-weight:700;color:var(--accent);
     background:var(--g-soft);border-radius:10px;padding:7px 10px}
   .gpace.late{color:#C22F45;background:var(--neg-soft)}
   .gpace.done{color:#00815C;background:var(--pos-soft)}
@@ -250,8 +252,8 @@
   .svi.chip-ic{width:19px;height:19px}
   .svi.bar-ic{width:18px;height:18px}
   .ico.pos{color:var(--pos)} .ico.red{color:var(--neg)} .ico.blue{color:var(--blue)}
-  .ico:not(.pos):not(.red):not(.blue){color:var(--g-mid)}
-  .qi{color:var(--g-mid)}
+  .ico:not(.pos):not(.red):not(.blue){color:var(--accent)}
+  .qi{color:var(--accent)}
   .bar-top span{display:inline-flex;align-items:center;gap:8px;min-width:0}
   .bar-top span span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
@@ -285,7 +287,7 @@
   /* ---------- Controls ---------- */
   .seg{display:flex;background:var(--g-soft);border-radius:15px;padding:4px;margin-bottom:14px}
   .seg button{flex:1;border:0;background:0;padding:11px 6px;border-radius:12px;font-weight:700;color:var(--ink-2);font-size:14.5px}
-  .seg button.on{background:var(--surface);color:var(--g-mid);box-shadow:0 2px 6px rgba(0,0,0,.07)}
+  .seg button.on{background:var(--surface);color:var(--accent);box-shadow:0 2px 6px rgba(0,0,0,.07)}
   .seg button.on.danger{color:var(--red)}
   .seg.tight button{padding:9px 4px;font-size:13.5px}
   .seg.seg4{display:grid;grid-template-columns:1fr 1fr;gap:3px}
@@ -313,7 +315,7 @@
   .row2{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start}
   .unit{display:flex;background:var(--g-soft);border-radius:14px;padding:4px;height:52px}
   .unit button{border:0;background:0;padding:0 14px;border-radius:11px;font-weight:700;color:var(--ink-2);font-size:14px}
-  .unit button.on{background:var(--surface);color:var(--g-mid)}
+  .unit button.on{background:var(--surface);color:var(--accent)}
   .toggle{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:16px;padding:13px;margin-bottom:12px}
   .sw{width:52px;height:30px;border-radius:99px;background:var(--line);position:relative;transition:.2s;flex:none}
   .sw.on{background:var(--g-bright)}
@@ -322,15 +324,15 @@
 
   .btn{display:block;width:100%;border:0;border-radius:16px;padding:15px;font-size:16px;font-weight:700;
     background:var(--g-bright);color:#fff;margin-bottom:10px}
-  .btn.ghost{background:var(--g-soft);color:var(--g-mid)}
+  .btn.ghost{background:var(--g-soft);color:var(--accent)}
   .btn.line{background:var(--surface);border:1px solid var(--line);color:var(--ink)}
-  .btn.dashed{background:var(--surface);border:1.5px dashed #A9B4FF;color:var(--g-mid)}
+  .btn.dashed{background:var(--surface);border:1.5px dashed #A9B4FF;color:var(--accent)}
   .btn.danger{background:var(--danger-bg);color:var(--red)}
   .btn:active{transform:scale(.985)}
   .btn.sm{padding:11px;font-size:14px;margin:0}
 
   .res{background:var(--g-soft);border-radius:18px;padding:16px;margin-bottom:12px}
-  .res .big{font-size:28px;font-weight:800;color:var(--g-mid)}
+  .res .big{font-size:28px;font-weight:800;color:var(--accent)}
   .res .lab{font-size:13px;color:var(--ink-2)}
   .kv{display:flex;justify-content:space-between;gap:12px;padding:9px 0;font-size:13.6px;
     border-top:1px solid var(--line);line-height:1.45}
@@ -406,7 +408,7 @@
   .tabbar button{flex:1;background:0;border:0;padding:6px 0;color:var(--ink-2);font-size:10.5px;font-weight:600;border-radius:15px}
   .tabbar button .g{display:flex;justify-content:center;margin-bottom:3px}
   .tabbar button .g .svi{width:23px;height:23px}
-  .tabbar button.on{background:var(--g-soft);color:var(--g-mid)}
+  .tabbar button.on{background:var(--g-soft);color:var(--accent)}
 
   /* ---------- Sheets ---------- */
   .scrim{position:fixed;inset:0;background:rgba(4,10,50,.55);opacity:0;pointer-events:none;transition:.22s;z-index:50}
@@ -616,9 +618,9 @@
   .selbar b{flex:1;font-size:13.5px;padding-left:6px}
   .selbar button{border:0;border-radius:12px;padding:10px 12px;font-weight:700;font-size:13px}
   .sel-del{background:var(--danger-bg);color:var(--neg)}
-  .sel-all{background:var(--g-soft);color:var(--g-mid)}
+  .sel-all{background:var(--g-soft);color:var(--accent)}
   .sel-off{background:transparent;color:var(--ink-2)}
-  h2 small.act{color:var(--g-mid);font-weight:700}
+  h2 small.act{color:var(--accent);font-weight:700}
 
   .toast{position:fixed;left:50%;transform:translate(-50%,20px);bottom:100px;background:var(--ink);color:#fff;
     padding:11px 18px;border-radius:14px;font-size:14px;opacity:0;transition:.25s;z-index:80;pointer-events:none}
@@ -649,6 +651,46 @@
   .badge{font-size:11px;background:var(--warn-bg);color:var(--warn-fg);border-radius:8px;padding:3px 7px;font-weight:600}
   .spin{width:34px;height:34px;border:3px solid var(--g-soft);border-top-color:var(--g-bright);border-radius:50%;animation:sp 1s linear infinite;margin:22px auto}
   @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* ---------- калькулятор тақырыбы ---------- */
+  .subhead{background:var(--surface);padding:calc(14px + env(safe-area-inset-top)) 16px 14px;
+    display:flex;align-items:center;gap:13px;border-bottom:1px solid var(--line)}
+  .subhead-t{font-weight:800;font-size:20px;letter-spacing:-.024em;line-height:1.2}
+
+  /* ортаға қойылған тақырыптағы «+» астындағы сегментке мінбесін */
+  .hero-top.center{min-height:54px}
+  .hero-top.center .plus{width:46px;height:46px;border-radius:15px;font-size:25px;
+    top:50%;margin-top:-23px;transform:none}
+
+  /* шот сүзгісі бір жолда, жанына сырғиды */
+  .chips.scroll{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;margin-left:-18px;margin-right:-18px;padding:0 18px 2px}
+  .chips.scroll::-webkit-scrollbar{display:none}
+  .chips.scroll .chip{flex:none;white-space:nowrap}
+
+  /* төрт түймелі шыны сегмент тар экранға сыйсын */
+  .seg.glass button{padding:10px 2px;font-size:13.5px;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* жабық терезелер фокус пен экран оқитын құралға көрінбейді */
+  .sheet{visibility:hidden;max-height:92dvh;overscroll-behavior:contain;
+    transition:transform .3s cubic-bezier(.2,.9,.25,1),visibility 0s linear .3s}
+  .sheet.on{visibility:visible;transition:transform .3s cubic-bezier(.2,.9,.25,1),visibility 0s}
+
+  /* пернетақтамен жүргенде фокус көрінсін */
+  button:focus-visible,.card[role=button]:focus-visible,.row:focus-visible,
+  input:focus-visible,select:focus-visible,[tabindex]:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px}
+  .hero button:focus-visible{outline-color:#fff}
+  .inp:focus{border-color:var(--accent)}
+
+  /* қараңғы тақырыпта ақ жарқыл жиекті жұмсарту */
+  html[data-theme="dark"] .res,html[data-theme="dark"] .cap-in{box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+  html[data-theme="dark"] .btn.dashed{border-color:#3A4585}
+  html[data-theme="dark"] .card h2 small.tag{color:var(--pos)}
+  html[data-theme="dark"] .card h2 small.tag.neg{color:var(--neg)}
+  .warnbar.danger{background:var(--danger-bg);color:var(--danger-fg)}
+  .ratebar .qi{color:#fff}
 </style>
 </head>
 <body>
@@ -659,7 +701,7 @@
   <div class="hero">
     <div class="hero-top center">
       <div class="ht"><h1>Қаржы</h1></div>
-      <button class="plus" onclick="openTx()">+</button>
+      <button class="plus" onclick="openTx()" aria-label="Операция қосу">+</button>
     </div>
     <div class="cap-label">Таза капитал</div>
     <div class="cap-row">
@@ -667,7 +709,7 @@
       <div class="pill" id="h-pill">↑ Оң</div>
     </div>
     <div class="monthbar">
-      <button onclick="shiftMonth(-1)">‹</button><span id="h-month">—</span><button onclick="shiftMonth(1)">›</button>
+      <button onclick="shiftMonth(-1)" aria-label="Алдыңғы ай">‹</button><span id="h-month">—</span><button onclick="shiftMonth(1)" aria-label="Келесі ай">›</button>
     </div>
     <div class="two">
       <div class="mini"><div class="t"><span class="dot in">↓</span> Кіріс</div><div class="v" id="h-in">0 ₸</div></div>
@@ -693,7 +735,7 @@
         <div style="margin-left:auto;color:var(--ink-2)">→</div>
       </div>
       <div class="trio" style="grid-template-columns:1fr 1fr;row-gap:14px">
-        <div><div class="l">Банктердегі ақша</div><div class="v" id="h-banks" style="color:var(--pos-light)">0 ₸</div></div>
+        <div><div class="l">Банктердегі ақша</div><div class="v" id="h-banks" style="color:var(--pos)">0 ₸</div></div>
         <div><div class="l">Несие қалдығы</div><div class="v" id="h-debts" style="color:var(--red)">0 ₸</div></div>
         <div><div class="l">Мақсатқа жиналған</div><div class="v" id="h-goals" style="color:var(--blue)">0 ₸</div></div>
         <div><div class="l">Қарыз · маған / мен</div><div class="v" id="h-pdebt">0 ₸</div></div>
@@ -745,7 +787,7 @@
   <div class="hero flat">
     <div class="hero-top center">
       <div class="ht"><h1>Операциялар</h1><div class="sub" id="o-count">0 операция</div></div>
-      <button class="plus" onclick="openTx()">+</button>
+      <button class="plus" onclick="openTx()" aria-label="Операция қосу">+</button>
     </div>
     <div class="seg glass" style="margin-top:14px;margin-bottom:0">
       <button class="on" data-of="all" onclick="setOpsFilter('all')">Барлығы</button>
@@ -753,8 +795,8 @@
       <button data-of="out" onclick="setOpsFilter('out')">Шығын</button>
       <button data-of="tr" onclick="setOpsFilter('tr')">Аударым</button>
     </div>
-    <input class="search" id="ops-q" placeholder="Іздеу: атау, санат, сома…" oninput="render()">
-    <div class="chips glass" id="ops-accs" style="margin-top:10px;margin-bottom:0"></div>
+    <input class="search" id="ops-q" type="search" aria-label="Іздеу" placeholder="Іздеу: атау, санат, сома…" oninput="render()">
+    <div class="chips glass scroll" id="ops-accs" style="margin-top:10px;margin-bottom:0"></div>
   </div>
   <div class="wrap">
     <p class="muted" style="padding:0 6px 8px">Операцияны солға сырғытсаңыз — өшіріледі, оңға сырғытсаңыз — түзетіледі.</p>
@@ -839,7 +881,7 @@
 <section class="page" id="p-goals">
   <div class="hero flat">
     <div class="hero-top">
-      <button class="back" onclick="go('home')">←</button>
+      <button class="back" onclick="go('home')" aria-label="Артқа">←</button>
       <div style="flex:1"><h1 style="font-size:24px">Мақсаттар</h1><div class="sub" id="g-count">0 мақсат</div></div>
     </div>
     <div class="cap-label">Жиналған</div>
@@ -855,7 +897,7 @@
 <section class="page" id="p-calc">
   <div class="hero flat">
     <div class="hero-top">
-      <button class="back" onclick="go('home')">←</button>
+      <button class="back" onclick="go('home')" aria-label="Артқа">←</button>
       <div style="flex:1"><h1 style="font-size:24px">Есептегіш</h1><div class="sub">Қаржылық есептеулер</div></div>
     </div>
   </div>
@@ -889,9 +931,9 @@
 
 <!-- ============ ИНВЕСТИЦИЯ КАЛЬКУЛЯТОРЫ ============ -->
 <section class="page" id="p-calc-inv">
-  <div style="background:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;gap:13px">
-    <button class="back dark" onclick="go('calc')">←</button>
-    <div><div style="font-weight:800;font-size:20px">Инвестиция калькуляторы</div>
+  <div class="subhead">
+    <button class="back dark" onclick="go('calc')" aria-label="Артқа">←</button>
+    <div><div class="subhead-t">Инвестиция калькуляторы</div>
       <div class="muted">Күрделі пайыз</div></div>
   </div>
   <div class="wrap">
@@ -947,9 +989,9 @@
 
 <!-- ============ НЕСИЕ КАЛЬКУЛЯТОРЫ ============ -->
 <section class="page" id="p-calc-loan">
-  <div style="background:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;gap:13px">
-    <button class="back dark" onclick="go('calc')">←</button>
-    <div><div style="font-weight:800;font-size:20px">Несие калькуляторы</div>
+  <div class="subhead">
+    <button class="back dark" onclick="go('calc')" aria-label="Артқа">←</button>
+    <div><div class="subhead-t">Несие калькуляторы</div>
       <div class="muted">Аннуитетті · Дифференциалды</div></div>
   </div>
   <div class="wrap">
@@ -1062,7 +1104,7 @@
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Қаржы · 3.0</div>
+        <div class="ver">Қаржы · 3.1</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
@@ -1076,10 +1118,10 @@
 <section class="page" id="p-debts">
   <div class="hero flat">
     <div class="hero-top">
-      <button class="back" onclick="go('home')">←</button>
+      <button class="back" onclick="go('home')" aria-label="Артқа">←</button>
       <div style="flex:1"><h1 style="font-size:24px">Қарыздар</h1>
         <div class="sub">Адамдарға берген және алған ақша</div></div>
-      <button class="plus" onclick="openDebt()">+</button>
+      <button class="plus" onclick="openDebt()" aria-label="Қарыз жазу">+</button>
     </div>
     <div class="two">
       <div class="mini"><div class="t">Маған қарыз</div><div class="v" id="d-lent">0 ₸</div></div>
@@ -1104,9 +1146,9 @@
 
 <!-- ============ ДЕПОЗИТ КАЛЬКУЛЯТОРЫ ============ -->
 <section class="page" id="p-calc-dep">
-  <div style="background:var(--surface);padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;gap:13px">
-    <button class="back dark" onclick="go('calc')">←</button>
-    <div><div style="font-weight:800;font-size:20px">Депозит калькуляторы</div>
+  <div class="subhead">
+    <button class="back dark" onclick="go('calc')" aria-label="Артқа">←</button>
+    <div><div class="subhead-t">Депозит калькуляторы</div>
       <div class="muted">Банк салымының табысы</div></div>
   </div>
   <div class="wrap">
@@ -1133,9 +1175,9 @@
 
 <!-- ============ САЛЫҚ КАЛЬКУЛЯТОРЫ ============ -->
 <section class="page" id="p-calc-tax">
-  <div style="background:var(--surface);padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;gap:13px">
-    <button class="back dark" onclick="go('calc')">←</button>
-    <div><div style="font-weight:800;font-size:20px">Салық калькуляторы</div>
+  <div class="subhead">
+    <button class="back dark" onclick="go('calc')" aria-label="Артқа">←</button>
+    <div><div class="subhead-t">Салық калькуляторы</div>
       <div class="muted">ЖК · оңайлатылған декларация (910-форма)</div></div>
   </div>
   <div class="wrap">
@@ -1165,7 +1207,7 @@
 <section class="page" id="p-import">
   <div class="hero flat">
     <div class="hero-top">
-      <button class="back" onclick="go('home')">←</button>
+      <button class="back" onclick="go('home')" aria-label="Артқа">←</button>
       <div style="flex:1"><h1 style="font-size:24px" id="imp-h1">Файл жүктеу</h1><div class="sub" id="imp-sub">PDF · Excel · CSV үзінді</div></div>
     </div>
   </div>
