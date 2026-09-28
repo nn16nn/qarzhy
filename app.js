@@ -406,9 +406,11 @@ function totals(){
   });
   inv = investedTotal();
   var dt = (typeof debtTotals === 'function') ? debtTotals() : {lent:0, owed:0};
-  return {banks:b, invested:inv, assets:b, debts:d,
+  /* мақсаттарда жиналған ақша да капиталға кіреді */
+  var g = 0; (DB.goals || []).forEach(function(x){ g += x.saved || 0; });
+  return {banks:b, invested:inv, assets:b, debts:d, goals:g,
           lent:dt.lent, owed:dt.owed,
-          net:b - d + dt.lent - dt.owed};
+          net:b + g - d + dt.lent - dt.owed};
 }
 function investedTotal(){
   var s2 = 0;
@@ -1076,6 +1078,7 @@ function render(){
   if(!assets.length) ob.innerHTML='<div class="empty">Шот жоқ.</div>';
   else {
     ob.innerHTML='<div class="kv"><span>Банктердегі ақша</span><b style="color:var(--pos)">'+money(T.banks)+'</b></div>'+
+      (T.goals>0?'<div class="kv"><span>Мақсаттарда жиналған</span><b style="color:var(--blue)">'+money(T.goals)+'</b></div>':'')+
       (T.invested>0?'<div class="kv"><span>Салынған инвестиция (барлық уақыт)</span><b style="color:var(--blue)">'+money(T.invested)+'</b></div>':'');
     var wrapB=document.createElement('div'); wrapB.style.marginTop='12px';
     assets.forEach(function(a){
@@ -2659,7 +2662,8 @@ var TR = [
 ["Жазба өшіріледі, шот қалдықтары бастапқы күйге қайтарылады. Жалғастырасыз ба?","Запись будет удалена, остатки счетов вернутся к прежним. Продолжить?","The record will be deleted and account balances restored. Continue?"],
 ["Қалдық, $","Остаток, $","Balance, $"],
 ["Артқа","Назад","Back"],["Алдыңғы ай","Предыдущий месяц","Previous month"],["Келесі ай","Следующий месяц","Next month"],
-["Іздеу","Поиск","Search"]
+["Іздеу","Поиск","Search"],
+["Мақсаттарда жиналған","Накоплено в целях","Saved in goals"]
 ];
 
 var LANG = 'kk';
@@ -4110,6 +4114,7 @@ function buildReport(){
     '<div style="font-size:17px;font-weight:800;margin:0 0 10px">Қаржылық жағдай</div>' +
     '<table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:26px">' +
       rpRow('Банктердегі ақша', money(T.banks), '#00BE86') +
+      (T.goals ? rpRow('Мақсаттарда жиналған', money(T.goals), '#6D3FE8') : '') +
       rpRow('Міндеттемелер · несиелер', money(T.debts), '#FF4D67') +
       (T.lent ? rpRow('Маған қарыз', money(T.lent), '#00BE86') : '') +
       (T.owed ? rpRow('Мен қарызбын', money(T.owed), '#FF4D67') : '') +
