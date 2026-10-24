@@ -501,8 +501,12 @@ function drawCats(){
   var box=document.getElementById('f-cats'); box.innerHTML='';
   CATS[fType].forEach(function(c){
     var b=document.createElement('button');
-    b.className='chip'+(c[0]===fCat?' on':'');
-    b.innerHTML=catSvg(fType,c[0],'chip-ic')+'<span>'+c[0]+'</span>';
+    var on=(c[0]===fCat);
+    b.type='button';
+    b.className='ctile'+(on?' on':'');
+    b.setAttribute('aria-pressed', on?'true':'false');
+    b.style.setProperty('--cc', catColor(fType,c[0]));
+    b.innerHTML='<span class="ct-i">'+catSvg(fType,c[0])+'</span><span class="ct-l">'+tr(c[0])+'</span>';
     b.onclick=function(){ fCat=c[0]; drawCats(); drawAccs(); };
     box.appendChild(b);
   });
@@ -952,6 +956,45 @@ function setPeriod(p){
 function customRange(){ render(); }
 function inRange(d){ return (!range.from || d>=range.from) && (!range.to || d<=range.to); }
 
+/* ---- басты бет: баланс графигі ---- */
+function drawSpark(net){
+  var svg=document.getElementById('h-spark'), pill=document.getElementById('h-pill');
+  if(!svg) return;
+  var now=new Date(), flows={};
+  DB.tx.forEach(function(t){ if(t.type==='tr') return; var k=t.date.slice(0,7); flows[k]=(flows[k]||0)+(t.type==='in'?t.amt:-t.amt); });
+  var pts=[net], bal=net;
+  for(var i=0;i<6;i++){
+    var d=new Date(now.getFullYear(), now.getMonth()-i, 1);
+    var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    bal-= (flows[k]||0); pts.unshift(bal);
+  }
+  var prev=pts[pts.length-2];
+  if(pill){
+    var ch=net-prev;
+    if(!prev && !ch){ pill.textContent='—'; pill.className='bl-delta'; }
+    else {
+      var pc = prev>0 ? ch/prev*100 : null;
+      pill.textContent=(ch>=0?'↑ +':'↓ −')+((pc===null||Math.abs(pc)>=300)
+        ? moneyShort(Math.abs(ch)) : Math.abs(pc).toFixed(1).replace('.',',')+'%');
+      pill.className='bl-delta '+(ch>=0?'up':'down');
+    }
+  }
+  var mn=Math.min.apply(null,pts), mx=Math.max.apply(null,pts), W=300, H=70, pad=6;
+  var rng=(mx-mn)||1;
+  var xy=pts.map(function(v,i){ return [i*W/(pts.length-1), pad+(H-pad*2)*(1-(v-mn)/rng)]; });
+  var dpath='M'+xy[0][0]+' '+xy[0][1];
+  for(var j=1;j<xy.length;j++){
+    var x0=xy[j-1][0], y0=xy[j-1][1], x1=xy[j][0], y1=xy[j][1], cx=(x0+x1)/2;
+    dpath+=' C'+cx+' '+y0+' '+cx+' '+y1+' '+x1+' '+y1;
+  }
+  var last=xy[xy.length-1];
+  svg.innerHTML='<defs><linearGradient id="spg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>'+
+    '<path d="'+dpath+' L'+W+' '+H+' L0 '+H+' Z" fill="url(#spg)"/>'+
+    '<path d="'+dpath+'" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'+
+    '<circle cx="'+last[0]+'" cy="'+last[1]+'" r="3.6" fill="#fff"/>';
+}
+function openTxType(t){ openTx(); setType(t); }
+
 /* ================= RENDER ================= */
 function render(){
   var T=totals();
@@ -960,9 +1003,9 @@ function render(){
 
   /* --- home --- */
   animNum(document.getElementById('h-net'), T.net);
-  var pill=document.getElementById('h-pill');
-  pill.textContent = T.net>=0?'↑ Оң':'↓ Теріс';
-  pill.style.color = T.net>=0?'#7CF2CE':'#FFA8B3';
+  drawSpark(T.net);
+  var bell=document.getElementById('h-bell');
+  if(bell){ var rw=0; try{ (DB.recur||[]).forEach(function(r){ var st=recurState(r); if(!st.paid && (st.late||st.soon)) rw++; }); }catch(e){} bell.classList.toggle('hide', !rw); }
   document.getElementById('h-month').textContent=MONTHS[cur.getMonth()]+' '+cur.getFullYear();
   document.getElementById('h-in').textContent=money(mIn);
   document.getElementById('h-out').textContent=money(mOut);
@@ -1156,11 +1199,15 @@ function render(){
     var pct=Math.min(100,Math.round(g.saved/g.target*100));
     var el=document.createElement('div'); el.className='card';
     el.onclick=function(){ openGview(g.id); };
-    el.innerHTML='<div style="display:flex;align-items:center;gap:11px;margin-bottom:12px">'+
-      '<div class="ico blue">'+svgIcon('flag')+'</div><div style="font-weight:700;font-size:16px">'+esc(g.name)+'</div></div>'+
+    var C=2*Math.PI*26, off=C*(1-pct/100);
+    el.className='card goal';
+    el.innerHTML='<div class="g-top"><div class="g-l">'+
+      '<div class="ico blue">'+svgIcon('flag')+'</div>'+
+      '<div class="g-name">'+esc(g.name)+'</div>'+
+      '<div class="g-amt">'+money(g.saved)+' / '+money(g.target)+'</div></div>'+
+      '<div class="ring" role="img" aria-label="'+pct+'%"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" class="rt"/>'+
+      '<circle cx="32" cy="32" r="26" class="rf" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 32 32)"/></svg><b>'+pct+'%</b></div></div>'+
       '<div class="track"><div class="fill" style="width:'+pct+'%"></div></div>'+
-      '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:13px;color:var(--ink-2)">'+
-      '<span>'+money(g.saved)+' / '+money(g.target)+'</span><b style="color:var(--ink)">'+pct+'%</b></div>'+
       (function(){
         var p=goalPace(g), h='';
         if(g.due && p.left>0){
@@ -1189,7 +1236,7 @@ function txRow(t){
   var a=acc(t.acc);
   if(t.type==='tr'){
     var to=acc(t.to);
-    row.innerHTML='<div class="ico blue">⇄</div>'+
+    row.innerHTML=catBox('tr','Аударым').replace(catSvg('tr','Аударым'), svgIcon('swap'))+
       '<div><div class="name">Аударым</div><div class="sub2">'+
       (a?esc(a.name):'—')+' → '+(to?esc(to.name):'—')+'</div></div>'+
       '<div class="amt" style="color:var(--blue)">'+nf(t.amt)+' ₸</div>';
@@ -2972,7 +3019,7 @@ function applyTheme(){
   var dark = isDark();
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   var mt = document.querySelector('meta[name="theme-color"]');
-  if(mt) mt.setAttribute('content', dark ? '#05071F' : '#2338e6');
+  if(mt) mt.setAttribute('content', dark ? '#070F1F' : '#F6F8FC');
 }
 function setTheme(m){
   DB.theme = m; save(); applyTheme(); render();
@@ -3306,9 +3353,21 @@ function svgIcon(name, cls){
 function catSvg(type, cat, cls){
   return svgIcon(CAT_ICON[cat] || (type === 'in' ? 'salary' : 'star'), cls);
 }
+var CAT_COL = {
+  'Тамақ':'#F04452','Ойын-сауық':'#8B5CF6','Байланыс':'#0EA5E9','Әке-шешеме':'#F59E0B',
+  'Көлік':'#2F6BFF','Киім':'#EC4899','Тұрғын үй':'#1D4ED8','Денсаулық':'#10B981','Білім':'#6366F1',
+  'Сыйлық':'#F97316','Инвестиция':'#7C3AED','Несие төлемі':'#E11D48','Кэшбэк':'#14B8A6',
+  'Жалақы':'#17B26A','Бизнес':'#0891B2','Фриланс':'#2563EB','Несие алу':'#64748B','Басқа':'#64748B'
+};
+function catColor(type, cat){
+  if(type === 'tr') return '#2F6BFF';
+  if(CAT_COL[cat]) return CAT_COL[cat];
+  if(type === 'in') return '#17B26A';
+  var h=0; String(cat||'').split('').forEach(function(c){ h=(h*31+c.charCodeAt(0))>>>0; });
+  return ['#F04452','#8B5CF6','#0EA5E9','#F59E0B','#10B981','#EC4899','#6366F1','#F97316'][h%8];
+}
 function catBox(type, cat){
-  var kind = type === 'in' ? 'pos' : (type === 'tr' ? 'blue' : 'red');
-  return '<div class="ico ' + kind + '">' + catSvg(type, cat) + '</div>';
+  return '<div class="ico cc" style="background:' + catColor(type, cat) + '">' + catSvg(type, cat) + '</div>';
 }
 
 /* ================= ҚАРЫЗДАР (адамдарға берген / алған) ================= */
