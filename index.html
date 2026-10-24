@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Qarzhy — Smart Money</title>
+<title>Қаржы</title>
 <link rel="preload" href="fonts/onest-cyrillic-ext-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/onest-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
@@ -797,69 +797,83 @@
   #splash .nm{font-weight:700;font-size:18px;letter-spacing:0}
   .toast{border-radius:var(--r-ctl);font-weight:500}
 
-  /* Qarzhy signature redesign — clean cobalt fintech identity */
+  /* Qarzhy visual refresh: cobalt-blue + clean white fintech UI */
   :root{
-    --g-deep:#062A82; --g-mid:#075BFA; --g-bright:#2D8CFF; --g-soft:#EAF3FF;
-    --ink:#101C3A; --ink-2:#73809B; --line:#E5ECF7; --bg:#F4F8FE;
-    --blue:#126BFF; --accent:#075BFA; --surface:#FFFFFF;
-    --tabbar:rgba(255,255,255,.94); --shadow:rgba(13,57,125,.06);
-    --shadow-2:rgba(13,57,125,.13); --sh1:rgba(13,57,125,.04); --sh2:rgba(13,57,125,.13);
-    --pos:#0DAA72; --pos-soft:#E1F8EF; --neg:#F04452; --neg-soft:#FFF0F1;
-    --blue-bg:#EAF3FF; --r-hero:30px; --r-card:24px; --r-tile:18px; --r-ctl:15px;
+    --g-deep:#063A9E; --g-mid:#086BFA; --g-bright:#27A0FF; --g-soft:#EAF3FF;
+    --ink:#101B35; --ink-2:#6D7D9A; --line:#E4ECF7; --bg:#F4F8FE; --red:#F04452;
+    --blue:#0878F9; --accent:#086BFA; --surface:#FFFFFF; --tabbar:rgba(255,255,255,.96);
+    --pos:#17B978; --pos-soft:#E1F8ED; --neg:#F04452; --neg-soft:#FFF0F1;
+    --blue-bg:#EAF3FF; --shadow:rgba(17,55,112,.07); --shadow-2:rgba(17,55,112,.14);
+    --sh1:rgba(17,55,112,.04); --sh2:rgba(17,55,112,.12);
   }
   html[data-theme="dark"]{
-    --g-deep:#041A4D; --g-mid:#135EF2; --g-bright:#4599FF; --g-soft:#12264A;
-    --ink:#F0F5FF; --ink-2:#A2B2D0; --line:#20314F; --bg:#071326;
-    --blue:#69A7FF; --accent:#69A7FF; --surface:#0E1D34;
-    --tabbar:rgba(14,29,52,.96); --shadow:rgba(0,0,0,.28); --shadow-2:rgba(0,0,0,.45);
-    --sh1:rgba(0,0,0,.22); --sh2:rgba(0,0,0,.4); --pos:#45D6A0; --pos-soft:#103B31;
-    --neg:#FF7882; --neg-soft:#3A202A; --blue-bg:#132A4C;
+    --g-deep:#061B43; --g-mid:#126DF5; --g-bright:#369DFF; --g-soft:#142747;
+    --ink:#F1F6FF; --ink-2:#A6B8D6; --line:#243754; --bg:#071326; --accent:#62A7FF;
+    --surface:#0E2039; --tabbar:rgba(10,28,51,.97); --blue-bg:#142747;
+    --shadow:rgba(0,0,0,.28); --shadow-2:rgba(0,0,0,.42); --sh1:rgba(0,0,0,.22); --sh2:rgba(0,0,0,.4);
   }
-  body{background:var(--bg);letter-spacing:-.012em}
-  .hero,.hero.flat,.subhead{background:radial-gradient(120% 90% at 100% 0%,rgba(84,171,255,.7),transparent 48%),linear-gradient(145deg,#087BFF 0%,#075BFA 48%,#073BAE 100%);border-radius:0 0 30px 30px;box-shadow:0 16px 38px -20px rgba(0,83,230,.55)}
-  html[data-theme="dark"] .hero,html[data-theme="dark"] .hero.flat,html[data-theme="dark"] .subhead{background:linear-gradient(145deg,#1247A8,#071B4C)}
-  .hero::before{opacity:.035}
-  .hero-top.center .mark{border-radius:13px;box-shadow:0 5px 15px rgba(0,25,100,.24)}
-  .hero h1,.hero-top.center .ht h1{font-weight:800;letter-spacing:-.045em}
-  .hero-top.center .ht .sub{font-size:10px;letter-spacing:.02em;color:#DCEBFF;margin-top:1px}
-  .cap{font-size:37px;font-weight:800;letter-spacing:-.045em}
-  .cap-label,.sub{color:#D6E7FF}
-  .plus{background:#fff;color:#075BFA;box-shadow:0 7px 20px rgba(0,25,100,.22);border-radius:17px;font-weight:700}
-  .pill{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.25)}
-  .mini,.wide,.ratebar{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.19);border-radius:18px}
-  .card{border:1px solid rgba(220,232,249,.8);border-radius:24px;box-shadow:0 8px 24px -18px rgba(20,65,130,.28);padding:18px 16px}
+  body{background:var(--bg)}
+  .hero{position:relative;overflow:hidden;background:radial-gradient(110% 95% at 100% 0%,rgba(69,190,255,.95) 0%,transparent 54%),linear-gradient(145deg,#087CFF 0%,#0755D8 54%,#073A9E 100%);border-radius:0 0 30px 30px;padding-bottom:23px;box-shadow:0 14px 30px -22px rgba(0,79,200,.65)}
+  .hero:before{content:"";position:absolute;right:-72px;bottom:-115px;width:240px;height:240px;border:34px solid rgba(255,255,255,.075);border-radius:48px;transform:rotate(34deg);opacity:1}
+  .hero>*{position:relative;z-index:1}
+  .hero.flat{background:linear-gradient(145deg,#087CFF 0%,#0755D8 58%,#073A9E 100%);border-radius:0 0 28px 28px}
+  .hero h1{font-size:25px;font-weight:800;letter-spacing:-.04em}
+  .hero-top.center .ht h1{font-size:22px}
+  .hero-top.center .mark{border-radius:14px;box-shadow:0 7px 18px rgba(0,28,95,.2);background:#fff;padding:3px}
+  .cap-label,.sub{color:#D9EAFF}
+  .cap{font-size:36px;font-weight:800;letter-spacing:-1.2px}
+  .plus{background:linear-gradient(145deg,#FFFFFF,#EAF4FF);color:#086BFA;box-shadow:0 8px 20px rgba(0,35,105,.22);border-radius:17px}
+  .pill{background:rgba(255,255,255,.17);border-color:rgba(255,255,255,.28);backdrop-filter:blur(8px)}
+  .mini,.wide,.ratebar{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(8px);border-radius:18px}
+  .mini .t{color:#E1EEFF}.mini .v{font-size:18px}
+  .wide{box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+  .wide .ic{background:rgba(255,255,255,.19);border-radius:14px}
+  .wrap{padding:15px 14px 18px}
+  .card{background:var(--surface);border:1px solid rgba(216,229,247,.8);border-radius:23px;padding:18px 16px;box-shadow:0 8px 24px -16px rgba(17,55,112,.24);margin-bottom:13px}
   html[data-theme="dark"] .card{border-color:var(--line)}
-  .trio{background:var(--g-soft)}
-  .quad button{background:var(--surface);border:1px solid var(--line);border-radius:19px;box-shadow:0 6px 20px -16px rgba(10,70,150,.3)}
-  .quad .qi,.qi{background:#EAF3FF;color:#075BFA;border-radius:13px}
-  html[data-theme="dark"] .quad .qi,html[data-theme="dark"] .qi{background:#142C50;color:#78B3FF}
-  .btn{background:linear-gradient(135deg,#168BFF,#075BFA);box-shadow:0 9px 20px -12px rgba(0,91,250,.8)!important}
-  .btn.ghost,.btn.dashed{background:var(--g-soft);color:var(--accent);border-color:#C9DFFF;box-shadow:none!important}
-  .sw.on,.cb.on,.chip.on,.tr-x span.cur{background:#075BFA;border-color:#075BFA}
-  .tabbar{border:1px solid rgba(220,232,249,.95);border-radius:24px;box-shadow:0 8px 30px rgba(12,48,100,.12);padding:7px 6px}
-  .tabbar button.on{background:#EAF3FF;color:#075BFA}
-  html[data-theme="dark"] .tabbar button.on{background:#142C50;color:#78B3FF}
-  .subhead{margin-bottom:0}
-  #splash{background:radial-gradient(circle at 50% 25%,#2B92FF 0%,#075BFA 44%,#062B83 100%);gap:12px}
-  #splash img{width:100px;height:100px;border-radius:28px;box-shadow:0 20px 40px -15px rgba(0,0,0,.35)}
-  #splash .nm{font-size:28px;font-weight:800;letter-spacing:-.05em}
-  #splash .tagline{font-size:12px;color:#D7E8FF;letter-spacing:.04em;margin-top:-8px}
-  .toast{box-shadow:0 10px 30px rgba(5,34,85,.18)}
-  @media(min-width:600px){body{max-width:520px;margin:0 auto;box-shadow:0 0 70px rgba(20,60,120,.08)}}
+  .card h2{font-weight:750;color:var(--ink)}
+  .quad{gap:10px}
+  .quad button,.stat3 .c{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:0 5px 18px -14px rgba(15,64,140,.35);padding:14px 8px;color:var(--ink)}
+  .quad button:active{background:var(--g-soft)}
+  .quad .qi{background:linear-gradient(145deg,#EAF4FF,#D9EAFF);color:#086BFA;border-radius:13px}
+  .ico{background:linear-gradient(145deg,#EAF4FF,#DCEBFF);color:#086BFA}
+  .btn{background:linear-gradient(110deg,#087CFF,#0759E7);border-radius:16px;color:#fff;box-shadow:0 8px 18px -11px rgba(0,92,240,.75)!important}
+  .btn.ghost{background:var(--g-soft);color:var(--accent);box-shadow:none!important}
+  .btn.line{background:var(--surface);border:1px solid var(--line);color:var(--ink);box-shadow:none!important}
+  .btn.dashed{background:var(--surface);border:1.5px dashed #8DBBFF;color:#086BFA;box-shadow:none!important}
+  .inp{border:1px solid var(--line);background:var(--surface);border-radius:15px;min-height:50px}
+  .inp:focus{border-color:#087CFF;box-shadow:0 0 0 3px rgba(8,124,255,.11);outline:0}
+  .chip.on,.sw.on,.cb.on,.tr-x span.cur{background:#086BFA;border-color:#086BFA}
+  .seg button.on{background:#086BFA;color:white;border-color:#086BFA}
+  .tabbar{background:var(--tabbar);border:1px solid rgba(218,230,246,.9);box-shadow:0 -8px 30px -23px rgba(0,48,120,.4);backdrop-filter:blur(18px);border-radius:24px 24px 0 0}
+  .tabbar button.on{background:#EAF3FF;color:#086BFA}
+  html[data-theme="dark"] .tabbar button.on{background:#142747;color:#76B4FF}
+  .sheet{background:var(--surface);border:1px solid var(--line);box-shadow:0 -12px 44px rgba(5,29,68,.2)}
+  #splash{background:radial-gradient(100% 80% at 100% 0%,#27A0FF 0%,transparent 60%),linear-gradient(145deg,#087CFF,#063A9E)}
+  #splash img{border-radius:28px;box-shadow:0 18px 40px -14px rgba(0,24,82,.4)}
+  .ver{background:#EAF3FF;color:#086BFA}
+  .ornament{opacity:.3}
+  @media(min-width:700px){body{max-width:520px;margin:0 auto;box-shadow:0 0 60px rgba(14,65,130,.08);min-height:100vh}.hero{border-radius:0 0 30px 30px}}
 
   .ratebar .qi,.ratebar .qi .svi{color:#fff !important;background:none !important;box-shadow:none !important}
   html[data-theme="dark"] .card,html[data-theme="dark"] .tabbar,html[data-theme="dark"] .quad button{border-color:var(--line) !important}
+  .hero:before{background-image:none !important;inset:auto !important;mix-blend-mode:normal !important}
+  .seg button.on{color:#fff}
+  .seg button.on.danger,.seg.seg3 button.on[data-k="out"]{background:var(--neg);border-color:var(--neg);color:#fff}
+  .seg.seg3 button.on[data-k="in"]{background:var(--pos);border-color:var(--pos);color:#fff}
+  .seg.seg3 button.on[data-k="inv"],.seg.seg4 button.on.blue{background:var(--blue);border-color:var(--blue);color:#fff}
+  .seg.glass button.on{background:#fff;color:#086BFA}
 </style>
 </head>
 <body>
-<div id="splash"><img src="icon-512.png" alt="Qarzhy"><div class="nm">Qarzhy</div><div class="tagline">Smart Money. Better Life.</div></div>
+<div id="splash"><img src="icon-512.png" alt="Қаржы"><div class="nm">Қаржы</div></div>
 
 <!-- ============ БАСТЫ ============ -->
 <section class="page on" id="p-home">
   <div class="hero">
     <div class="hero-top center">
       <img class="mark" src="icon-192.png" alt="" width="40" height="40">
-      <div class="ht"><h1>Qarzhy</h1><div class="sub">Smart Money. Better Life.</div></div>
+      <div class="ht"><h1>Қаржы</h1></div>
       <button class="plus" onclick="openTx()" aria-label="Операция қосу">+</button>
     </div>
     <div class="cap-label">Таза капитал</div>
