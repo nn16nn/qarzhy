@@ -303,42 +303,47 @@ function accIconHtml(a, cls){
   if(n && SVGI[n]) return svgIcon(n, cls);
   return '<span style="font-size:19px;line-height:1">' + (n || '') + '</span>';
 }
-var BRAND = {
-  'kaspi bank':      ['K','#F14635'],
-  'freedom superapp':['F','#12356B'],
-  'halyk bank':      ['H','#00A19A'],
-  'jusan bank':      ['J','#F5C518','#1A1A1A'],
-  'fortebank':       ['F','#00A0DF'],
-  'bereke bank':     ['B','#7B2CBF'],
-  'otbasy bank':     ['O','#E30613'],
-  'qazaq bank':      ['Q','#0F766E'],
-  'қолма-қол':       ['₸','#0B9F72']
-};
-function brandOf(name){
+/* Банктер: ресми бренд түсі (Brandfetch), белгідегі әріп, атауын тану.
+   Банктердің нақты логотиптері салынбайды — тек түсі мен бас әрпі. */
+var BANKS = [
+  ['Kaspi Bank',          'card',  /kaspi|каспи|каспий/i,                 'K',  '#F14635', '#FFFFFF'],
+  ['Halyk Bank',          'bank',  /halyk|халык|халық|народный банк/i,    'H',  '#00815F', '#F1A400'],
+  ['Freedom SuperApp',    'bank',  /freedom|фридом|ffin/i,                'F',  '#02B140', '#FFFFFF'],
+  ['Jusan Bank',          'card',  /jusan|жусан|жусан/i,                  'J',  '#EDB110', '#1E3F7A'],
+  ['ForteBank',           'card',  /forte|форте/i,                        'Fo', '#A31551', '#FFFFFF'],
+  ['Bereke Bank',         'bank',  /bereke|береке/i,                      'B',  '#023DFF', '#FFFFFF'],
+  ['Bank CenterCredit',   'bank',  /centercredit|центркредит|\bbcc\b|бцк/i,'BCC','#00AB75', '#FFFFFF'],
+  ['Otbasy Bank',         'house', /otbasy|отбасы|жилстрой/i,             'O',  '#008B8A', '#FFFFFF'],
+  ['Home Credit Bank',    'card',  /home ?credit|хоум ?кредит/i,          'HC', '#E2001A', '#FFFFFF'],
+  ['Qazaq Bank',          'bank',  /qazaq|назарбанк/i,                    'Q',  '#0F766E', '#FFFFFF'],
+  ['Қолма-қол',           'wallet',/^қолма-қол|^наличн|^cash/i,           '₸',  '#0B9F72', '#FFFFFF']
+];
+function bankOf(name){
   if(!name) return null;
-  var k = String(name).trim().toLowerCase();
-  if(BRAND[k]) return BRAND[k];
-  for(var b in BRAND){ if(k.indexOf(b.split(' ')[0]) === 0) return BRAND[b]; }
+  var k = String(name).trim();
+  for(var i = 0; i < BANKS.length; i++){
+    if(BANKS[i][0].toLowerCase() === k.toLowerCase()) return BANKS[i];
+  }
+  for(var j = 0; j < BANKS.length; j++){
+    if(BANKS[j][2] && BANKS[j][2].test(k)) return BANKS[j];
+  }
   return null;
+}
+/* ескі код үшін: [әріп, фон, мәтін түсі] */
+function brandOf(name){
+  var b = bankOf(name);
+  return b ? [b[3], b[4], b[5]] : null;
+}
+function brandSm(br){
+  if(!br) return '';
+  return '<span class="brand sm' + (br[0].length > 1 ? ' w' : '') + '" style="background:' + br[1] + ';color:' + (br[2] || '#fff') + '">' + br[0] + '</span>';
 }
 function accBadge(a, small){
   var b = brandOf(a.name);
   if(!b) return '<div class="ico'+(small?' sm':'')+'">'+accIconHtml(a)+'</div>';
-  return '<div class="brand'+(small?' sm':'')+'" style="background:'+b[1]+
-         (b[2]?';color:'+b[2]:'')+'">'+b[0]+'</div>';
+  return '<div class="brand'+(small?' sm':'')+(b[0].length > 1 ? ' w' : '')+'" style="background:'+b[1]+';color:'+(b[2]||'#fff')+'">'+b[0]+'</div>';
 }
 
-var BANKS = [
-  ['Kaspi Bank','card',/kaspi|каспи|каспий/i],
-  ['Freedom SuperApp','bank',/freedom|фридом|фрidom/i],
-  ['Halyk Bank','bank',/halyk|халык|халық|народный банк/i],
-  ['Jusan Bank','card',/jusan|жусан/i],
-  ['ForteBank','card',/forte|форте/i],
-  ['Bereke Bank','bank',/bereke|береке/i],
-  ['Otbasy Bank','house',/otbasy|отбасы|жилстрой/i],
-  ['Qazaq Bank','bank',/qazaq|назарбанк/i],
-  ['Қолма-қол','wallet',null]
-];
 function bankExists(name){
   var f=false;
   DB.accounts.forEach(function(a){ if(a.name.toLowerCase()===name.toLowerCase()) f=true; });
@@ -522,7 +527,7 @@ function drawAccs(){
     var b=document.createElement('button');
     b.className='chip'+(a.id===fAcc?' on':'');
     var br=brandOf(a.name);
-    b.innerHTML=(br?'<span class="brand sm" style="background:'+br[1]+(br[2]?';color:'+br[2]:'')+'">'+br[0]+'</span>'
+    b.innerHTML=(br?brandSm(br)
       :accIconHtml(a,'chip-ic'))+'<span>'+esc(a.name)+'</span>';
     b.onclick=function(){ fAcc=a.id; if(fTo===a.id) fTo=null; drawAccs(); };
     box.appendChild(b);
@@ -714,7 +719,7 @@ function drawBankChips(){
     var btn=document.createElement('button');
     btn.className='chip'+(cur===b[0].toLowerCase()?' on':'');
     btn.innerHTML=(br
-      ? '<span class="brand sm" style="background:'+br[1]+(br[2]?';color:'+br[2]:'')+'">'+br[0]+'</span>'
+      ? brandSm(br)
       : svgIcon(b[1],'chip-ic'))+'<span>'+b[0]+'</span>';
     btn.onclick=function(){
       document.getElementById('ac-name').value=b[0];
@@ -1084,7 +1089,7 @@ function render(){
     var obr = a.id==='all' ? null : brandOf(a.name);
     b.innerHTML=(a.id==='all'
       ? svgIcon('grid','chip-ic')
-      : (obr ? '<span class="brand sm" style="background:'+obr[1]+(obr[2]?';color:'+obr[2]:'')+'">'+obr[0]+'</span>'
+      : (obr ? brandSm(obr)
              : accIconHtml(a,'chip-ic')))+'<span>'+esc(a.name)+'</span>';
     b.onclick=function(){ opsAcc=a.id; render(); };
     oab.appendChild(b);
@@ -1263,7 +1268,7 @@ function renderAccList(kind, elId, emptyTxt){
     if(kind==='debt') sub=(a.rate||0)+'% · айына '+nf(a.pay||0)+' ₸';
     var plHtml='';
     if(a.cur==='USD') sub += ' · ≈ '+nf(toKZT(a))+' ₸';
-    row.innerHTML=(kind==='asset' ? accBadge(a) :
+    row.innerHTML=((kind==='asset' || brandOf(a.name)) ? accBadge(a) :
       '<div class="ico'+(kind==='debt'?' red':' blue')+'">'+accIconHtml(a)+'</div>')+
       '<div style="min-width:0;flex:1"><div class="name">'+esc(a.name)+(a.cur==='USD'?' <span class="badge">$</span>':'')+
       '</div><div class="sub2">'+sub+'</div></div>'+
@@ -2209,7 +2214,7 @@ function renderImport(){
     var b = document.createElement('button');
     b.className = 'chip' + (a.id === IMP.acc ? ' on' : '');
     var br2 = brandOf(a.name);
-    b.innerHTML = (br2 ? '<span class="brand sm" style="background:'+br2[1]+(br2[2]?';color:'+br2[2]:'')+'">'+br2[0]+'</span>'
+    b.innerHTML = (br2 ? brandSm(br2)
       : accIconHtml(a,'chip-ic')) + '<span>'+esc(a.name)+'</span>';
     b.onclick = function(){ IMP.acc = a.id; renderImport(); };
     ab.appendChild(b);
@@ -2222,7 +2227,7 @@ function renderImport(){
       'Бұл үзінді <b>' + esc(IMP.bank[0]) + '</b> банкінен көрінеді. Сол шотты құрайық па?</div>';
     var mk = document.createElement('button');
     mk.className = 'btn ghost'; mk.style.marginBottom = '12px';
-    mk.textContent = IMP.bank[1] + ' ' + IMP.bank[0] + ' шотын құру';
+    mk.innerHTML = brandSm(brandOf(IMP.bank[0])) + ' ' + esc(IMP.bank[0]) + ' шотын құру';
     mk.onclick = function(){ IMP.bankUsed = true; addBank(IMP.bank[0], IMP.bank[1], true); };
     hint.appendChild(mk);
   }
@@ -2232,7 +2237,7 @@ function renderImport(){
     if(bankExists(bk[0])) return;
     var b = document.createElement('button');
     b.className = 'chip';
-    b.textContent = '+ ' + bk[1] + ' ' + bk[0];
+    b.innerHTML = '+ ' + brandSm(brandOf(bk[0])) + '<span>' + esc(bk[0]) + '</span>';
     b.onclick = function(){ addBank(bk[0], bk[1], true); };
     addBox.appendChild(b);
   });
@@ -3473,7 +3478,7 @@ function drawDebtAccs(){
     var b = document.createElement('button');
     var br = brandOf(a.name);
     b.className = 'chip' + (a.id === dAcc ? ' on' : '');
-    b.innerHTML = (br ? '<span class="brand sm" style="background:'+br[1]+(br[2]?';color:'+br[2]:'')+'">'+br[0]+'</span>'
+    b.innerHTML = (br ? brandSm(br)
                       : accIconHtml(a,'chip-ic')) + '<span>' + esc(a.name) + '</span>';
     b.onclick = function(){ dAcc = a.id; drawDebtAccs(); };
     box.appendChild(b);
