@@ -1015,6 +1015,62 @@
   .quad{grid-template-columns:repeat(2,minmax(0,1fr))}
   .quad button{min-width:0;overflow:hidden}
   .two.inout{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+  /* =====================================================
+     v15 · Q бренд: қою көк + кобальт + маржан
+     ===================================================== */
+  :root{
+    --navy:#0B2A7A; --coral:#FF6F61; --coral-soft:#FFEDEB;
+    --g-deep:#0B2A7A; --g-mid:#1463FF; --g-bright:#3D7EFF; --g-soft:#EAF1FF;
+    --accent:#1463FF; --blue:#1463FF; --blue-bg:#EAF1FF;
+    --ink:#0B1A3F; --ink-2:#67759A; --line:#E6ECF6; --bg:#F4F7FD; --surface:#FFFFFF;
+  }
+  html[data-theme="dark"]{
+    --navy:#7FA2FF; --coral:#FF8A7E; --coral-soft:#3A1F22;
+    --g-deep:#0A1E52; --g-mid:#2F74FF; --g-bright:#5B95FF; --g-soft:#14223D;
+    --accent:#6FA2FF; --blue:#6FA2FF; --blue-bg:#14223D;
+    --ink:#EEF3FF; --ink-2:#9AA9C8; --line:#1E2B47; --bg:#060D1F; --surface:#0E1830;
+  }
+  .ah-wm{color:var(--navy)}
+  html[data-theme="dark"] .ah-wm{color:var(--ink)}
+  .ah-brand img{border-radius:0;width:34px;height:34px}
+  .iconbtn.avatar{background:linear-gradient(145deg,#3D7EFF,#0B2A7A);color:#fff;border:0}
+  .bdot{background:var(--coral)}
+  .balance{background:radial-gradient(120% 130% at 100% 0%,#4A8BFF 0%,transparent 55%),
+    linear-gradient(135deg,#1F66FF 0%,#1048E0 55%,#0B2A7A 100%)}
+  html[data-theme="dark"] .balance{background:radial-gradient(120% 130% at 100% 0%,#2A56C8 0%,transparent 55%),
+    linear-gradient(135deg,#173E9E 0%,#102C78 55%,#0A1B4B 100%)}
+  .tabbar .fab{background:linear-gradient(145deg,#3D7EFF,#1048E0) !important}
+  .qa button:first-child .qa-i{background:var(--accent)}
+
+  /* шоттар: банк картасы */
+  .acc-card{margin:12px 0 12px;padding:20px 20px 18px;cursor:default}
+  .acc-card .ac-logo{width:30px;height:30px;filter:brightness(0) invert(1);opacity:.9}
+  .acc-card .ac-num{font-size:13px;letter-spacing:.04em;color:rgba(255,255,255,.8);margin-top:10px}
+  .acc-card .cap{margin:8px 0 0}
+
+  /* статистика: кезең түймелері */
+  .pseg{margin:10px 0 4px;background:var(--g-soft)}
+  .pseg button{font-size:13.5px;padding:9px 4px}
+  .pseg button.on{background:var(--accent) !important;color:#fff !important}
+  .mnav.fixed .mn{visibility:hidden}
+
+  /* мақсаттар: бірінші мақсат — ерекшеленген көк карта */
+  #goal-list .goal:first-child{color:#fff;border:0;
+    background:radial-gradient(120% 130% at 100% 0%,#4A8BFF 0%,transparent 55%),linear-gradient(135deg,#1F66FF,#0B2A7A);
+    box-shadow:0 20px 36px -22px rgba(16,72,224,.8)}
+  #goal-list .goal:first-child .g-amt,#goal-list .goal:first-child .muted{color:rgba(255,255,255,.8)}
+  #goal-list .goal:first-child .ico{background:rgba(255,255,255,.18);color:#fff}
+  #goal-list .goal:first-child .ring .rt{stroke:rgba(255,255,255,.22)}
+  #goal-list .goal:first-child .ring .rf{stroke:#fff}
+  #goal-list .goal:first-child .ring b{color:#fff}
+  #goal-list .goal:first-child .track{background:rgba(255,255,255,.22)}
+  #goal-list .goal:first-child .fill{background:#fff}
+  #goal-list .goal:first-child .gpace{background:rgba(255,255,255,.16);color:#fff}
+
+  /* ашылу экраны */
+  #splash{background:linear-gradient(160deg,#1F66FF,#0B2A7A) !important}
+  html[data-theme="dark"] .pseg button.on{background:var(--g-mid) !important}
 </style>
 </head>
 <body>
@@ -1023,10 +1079,10 @@
 <!-- ============ БАСТЫ ============ -->
 <section class="page on" id="p-home">
   <header class="apphead">
-    <div class="ah-brand"><img src="icon-192.png" alt="" width="34" height="34"><span class="ah-wm">Qarzhy</span></div>
+    <div class="ah-brand"><img src="qarzhy-logo.svg" alt="" width="34" height="34"><span class="ah-wm">Qarzhy</span></div>
     <div class="ah-act">
       <button class="iconbtn" onclick="go('recur')" aria-label="Еске салулар"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2H4.5Z"/><path d="M10 21h4"/></svg><i class="bdot hide" id="h-bell"></i></button>
-      <button class="iconbtn" onclick="go('set')" aria-label="Баптау"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg></button>
+      <button class="iconbtn avatar" onclick="go('set')" aria-label="Профиль және баптау"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M5 19.5c1.1-3.2 3.8-5 7-5s5.9 1.8 7 5"/></svg></button>
     </div>
   </header>
 
@@ -1096,8 +1152,11 @@
     <div class="hero-top center">
       <div class="ht"><h1>Менің қаржым</h1><div class="sub" id="a-count">0 шот</div></div>
     </div>
-    <div class="cap-label">Таза капитал</div>
-    <div class="cap" id="a-net">0 ₸</div>
+    <div class="balance acc-card">
+      <div class="bl-top"><span>Таза капитал</span><img src="qarzhy-logo.svg" alt="" width="30" height="30" class="ac-logo"></div>
+      <div class="cap" id="a-net">0 ₸</div>
+      <div class="ac-num">Qarzhy · <span id="a-count2">0 шот</span></div>
+    </div>
     <div class="two sm3">
       <div class="mini"><div class="t">Банктер</div><div class="v" id="a-banks">0 ₸</div></div>
       <div class="mini"><div class="t">Мақсаттар</div><div class="v" id="a-goals">0 ₸</div></div>
@@ -1144,9 +1203,12 @@
 <section class="page" id="p-stat">
   <div class="hero flat">
     <div class="hero-top center">
-      <div class="ht"><h1>Нәтиже</h1><div class="sub" id="s-count">0 операция</div></div>
+      <div class="ht"><h1>Статистика</h1><div class="sub" id="s-count">0 операция</div></div>
     </div>
-    <div class="mnav">
+    <div class="seg pseg" id="s-per" role="group" aria-label="Кезең">
+      <button data-p="week" onclick="setStatPer('week')">Апта</button><button data-p="month" class="on" onclick="setStatPer('month')">Ай</button><button data-p="year" onclick="setStatPer('year')">Жыл</button><button data-p="all" onclick="setStatPer('all')">Барлығы</button>
+    </div>
+    <div class="mnav" id="s-mnav">
       <button class="mn" onclick="shiftStatMon(-1)" aria-label="Алдыңғы ай">‹</button>
       <div class="mn-l" id="s-month">—</div>
       <button class="mn" id="s-mon-next" onclick="shiftStatMon(1)" aria-label="Келесі ай">›</button>
@@ -1415,7 +1477,7 @@
 <section class="page" id="p-set">
   <div class="hero flat">
     <div class="hero-top center">
-      <div class="ht"><h1>Баптау</h1><div class="sub">Дерек және көшірме</div></div>
+      <div class="ht"><h1>Профиль</h1><div class="sub">Баптау, дерек және көшірме</div></div>
     </div>
   </div>
   <div class="wrap">
@@ -1614,10 +1676,10 @@
 <!-- ============ TABBAR ============ -->
 <nav class="tabbar">
   <button class="on" data-tab="home" onclick="go('home')"><span class="g" data-i="home"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11 12 3.5 20.5 11"/><path d="M5.8 9.7V20h12.4V9.7"/><path d="M10 20v-5h4v5"/></svg></span>Басты</button>
-  <button data-tab="accounts" onclick="go('accounts')"><span class="g" data-i="wallet"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6.5" width="18" height="13" rx="3"/><path d="M3 9.5V7a2.5 2.5 0 0 1 2.5-2.5H16"/><circle cx="16.5" cy="13" r="1.4"/></svg></span>Қаржы</button>
+  <button data-tab="accounts" onclick="go('accounts')"><span class="g" data-i="wallet"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6.5" width="18" height="13" rx="3"/><path d="M3 9.5V7a2.5 2.5 0 0 1 2.5-2.5H16"/><circle cx="16.5" cy="13" r="1.4"/></svg></span>Шоттар</button>
   <button class="fab" onclick="openTx()" aria-label="Операция қосу"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
-  <button data-tab="ops" onclick="go('ops')"><span class="g" data-i="receipt"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.2h12v17.6l-3-1.8-3 1.8-3-1.8-3 1.8V3.2Z"/><path d="M9.2 8.2h5.6"/><path d="M9.2 12h5.6"/></svg></span>Операция</button>
-  <button data-tab="stat" onclick="go('stat')"><span class="g" data-i="stats"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11"/><path d="M9.3 20V5"/><path d="M14.7 20v-6"/><path d="M20 20V9"/></svg></span>Нәтиже</button>
+  <button data-tab="stat" onclick="go('stat')"><span class="g" data-i="stats"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11"/><path d="M9.3 20V5"/><path d="M14.7 20v-6"/><path d="M20 20V9"/></svg></span>Статистика</button>
+  <button data-tab="set" onclick="go('set')"><span class="g" data-i="user"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.2-3.6 4.1-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/></svg></span>Профиль</button>
 </nav>
 
 <div class="scrim" id="scrim" onclick="closeSheets()"></div>

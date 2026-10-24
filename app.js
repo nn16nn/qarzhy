@@ -495,6 +495,7 @@ function setType(t){
   document.getElementById('f-acc-lab').textContent =
     t==='tr' ? 'Қай шоттан' : (t==='in'?'Қай шотқа түсті':'Қай шоттан');
   if(!moves){ fCat = CATS[t][0][0]; drawCats(); }
+  if(!fEdit){ var tt=document.getElementById('tx-title'); if(tt) tt.textContent = tr(t==='in'?'Кіріс қосу':(t==='tr'?'Аударым':'Шығын қосу')); }
   drawAccs();
 }
 function drawCats(){
@@ -1042,6 +1043,7 @@ function render(){
 
   /* --- accounts --- */
   document.getElementById('a-count').textContent=DB.accounts.length+' шот';
+  var ac2=document.getElementById('a-count2'); if(ac2) ac2.textContent=DB.accounts.length+' шот';
   animNum(document.getElementById('a-net'), T.net);
   document.getElementById('a-banks').textContent=moneyShort(T.banks);
   var ai=document.getElementById('a-goals');
@@ -1284,15 +1286,41 @@ var statKind = 'out';       /* out | in | inv */
 var statMode = 'bubbles';   /* bubbles | donut | flow | budget */
 
 function statMonStart(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth() + statMon, 1); }
+var statPer = 'month';      /* week | month | year | all */
 function applyStatMon(){
-  var f = statMonStart(), t = new Date(f.getFullYear(), f.getMonth() + 1, 0);
-  range.from = iso(f); range.to = iso(t);
-  var lbl = document.getElementById('s-month');
-  if(lbl) lbl.textContent = MONTHS[f.getMonth()] + ' ' + f.getFullYear();
+  var f = statMonStart(), t = new Date(f.getFullYear(), f.getMonth() + 1, 0), lbl = '';
+  if(statPer === 'week'){
+    var n = new Date(); t = new Date(n.getFullYear(), n.getMonth(), n.getDate());
+    f = new Date(t); f.setDate(t.getDate() - 6);
+    lbl = f.getDate() + ' ' + MONTHS[f.getMonth()].slice(0,3) + ' – ' + t.getDate() + ' ' + MONTHS[t.getMonth()].slice(0,3);
+  } else if(statPer === 'year'){
+    f = new Date(f.getFullYear(), 0, 1); t = new Date(f.getFullYear(), 11, 31);
+    lbl = String(f.getFullYear());
+  } else if(statPer === 'all'){
+    lbl = tr('Барлығы');
+  } else {
+    lbl = MONTHS[f.getMonth()] + ' ' + f.getFullYear();
+  }
+  range.from = statPer === 'all' ? null : iso(f);
+  range.to   = statPer === 'all' ? null : iso(t);
+  var el = document.getElementById('s-month');
+  if(el) el.textContent = lbl;
   var nx = document.getElementById('s-mon-next');
-  if(nx) nx.classList.toggle('off', statMon >= 0);
+  var step = statPer === 'year' ? 12 : 1;
+  if(nx) nx.classList.toggle('off', statPer === 'year' ? statMonStart().getFullYear() >= new Date().getFullYear() : statMon >= 0);
+  var nav = document.getElementById('s-mnav');
+  if(nav) nav.classList.toggle('fixed', statPer === 'week' || statPer === 'all');
+  var bs = document.querySelectorAll('#s-per button');
+  for(var i = 0; i < bs.length; i++) bs[i].classList.toggle('on', bs[i].dataset.p === statPer);
 }
+function setStatPer(p){ statPer = p; if(p !== 'year') statMon = Math.min(statMon, 0); applyStatMon(); render(); }
 function shiftStatMon(d){
+  if(statPer === 'week' || statPer === 'all') return;
+  if(statPer === 'year'){
+    var y = statMonStart().getFullYear() + d;
+    if(y > new Date().getFullYear()) return;
+    statMon += d * 12; applyStatMon(); render(); return;
+  }
   if(statMon + d > 0) return;
   statMon += d; applyStatMon(); render();
 }
@@ -2353,7 +2381,7 @@ function importConfirm(){
 var TR = [
 /* --- навигация --- */
 ["Басты","Главная","Home"],["Қаржы","Финансы","Finance"],["Операция","Операции","Activity"],
-["Нәтиже","Нәтиже","Stats"],["Баптау","Настройки","Settings"],
+["Нәтиже","Нәтиже","Stats"],["Статистика","Статистика","Statistics"],["Шоттар","Счета","Accounts"],["Профиль","Профиль","Profile"],["Кіріс қосу","Добавить доход","Add income"],["Шығын қосу","Добавить расход","Add expense"],["Баптау","Настройки","Settings"],
 ["Шолу","Обзор","Overview"],["Операциялар","Операции","Transactions"],
 ["Мақсаттар","Цели","Goals"],["Есептегіш","Есептегіш","Calculator"],["Бюджет — санат лимиттері","Бюджет — лимиты по категориям","Budget — category limits"],
 
@@ -3281,6 +3309,7 @@ function parseFreedom(lines){
 
 /* ================= SVG БЕЛГІШЕЛЕР ================= */
 var SVGI = {
+  user:   '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.2-3.6 4.1-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/>',
   home:   '<path d="M3.5 11 12 3.5 20.5 11"/><path d="M5.8 9.7V20h12.4V9.7"/><path d="M10 20v-5h4v5"/>',
   wallet: '<rect x="3" y="6.5" width="18" height="13" rx="3"/><path d="M3 9.5V7a2.5 2.5 0 0 1 2.5-2.5H16"/><circle cx="16.5" cy="13" r="1.4"/>',
   receipt:'<path d="M6 3.2h12v17.6l-3-1.8-3 1.8-3-1.8-3 1.8V3.2Z"/><path d="M9.2 8.2h5.6"/><path d="M9.2 12h5.6"/>',
