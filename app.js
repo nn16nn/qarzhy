@@ -7,7 +7,7 @@ var store = {
   set: function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; } }
 };
 var brId = null;
-var DB = { tx:[], goals:[], accounts:[], btx:[], debts:[], limits:{}, split:null, lastBackup:null, lang:'kk', theme:'auto', rate:null };
+var DB = { tx:[], goals:[], accounts:[], btx:[], debts:[], limits:{}, split:null, recur:[], lastBackup:null, lang:'kk', theme:'auto', rate:null };
 
 function load(){
   try{
@@ -16,7 +16,7 @@ function load(){
       var d = JSON.parse(raw);
       DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[]; DB.debts = d.debts||[];
       DB.limits = d.limits||{};
-      DB.split = d.split||null;
+      DB.split = d.split||null; DB.recur = d.recur||[];
       DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto';
       DB.lastBackup = d.lastBackup||null; DB.rate = d.rate||null;
       DB.updated = d.updated||null;
@@ -104,7 +104,7 @@ function applyDB(d){
   if(!d) return;
   DB.tx = d.tx || []; DB.goals = d.goals || []; DB.accounts = d.accounts || [];
   DB.btx = d.btx || []; DB.debts = d.debts || []; DB.limits = d.limits || {};
-  DB.split = d.split || null;
+  DB.split = d.split || null; DB.recur = d.recur || [];
   SPLIT = null; if(splitTimer){ clearTimeout(splitTimer); splitTimer = null; }
   DB.lastBackup = d.lastBackup || null; DB.lang = d.lang || 'kk';
   DB.theme = d.theme || 'auto'; DB.rate = d.rate || null;
@@ -409,11 +409,11 @@ function totals(){
   });
   inv = investedTotal();
   var dt = (typeof debtTotals === 'function') ? debtTotals() : {lent:0, owed:0};
-  /* мақсаттарда жиналған ақша да капиталға кіреді */
+  /* мақсаттарда жиналған ақша таза капиталға кірмейді — ол бөлек есептеледі */
   var g = 0; (DB.goals || []).forEach(function(x){ g += x.saved || 0; });
   return {banks:b, invested:inv, assets:b, debts:d, goals:g,
           lent:dt.lent, owed:dt.owed,
-          net:b + g - d + dt.lent - dt.owed};
+          net:b - d + dt.lent - dt.owed};
 }
 function investedTotal(){
   var s2 = 0;
@@ -928,7 +928,8 @@ function importData(el){
 function wipe(){
   if(!confirm(tr('Барлық дерек өшіріледі. Жалғастырасыз ба?'))) return;
   DB={tx:[],goals:[],accounts:[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:0,cur:'KZT'}],
-      btx:[],debts:[],limits:{},lastBackup:DB.lastBackup,lang:DB.lang,theme:DB.theme,rate:DB.rate};
+      btx:[],debts:[],limits:{},split:null,recur:[],lastBackup:DB.lastBackup,lang:DB.lang,theme:DB.theme,rate:DB.rate};
+  SPLIT=null;
   SNAPS.forEach(function(x){ idbDel('snap:'+x.day); });
   SNAPS=[]; idbSet('snaps',[]).catch(function(){});
   save(); render(); toast('Өшірілді');
@@ -1112,6 +1113,8 @@ function render(){
 
   /* --- жаңа бөлімдер --- */
   drawDebts();
+  drawRecur();
+  drawCashback();
   calcDep();
   calcTax();
   drawWarnings();
@@ -2605,6 +2608,23 @@ var TR = [
 ["Жалақыны жазыңыз.","Введите зарплату.","Enter your salary."],
 ["Пайыздың қосындысы 100% болуы керек.","Сумма процентов должна быть 100%.","Percentages must add up to 100%."],
 ["Кемінде бір бөлім қалуы керек.","Должен остаться хотя бы один раздел.","At least one part must remain."],
+["Тек есеп — ешқайда жіберілмейді","Только расчёт — никуда не отправлять","Calculation only — don't send anywhere"],
+["Мақсат","Цель","Goal"],["Инвестиция (шығын ретінде жазылады)","Инвестиции (запишется как расход)","Investment (recorded as expense)"],
+["Аударым","Перевод","Transfer"],["Жалақы жоспары","План зарплаты","Salary plan"],["бөлім орындалды","разделов выполнено","parts done"],
+["Жалақы жоспары бойынша ақша жіберіледі. Жалғастырасыз ба?","Деньги будут отправлены по плану зарплаты. Продолжить?","Money will be sent according to the salary plan. Continue?"],
+["Бұл айда жоспар орындалған. Қайта орындасаңыз ақша екінші рет жіберіледі. Жалғастырасыз ба?","В этом месяце план уже выполнен. Повторно деньги отправятся ещё раз. Продолжить?","The plan was already applied this month. Applying again sends the money twice. Continue?"],
+["Жоспарды орындау","Выполнить план","Apply plan"],["Қай шоттан бөлеміз","С какого счёта делим","Split from account"],
+["Қайталанатын төлемдер","Регулярные платежи","Recurring payments"],["Ай сайынғы төлемдер мен еске салу","Ежемесячные платежи и напоминания","Monthly payments and reminders"],
+["Жаңа төлем","Новый платёж","New payment"],["Төлемді түзету","Изменить платёж","Edit payment"],["Төлем жақындады","Платёж скоро","Payment due soon"],
+["Төлем мерзімі өтті","Платёж просрочен","Payment overdue"],["Төледім","Оплатил","Paid"],["төленді","оплачено","paid"],
+["бүгін","сегодня","today"],["күннен кейін","дн. осталось","days left"],["Төлем жазылды","Платёж записан","Payment recorded"],
+["Төлем әлі жоқ.","Платежей пока нет.","No payments yet."],
+["Айдың қай күні екенін жазыңыз (1–31)","Укажите день месяца (1–31)","Enter the day of month (1–31)"],
+["Төлем тізімнен өшіріледі. Бұрын жазылған операциялар қалады. Жалғастырасыз ба?","Платёж удалится из списка. Прежние операции останутся. Продолжить?","The payment will be removed. Past transactions stay. Continue?"],
+["Осы айда қайтты","Вернулось в этом месяце","Returned this month"],["Өткен айда","В прошлом месяце","Last month"],
+["Осы айдағы кэшбэк саны","Начислений кэшбэка в месяце","Cashback entries this month"],
+["Шығынның қанша пайызы қайтты","Какая доля расходов вернулась","Share of spending returned"],
+["Барлық уақытта","За всё время","All time"],
 ["Салық калькуляторы","Налоговый калькулятор","Tax calculator"],
 ["ЖК · оңайлатылған декларация","ИП · упрощённая декларация","Sole trader · simplified"],
 ["ЖК · оңайлатылған декларация (910-форма)","ИП · упрощённая декларация (форма 910)","Sole trader · simplified (form 910)"],
@@ -4019,15 +4039,17 @@ function splitInit(){
   var items = (s && s.items && s.items.length) ? s.items : SPLIT_DEF;
   SPLIT = {
     sum: (s && s.sum) || 0,
-    items: items.map(function(x){ return { name: String(x.name || ''), pct: +x.pct || 0 }; })
+    src: (s && s.src) || null,
+    applied: (s && s.applied) || null,
+    items: items.map(function(x){ return { name: String(x.name || ''), pct: +x.pct || 0, to: x.to || '' }; })
   };
 }
 function splitCommit(){
   if(splitTimer){ clearTimeout(splitTimer); splitTimer = null; }
   if(!SPLIT) return;
   DB.split = {
-    sum: SPLIT.sum,
-    items: SPLIT.items.map(function(x){ return { name: x.name, pct: x.pct }; })
+    sum: SPLIT.sum, src: SPLIT.src, applied: SPLIT.applied,
+    items: SPLIT.items.map(function(x){ return { name: x.name, pct: x.pct, to: x.to || '' }; })
   };
   save();
 }
@@ -4083,10 +4105,91 @@ function renderSplit(){
       '<div style="height:8px;background:var(--line);border-radius:99px;margin-top:8px;overflow:hidden">' +
         '<div id="sp-b-' + i + '" style="height:8px;width:0;background:' + SPLIT_COL[i % SPLIT_COL.length] +
           ';border-radius:99px;transition:width .2s"></div></div>' +
+      '<select class="inp soft" onchange="splitTo(' + i + ',this.value)" style="margin:12px 0 0;padding:11px 12px">' +
+        splitTargets(x) + '</select>' +
     '</div>';
   });
   box.innerHTML = h;
+  drawSplitSrc();
   updateSplit();
+}
+/* бөлім қайда жіберіледі: мақсат, инвестиция шығыны немесе басқа шотқа аударым */
+function splitTargets(x){
+  var cur = x.to || '', ok = false, h = '';
+  function opt(v, label){
+    var on = (v === cur); if(on) ok = true;
+    h += '<option value="' + esc(v) + '"' + (on ? ' selected' : '') + '>' + esc(label) + '</option>';
+  }
+  opt('', tr('Тек есеп — ешқайда жіберілмейді'));
+  (DB.goals || []).forEach(function(g){ opt('goal:' + g.id, tr('Мақсат') + ': ' + g.name); });
+  opt('inv', tr('Инвестиция (шығын ретінде жазылады)'));
+  accsOf('asset').forEach(function(a){ opt('acc:' + a.id, tr('Аударым') + ': ' + a.name); });
+  if(!ok) x.to = '';
+  return h;
+}
+function drawSplitSrc(){
+  var box = document.getElementById('sp-src');
+  if(!box || !SPLIT) return;
+  box.innerHTML = '';
+  var list = accsOf('asset');
+  if(!list.length){ box.innerHTML = '<div class="muted">Алдымен шот қосыңыз</div>'; return; }
+  var ok = false; list.forEach(function(a){ if(a.id === SPLIT.src) ok = true; });
+  if(!ok) SPLIT.src = list[0].id;
+  list.forEach(function(a){
+    var b = document.createElement('button');
+    b.className = 'chip' + (a.id === SPLIT.src ? ' on' : '');
+    b.innerHTML = accIconHtml(a, 'chip-ic') + '<span>' + esc(a.name) + '</span>';
+    b.onclick = function(){ SPLIT.src = a.id; splitSaveSoon(); drawSplitSrc(); };
+    box.appendChild(b);
+  });
+}
+function splitTo(i, v){
+  if(!SPLIT || !SPLIT.items[i]) return;
+  SPLIT.items[i].to = v;
+  splitSaveSoon();
+}
+/* жоспарды орындау: байланысқан бөлімдердің ақшасы мақсатқа / инвестицияға / шотқа жіберіледі */
+function splitApply(){
+  var a = splitReady();
+  if(!a) return;
+  var src = acc(SPLIT.src);
+  if(!src){ toast('Алдымен шот қосыңыз'); return; }
+  var jobs = [];
+  SPLIT.items.forEach(function(x, i){
+    if(x.to && a[i] > 0) jobs.push({ x: x, v: a[i] });
+  });
+  if(!jobs.length){ toast('Ешбір бөлім мақсатқа не шотқа байланбаған.'); return; }
+  var ym = todayISO().slice(0, 7);
+  var msg = tr('Жалақы жоспары бойынша ақша жіберіледі. Жалғастырасыз ба?');
+  if(SPLIT.applied === ym) msg = tr('Бұл айда жоспар орындалған. Қайта орындасаңыз ақша екінші рет жіберіледі. Жалғастырасыз ба?');
+  if(!confirm(msg)) return;
+  var done = 0;
+  jobs.forEach(function(j){
+    var to = j.x.to, v = j.v, note = tr('Жалақы жоспары') + ': ' + j.x.name;
+    if(to.indexOf('goal:') === 0){
+      var g = goal(to.slice(5));
+      if(!g) return;
+      src.bal -= toAcc(src, v);
+      g.saved = (g.saved || 0) + v;
+      g.hist = g.hist || [];
+      g.hist.push({ date: todayISO(), acc: src.id, amt: v });
+      done++;
+    } else if(to === 'inv'){
+      var t = { id: newId(), type: 'out', cat: 'Инвестиция', amt: v, date: todayISO(),
+                note: note, acc: src.id, loan: null, to: null };
+      DB.tx.push(t); applyTx(t, 1); done++;
+    } else if(to.indexOf('acc:') === 0){
+      var dst = acc(to.slice(4));
+      if(!dst || dst.id === src.id) return;
+      var t2 = { id: newId(), type: 'tr', cat: 'Аударым', amt: v, date: todayISO(),
+                 note: note, acc: src.id, loan: null, to: dst.id };
+      DB.tx.push(t2); applyTx(t2, 1); done++;
+    }
+  });
+  SPLIT.applied = ym;
+  splitCommit();
+  render();
+  toast(done + ' ' + tr('бөлім орындалды'));
 }
 function updateSplit(){
   if(!SPLIT) return;
@@ -4127,7 +4230,7 @@ function splitPct(i, v){
 function splitAdd(){
   splitInit();
   var left = Math.max(0, Math.round((100 - splitTotal()) * 100) / 100);
-  SPLIT.items.push({ name: 'Жаңа бөлім', pct: left });
+  SPLIT.items.push({ name: 'Жаңа бөлім', pct: left, to: '' });
   splitCommit();
   renderSplit();
 }
@@ -4139,7 +4242,7 @@ function splitDel(i){
 }
 function splitReset(){
   splitInit();
-  SPLIT.items = SPLIT_DEF.map(function(x){ return { name: x.name, pct: x.pct }; });
+  SPLIT.items = SPLIT_DEF.map(function(x){ return { name: x.name, pct: x.pct, to: '' }; });
   splitCommit();
   renderSplit();
 }
@@ -4179,6 +4282,165 @@ function exportSplitXlsx(){
   SPLIT.items.forEach(function(x, i){ rows.push([x.name, x.pct, a[i]]); });
   rows.push([], ['Барлығы', 100, sum]);
   exportXlsx([{ name: 'Жалақы бөлу', rows: rows }], 'qarzhy-zhalaqy-' + todayISO() + '.xlsx');
+}
+
+/* ================= КЭШБЭК ҚОРЫТЫНДЫСЫ ================= */
+function drawCashback(){
+  var card = document.getElementById('ov-cb-card'), box = document.getElementById('ov-cb');
+  if(!card || !box) return;
+  var all = 0, cnt = 0, mSum = 0, mCnt = 0, mOut = 0, pSum = 0;
+  var p = new Date(cur.getFullYear(), cur.getMonth() - 1, 1), pKey = iso(p).slice(0, 7);
+  DB.tx.forEach(function(t){
+    if(t.type === 'in' && t.cat === 'Кэшбэк'){
+      all += t.amt; cnt++;
+      if(inMonth(t.date)){ mSum += t.amt; mCnt++; }
+      if(t.date.slice(0, 7) === pKey) pSum += t.amt;
+    } else if(t.type === 'out' && inMonth(t.date)){ mOut += t.amt; }
+  });
+  card.classList.toggle('hide', cnt === 0);
+  if(!cnt){ box.innerHTML = ''; return; }
+  box.innerHTML =
+    '<div class="kv"><span>Осы айда қайтты</span><b style="color:var(--pos)">' + money(mSum) + '</b></div>' +
+    '<div class="kv"><span>Өткен айда</span><b>' + money(pSum) + '</b></div>' +
+    '<div class="kv"><span>Осы айдағы кэшбэк саны</span><b>' + mCnt + '</b></div>' +
+    '<div class="kv"><span>Шығынның қанша пайызы қайтты</span><b>' + (mOut > 0 ? (Math.round(mSum / mOut * 1000) / 10).toString().replace('.', ',') + '%' : '—') + '</b></div>' +
+    '<div class="kv"><span>Барлық уақытта</span><b>' + money(all) + '</b></div>';
+}
+
+/* ================= ҚАЙТАЛАНАТЫН ТӨЛЕМДЕР ================= */
+/* DB.recur: { id, name, amt, day, cat, acc, paid:'YYYY-MM' } — paid айы біткенде өзі «төленбеген» болады */
+var rcEdit = null, rcCat = 'Тұрғын үй', rcAcc = null;
+
+function recurState(r){
+  var now = new Date(), ym = iso(now).slice(0, 7);
+  var last = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  var due = iso(new Date(now.getFullYear(), now.getMonth(), Math.min(Math.max(1, +r.day || 1), last)));
+  var paid = (r.paid === ym);
+  var days = Math.round((parseISO(due) - parseISO(todayISO())) / 864e5);
+  return { due: due, paid: paid, days: days, late: !paid && days < 0, soon: !paid && days >= 0 && days <= 3 };
+}
+function recurOf(id){ var r = null; (DB.recur || []).forEach(function(x){ if(x.id === id) r = x; }); return r; }
+
+function openRecur(id){
+  rcEdit = id || null;
+  var r = id ? recurOf(id) : null;
+  document.getElementById('rc-name').value = r ? r.name : '';
+  document.getElementById('rc-amt').value = r ? r.amt : '';
+  document.getElementById('rc-day').value = r ? r.day : '';
+  document.getElementById('rc-title').textContent = r ? 'Төлемді түзету' : 'Жаңа төлем';
+  document.getElementById('rc-del').classList.toggle('hide', !r);
+  rcCat = r ? r.cat : 'Тұрғын үй';
+  rcAcc = r ? r.acc : null;
+  drawRcCats(); drawRcAccs();
+  openSheet('sheet-recur');
+}
+function drawRcCats(){
+  var box = document.getElementById('rc-cats'); box.innerHTML = '';
+  CATS.out.forEach(function(c){
+    var b = document.createElement('button');
+    b.className = 'chip' + (c[0] === rcCat ? ' on' : '');
+    b.innerHTML = catSvg('out', c[0], 'chip-ic') + '<span>' + c[0] + '</span>';
+    b.onclick = function(){ rcCat = c[0]; drawRcCats(); };
+    box.appendChild(b);
+  });
+}
+function drawRcAccs(){
+  var box = document.getElementById('rc-accs'); box.innerHTML = '';
+  var list = accsOf('asset');
+  var ok = false; list.forEach(function(a){ if(a.id === rcAcc) ok = true; });
+  if(!ok) rcAcc = list.length ? list[0].id : null;
+  list.forEach(function(a){
+    var b = document.createElement('button');
+    b.className = 'chip' + (a.id === rcAcc ? ' on' : '');
+    b.innerHTML = accIconHtml(a, 'chip-ic') + '<span>' + esc(a.name) + '</span>';
+    b.onclick = function(){ rcAcc = a.id; drawRcAccs(); };
+    box.appendChild(b);
+  });
+}
+function saveRecur(){
+  var name = document.getElementById('rc-name').value.trim();
+  var amt = parseFloat(document.getElementById('rc-amt').value);
+  var day = Math.round(parseFloat(document.getElementById('rc-day').value));
+  if(!name){ toast('Атауын жазыңыз'); return; }
+  if(!amt || amt <= 0){ toast('Соманы жазыңыз'); return; }
+  if(!day || day < 1 || day > 31){ toast('Айдың қай күні екенін жазыңыз (1–31)'); return; }
+  if(!DB.recur) DB.recur = [];
+  var r = rcEdit ? recurOf(rcEdit) : null;
+  if(r){ r.name = name; r.amt = amt; r.day = day; r.cat = rcCat; r.acc = rcAcc; }
+  else DB.recur.push({ id: newId(), name: name, amt: amt, day: day, cat: rcCat, acc: rcAcc, paid: null });
+  rcEdit = null;
+  save(); closeSheets(); render(); toast('Сақталды');
+}
+function delRecur(){
+  if(!rcEdit) return;
+  if(!confirm(tr('Төлем тізімнен өшіріледі. Бұрын жазылған операциялар қалады. Жалғастырасыз ба?'))) return;
+  DB.recur = (DB.recur || []).filter(function(x){ return x.id !== rcEdit; });
+  rcEdit = null;
+  save(); closeSheets(); render(); toast('Өшірілді');
+}
+function payRecur(id){
+  var r = recurOf(id); if(!r) return;
+  var a = acc(r.acc) || accsOf('asset')[0];
+  if(!a){ toast('Алдымен шот қосыңыз'); return; }
+  var t = { id: newId(), type: 'out', cat: r.cat, amt: r.amt, date: todayISO(),
+            note: r.name, acc: a.id, loan: null, to: null };
+  DB.tx.push(t); applyTx(t, 1);
+  r.paid = todayISO().slice(0, 7);
+  save(); render(); toast('Төлем жазылды');
+}
+function drawRecur(){
+  var box = document.getElementById('rc-list');
+  if(!box) return;
+  var list = (DB.recur || []).slice().sort(function(a, b){
+    var sa = recurState(a), sb = recurState(b);
+    if(sa.paid !== sb.paid) return sa.paid ? 1 : -1;
+    return sa.due < sb.due ? -1 : 1;
+  });
+  var total = 0, left = 0;
+  list.forEach(function(r){ total += r.amt; if(!recurState(r).paid) left += r.amt; });
+  var te = document.getElementById('rc-total'), le = document.getElementById('rc-left');
+  if(te) te.textContent = money(total);
+  if(le) le.textContent = money(left);
+  box.innerHTML = '';
+  if(!list.length){
+    box.innerHTML = '<div class="empty">Төлем әлі жоқ.<br>Жалға алу, несие, жазылым сияқты ай сайынғы төлемдерді қосыңыз.</div>';
+    return;
+  }
+  list.forEach(function(r){
+    var st = recurState(r);
+    var el = document.createElement('div');
+    el.className = 'row';
+    el.style.display = 'block';
+    el.style.padding = '13px 2px';
+    el.onclick = function(){ openRecur(r.id); };
+    var badge = st.paid ? ' <span class="badge" style="background:var(--pos);color:#fff">' + tr('төленді') + '</span>'
+              : st.late ? ' <span class="badge">' + tr('мерзімі өтті') + '</span>'
+              : st.soon ? ' <span class="badge">' + (st.days === 0 ? tr('бүгін') : st.days + ' ' + tr('күннен кейін')) + '</span>' : '';
+    el.innerHTML =
+      '<div style="display:flex;align-items:center;gap:11px">' +
+        '<div class="ico' + (st.paid ? ' pos' : (st.late ? ' red' : '')) + '">' + svgIcon(st.paid ? 'target' : 'clock') + '</div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div class="name">' + esc(r.name) + badge + '</div>' +
+          '<div class="sub2">' + fullDate(st.due) + ' · ' + esc(r.cat) + '</div>' +
+        '</div>' +
+        '<div class="amt">' + money(r.amt) + '</div>' +
+      '</div>' +
+      (st.paid ? '' : '<button class="btn line" style="margin:10px 0 0;padding:10px" ' +
+        'onclick="event.stopPropagation();payRecur(\'' + r.id + '\')">' + tr('Төледім') + '</button>');
+    box.appendChild(el);
+  });
+}
+/* басты беттегі ескерту: мерзімі өткен немесе 3 күн ішінде келетін төлемдер */
+function recurWarn(){
+  var late = [], soon = [];
+  (DB.recur || []).forEach(function(r){
+    var st = recurState(r);
+    if(st.late) late.push(r.name); else if(st.soon) soon.push(r.name + ' (' + (st.days === 0 ? tr('бүгін') : st.days + ' ' + tr('күннен кейін')) + ')');
+  });
+  var h = '';
+  if(late.length) h += '<div class="warnbar danger" onclick="go(\'recur\')"><b>Төлем мерзімі өтті</b>' + esc(late.join(', ')) + '</div>';
+  if(soon.length) h += '<div class="warnbar" onclick="go(\'recur\')"><b>Төлем жақындады</b>' + esc(soon.join(', ')) + '</div>';
+  return h;
 }
 
 /* ================= PDF ЕСЕП ================= */
@@ -4581,6 +4843,7 @@ function drawWarnings(){
     html+='<div class="warnbar"><b>Қарыз мерзімі өтті</b>'+dt2.overdue+
       ' жазбаның қайтару мерзімі өтіп кетті. Қарыздар бөлімінен қараңыз.</div>';
   }
+  html+=recurWarn();
   box.innerHTML=html;
 }
 function cleanDups(){

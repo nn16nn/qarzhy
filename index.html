@@ -749,6 +749,9 @@
       <button onclick="go('calc')"><span class="qi" data-i="calc"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="2.8" width="15" height="18.4" rx="2.6"/><path d="M8 7h8"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15h.01M8.5 18.3h.01M12 18.3h.01M15.5 18.3h.01"/></svg></span> Есептегіш</button>
       <button onclick="go('debts')"><span class="qi" data-i="swap"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h13"/><path d="M13.6 5 17 8.5 13.6 12"/><path d="M20 15.5H7"/><path d="M10.4 12 7 15.5 10.4 19"/></svg></span> Қарыздар</button>
     </div>
+    <div class="quad" style="margin-top:-2px">
+      <button style="grid-column:1/-1" onclick="go('recur')"><span class="qi" data-i="clock"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 6.8V12l3.6 2.2"/></svg></span> Қайталанатын төлемдер</button>
+    </div>
     <div id="home-warn"></div>
 
     <button class="btn dashed" onclick="startBankImport()" style="margin-bottom:12px"><span class="qi" data-i="inbox" style="display:inline-flex;vertical-align:-6px;margin-right:8px"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9.5"/><path d="M8.2 9.2 12 13l3.8-3.8"/><path d="M3.5 14.5h4l1.6 2.6h5.8l1.6-2.6h4"/><path d="M3.5 14.5V18a2.5 2.5 0 0 0 2.5 2.5h12a2.5 2.5 0 0 0 2.5-2.5v-3.5"/></svg></span>Банк үзіндісін жүктеу (PDF · Excel)</button>
@@ -858,6 +861,7 @@
       <div id="ov-month"></div>
     </div>
     <div class="card"><h2>Активтер құрылымы</h2><div id="ov-assets"></div></div>
+    <div class="card hide" id="ov-cb-card"><h2>Кэшбэк</h2><div id="ov-cb"></div></div>
     <div class="card" id="ov-debt-card"><h2>Несие жүктемесі</h2><div id="ov-debts"></div></div>
     <div class="row2" style="gap:10px;margin-bottom:12px">
       <button class="btn" onclick="exportPdf()" style="margin:0">PDF есеп</button>
@@ -948,8 +952,11 @@
     <div id="sp-total"></div>
     <div id="sp-list"></div>
     <button class="btn line" onclick="splitAdd()">+ Бөлім қосу</button>
+    <label class="f" style="margin-top:6px">Қай шоттан бөлеміз</label>
+    <div class="chips" id="sp-src"></div>
+    <button class="btn" onclick="splitApply()">Жоспарды орындау</button>
     <div class="row2" style="gap:10px;margin-top:10px">
-      <button class="btn" onclick="splitSaveBtn()" style="margin:0">Жоспарды сақтау</button>
+      <button class="btn line" onclick="splitSaveBtn()" style="margin:0">Жоспарды сақтау</button>
       <button class="btn line" onclick="splitReset()" style="margin:0">Бастапқы жоспар</button>
     </div>
     <div class="row2" style="gap:10px;margin-top:10px">
@@ -1144,6 +1151,29 @@
 
 <!-- ============ ТҰРАҚТЫ ОПЕРАЦИЯЛАР ============ -->
 
+<!-- ============ ҚАЙТАЛАНАТЫН ТӨЛЕМДЕР ============ -->
+<section class="page" id="p-recur">
+  <div class="hero flat">
+    <div class="hero-top">
+      <button class="back" onclick="go('home')" aria-label="Артқа">←</button>
+      <div style="flex:1"><h1 style="font-size:24px">Қайталанатын төлемдер</h1>
+        <div class="sub">Ай сайынғы төлемдер мен еске салу</div></div>
+      <button class="plus" onclick="openRecur()" aria-label="Төлем қосу">+</button>
+    </div>
+    <div class="two">
+      <div class="mini"><div class="t">Айына барлығы</div><div class="v" id="rc-total">0 ₸</div></div>
+      <div class="mini"><div class="t">Әлі төленбеген</div><div class="v" id="rc-left">0 ₸</div></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="card">
+      <div id="rc-list"></div>
+      <button class="btn dashed" style="margin:12px 0 0" onclick="openRecur()">Төлем қосу</button>
+    </div>
+    <p class="muted" style="padding:0 4px">«Төледім» басқанда шығын операциясы жазылып, шоттан ақша азаяды. Келесі айда төлем қайтадан «төленбеген» болып шығады.</p>
+  </div>
+</section>
+
 <!-- ============ ҚАРЫЗДАР ============ -->
 <section class="page" id="p-debts">
   <div class="hero flat">
@@ -1327,6 +1357,25 @@
     <input class="inp" id="ac-pay" type="number" inputmode="decimal" placeholder="0">
   </div>
   <button class="btn" onclick="saveAcc()">Сақтау</button>
+  <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
+</div>
+
+<!-- Sheet: recurring payment -->
+<div class="sheet" id="sheet-recur">
+  <div class="grab"></div>
+  <h3 id="rc-title">Жаңа төлем</h3>
+  <label class="f">Атауы</label>
+  <input class="inp" id="rc-name" type="text" placeholder="Мысалы: пәтер жалдау, интернет">
+  <label class="f">Сома, ₸</label>
+  <input class="inp big" id="rc-amt" type="number" inputmode="decimal" placeholder="0">
+  <label class="f">Айдың қай күні төленеді (1–31)</label>
+  <input class="inp" id="rc-day" type="number" inputmode="numeric" placeholder="5">
+  <label class="f">Санат</label>
+  <div class="chips" id="rc-cats"></div>
+  <label class="f">Қай шоттан</label>
+  <div class="chips" id="rc-accs"></div>
+  <button class="btn" onclick="saveRecur()">Сақтау</button>
+  <button class="btn danger hide" id="rc-del" onclick="delRecur()">Төлемді өшіру</button>
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
 </div>
 
