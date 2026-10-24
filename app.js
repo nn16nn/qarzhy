@@ -312,7 +312,7 @@ var BRAND = {
   'bereke bank':     ['B','#7B2CBF'],
   'otbasy bank':     ['O','#E30613'],
   'qazaq bank':      ['Q','#0F766E'],
-  'қолма-қол':       ['₸','#00BE86']
+  'қолма-қол':       ['₸','#0B9F72']
 };
 function brandOf(name){
   if(!name) return null;
@@ -1241,7 +1241,7 @@ function applyStatMon(){
   var f = statMonStart(), t = new Date(f.getFullYear(), f.getMonth() + 1, 0);
   range.from = iso(f); range.to = iso(t);
   var lbl = document.getElementById('s-month');
-  if(lbl) lbl.textContent = MONTHS[f.getMonth()].toUpperCase() + ' ' + f.getFullYear();
+  if(lbl) lbl.textContent = MONTHS[f.getMonth()] + ' ' + f.getFullYear();
   var nx = document.getElementById('s-mon-next');
   if(nx) nx.classList.toggle('off', statMon >= 0);
 }
@@ -1391,8 +1391,8 @@ function drawFlow(){
   stage.innerHTML = '<div class="flow"><div class="fl-scroll" id="fl-scroll">' +
     '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">' +
     '<defs>' +
-      '<linearGradient id="fgIn" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#00BE86"/><stop offset="1" stop-color="#7CF2CE"/></linearGradient>' +
-      '<linearGradient id="fgOut" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF4D67"/><stop offset="1" stop-color="#FFA8B3"/></linearGradient>' +
+      '<linearGradient id="fgIn" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#0B9F72"/><stop offset="1" stop-color="#7CF2CE"/></linearGradient>' +
+      '<linearGradient id="fgOut" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E5384F"/><stop offset="1" stop-color="#FFA8B3"/></linearGradient>' +
     '</defs>' +
     '<line x1="8" y1="' + mid + '" x2="' + (W - 8) + '" y2="' + mid + '" stroke="var(--line)" stroke-width="1.5"/>' +
     sIn + sOut + lbl + '</svg></div></div>';
@@ -2878,7 +2878,7 @@ function bindExitSave(){
 }
 
 /* ================= ДИАГРАММАЛАР ================= */
-var PIE_COLORS = ['#021CF5','#3F5CFF','#6D3FE8','#00A3C4','#E2534B',
+var PIE_COLORS = ['#2338E6','#D9860B','#6D3FE8','#0AA5C2','#E5384F',
                   '#F0913C','#9B51E0','#2BB673','#7A8199','#C4CAE0'];
 
 function drawDonut(elId, items, centerLabel, noLegend){
@@ -2972,7 +2972,7 @@ function applyTheme(){
   var dark = isDark();
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   var mt = document.querySelector('meta[name="theme-color"]');
-  if(mt) mt.setAttribute('content', dark ? '#04061C' : '#021cf5');
+  if(mt) mt.setAttribute('content', dark ? '#05071F' : '#2338e6');
 }
 function setTheme(m){
   DB.theme = m; save(); applyTheme(); render();
@@ -3592,17 +3592,17 @@ function exportLoanPdf(){
     rows += '<tr>' +
       '<td style="padding:6px 0;border-bottom:1px solid #EEF1FA;color:#5D6480">' + m + '</td>' +
       '<td style="padding:6px 0;border-bottom:1px solid #EEF1FA;text-align:right;font-weight:600">' + nf(pay) + '</td>' +
-      '<td style="padding:6px 0;border-bottom:1px solid #EEF1FA;text-align:right;color:#FF4D67">' + nf(int_) + '</td>' +
-      '<td style="padding:6px 0;border-bottom:1px solid #EEF1FA;text-align:right;color:#00BE86">' + nf(pr) + '</td>' +
+      '<td style="padding:6px 0;border-bottom:1px solid #EEF1FA;text-align:right;color:#E5384F">' + nf(int_) + '</td>' +
+      '<td style="padding:6px 0;border-bottom:1px solid #EEF1FA;text-align:right;color:#0B9F72">' + nf(pr) + '</td>' +
       '<td style="padding:6px 0;border-bottom:1px solid #EEF1FA;text-align:right">' + nf(Math.max(0, bal)) + '</td></tr>';
   }
 
   var html =
   '<div style="width:794px;padding:44px 46px;background:#fff;color:#0D1226;' +
        'font-family:Inter,-apple-system,Roboto,Arial,sans-serif;box-sizing:border-box">' +
-    '<div style="display:flex;align-items:center;gap:16px;padding-bottom:22px;border-bottom:3px solid #021CF5">' +
-      '<div style="width:54px;height:54px;border-radius:16px;background:#021CF5;color:#fff;' +
-           'display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800">Q</div>' +
+    '<div style="display:flex;align-items:center;gap:16px;padding-bottom:22px;border-bottom:3px solid #2338E6">' +
+      '<div style="width:54px;height:54px;border-radius:16px;background:#2338E6;color:#fff;' +
+           'display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800">Қ</div>' +
       '<div style="flex:1"><div style="font-size:26px;font-weight:800">Несие төлем кестесі</div>' +
         '<div style="color:#5D6480;font-size:14px;margin-top:2px">' +
           (loanType === 'ann' ? 'Аннуитетті' : 'Дифференциалды') + ' · ' + rate + '% жылдық</div></div>' +
@@ -3610,15 +3610,15 @@ function exportLoanPdf(){
     '</div>' +
 
     '<div style="display:flex;gap:14px;margin:26px 0">' +
-      '<div style="flex:1;background:#E9ECFF;border-radius:16px;padding:18px">' +
+      '<div style="flex:1;background:#EBEEFF;border-radius:16px;padding:18px">' +
         '<div style="color:#5D6480;font-size:13px">Ай сайынғы төлем</div>' +
-        '<div style="font-size:23px;font-weight:800;color:#021CF5;margin-top:4px">' + money(first, loanCur) + '</div></div>' +
+        '<div style="font-size:23px;font-weight:800;color:#2338E6;margin-top:4px">' + money(first, loanCur) + '</div></div>' +
       '<div style="flex:1;background:#FFEFF1;border-radius:16px;padding:18px">' +
         '<div style="color:#5D6480;font-size:13px">Артық төлем</div>' +
-        '<div style="font-size:23px;font-weight:800;color:#FF4D67;margin-top:4px">' + money(interest, loanCur) + '</div></div>' +
+        '<div style="font-size:23px;font-weight:800;color:#E5384F;margin-top:4px">' + money(interest, loanCur) + '</div></div>' +
       '<div style="flex:1;background:#EAFBF4;border-radius:16px;padding:18px">' +
         '<div style="color:#5D6480;font-size:13px">Барлық төлем</div>' +
-        '<div style="font-size:23px;font-weight:800;color:#00BE86;margin-top:4px">' + money(total, loanCur) + '</div></div>' +
+        '<div style="font-size:23px;font-weight:800;color:#0B9F72;margin-top:4px">' + money(total, loanCur) + '</div></div>' +
     '</div>' +
 
     '<table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:24px">' +
@@ -3687,9 +3687,9 @@ function shareOrSave(blob, name){
 
 /* --- ортақ баптар --- */
 function calcHead(title, sub){
-  return '<div style="display:flex;align-items:center;gap:16px;padding-bottom:20px;border-bottom:3px solid #021CF5">' +
-    '<div style="width:54px;height:54px;border-radius:16px;background:#021CF5;color:#fff;' +
-         'display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800">Q</div>' +
+  return '<div style="display:flex;align-items:center;gap:16px;padding-bottom:20px;border-bottom:3px solid #2338E6">' +
+    '<div style="width:54px;height:54px;border-radius:16px;background:#2338E6;color:#fff;' +
+         'display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800">Қ</div>' +
     '<div style="flex:1"><div style="font-size:25px;font-weight:800">' + title + '</div>' +
       '<div style="color:#5D6480;font-size:14px;margin-top:2px">' + sub + '</div></div>' +
     '<div style="text-align:right;color:#5D6480;font-size:12px">' + fullDate(todayISO()) + '</div></div>';
@@ -3732,15 +3732,15 @@ function exportInvPdf(){
     body += '<tr>' +
       '<td style="padding:7px 0;border-bottom:1px solid #EEF1FA;color:#5D6480">' + x.m + '</td>' +
       '<td style="padding:7px 0;border-bottom:1px solid #EEF1FA;text-align:right">' + nf(x.inv) + '</td>' +
-      '<td style="padding:7px 0;border-bottom:1px solid #EEF1FA;text-align:right;color:#00BE86">' + nf(x.bal - x.inv) + '</td>' +
+      '<td style="padding:7px 0;border-bottom:1px solid #EEF1FA;text-align:right;color:#0B9F72">' + nf(x.bal - x.inv) + '</td>' +
       '<td style="padding:7px 0;border-bottom:1px solid #EEF1FA;text-align:right;font-weight:700">' + nf(x.bal) + '</td></tr>';
   });
   var html = calcWrap(
     calcHead('Инвестиция есебі', d.n + ' ай · жылдық ' + d.rate + '%' + (invReinvest ? ' · реинвестициямен' : '')) +
     calcCards([
-      { label: 'Соңғы сома', value: money(d.bal, d.cur), bg: '#E9ECFF', fg: '#021CF5' },
+      { label: 'Соңғы сома', value: money(d.bal, d.cur), bg: '#EBEEFF', fg: '#2338E6' },
       { label: 'Салынған', value: money(d.inv, d.cur), bg: '#F4F6FF', fg: '#0D1226' },
-      { label: 'Пайыздық табыс', value: money(d.bal - d.inv, d.cur), bg: '#EAFBF4', fg: '#00BE86' }
+      { label: 'Пайыздық табыс', value: money(d.bal - d.inv, d.cur), bg: '#EAFBF4', fg: '#0B9F72' }
     ]) +
     '<table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:24px">' +
       rpRow('Бастапқы салым', money(d.P, d.cur)) +
@@ -3836,15 +3836,15 @@ function exportDepPdf(){
     body += '<tr>' +
       '<td style="padding:7px 0;border-bottom:1px solid #EEF1FA;color:#5D6480">' + x.m + '</td>' +
       '<td style="padding:7px 0;border-bottom:1px solid #EEF1FA;text-align:right">' + nf(x.inv) + '</td>' +
-      '<td style="padding:7px 0;border-bottom:1px solid #EEF1FA;text-align:right;color:#00BE86">' + nf(x.bal - x.inv) + '</td>' +
+      '<td style="padding:7px 0;border-bottom:1px solid #EEF1FA;text-align:right;color:#0B9F72">' + nf(x.bal - x.inv) + '</td>' +
       '<td style="padding:7px 0;border-bottom:1px solid #EEF1FA;text-align:right;font-weight:700">' + nf(x.bal) + '</td></tr>';
   });
   var html = calcWrap(
     calcHead('Депозит есебі', d.n + ' ай · жылдық ' + d.rate + '%' + (depCap ? ' · капитализациямен' : '')) +
     calcCards([
-      { label: 'Мерзім соңында', value: money(d.bal), bg: '#E9ECFF', fg: '#021CF5' },
+      { label: 'Мерзім соңында', value: money(d.bal), bg: '#EBEEFF', fg: '#2338E6' },
       { label: 'Салынған', value: money(d.inv), bg: '#F4F6FF', fg: '#0D1226' },
-      { label: 'Пайыздық табыс', value: money(d.bal - d.inv), bg: '#EAFBF4', fg: '#00BE86' }
+      { label: 'Пайыздық табыс', value: money(d.bal - d.inv), bg: '#EAFBF4', fg: '#0B9F72' }
     ]) +
     '<table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:24px">' +
       rpRow('Салым сомасы', money(d.P)) +
@@ -3901,9 +3901,9 @@ function exportTaxPdf(){
   var html = calcWrap(
     calcHead('Салық есебі', 'ЖК · оңайлатылған декларация · ' + d.months + ' ай') +
     calcCards([
-      { label: 'Барлығы төлеу керек', value: money(d.sum), bg: '#FFEFF1', fg: '#FF4D67' },
+      { label: 'Барлығы төлеу керек', value: money(d.sum), bg: '#FFEFF1', fg: '#E5384F' },
       { label: 'Табыс', value: money(d.income), bg: '#F4F6FF', fg: '#0D1226' },
-      { label: 'Қолда қалады', value: money(d.income - d.sum), bg: '#EAFBF4', fg: '#00BE86' }
+      { label: 'Қолда қалады', value: money(d.income - d.sum), bg: '#EAFBF4', fg: '#0B9F72' }
     ]) +
     '<div style="font-size:17px;font-weight:800;margin:0 0 10px">Салық</div>' +
     '<table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:22px">' +
@@ -4030,7 +4030,7 @@ var SPLIT_DEF = [
   { name: 'Жинақ',      pct: 20 },
   { name: 'Өзіме',      pct: 10 }
 ];
-var SPLIT_COL = ['#021CF5', '#6D3FE8', '#00BE86', '#FF9F1C', '#FF4D67', '#0EA5E9', '#8B5CF6', '#14B8A6'];
+var SPLIT_COL = ['#2338E6', '#D9860B', '#0B9F72', '#6D3FE8', '#E5384F', '#0AA5C2', '#F0913C', '#7A8199'];
 var SPLIT = null, splitTimer = null;
 
 function splitInit(){
@@ -4269,7 +4269,7 @@ function exportSplitPdf(){
     calcHead('Жалақы бөлу', 'Пайыздық жоспар · ' + a.length + ' бөлім') +
     calcCards([
       { label: 'Жалақы', value: money(sum), bg: '#F4F6FF', fg: '#0D1226' },
-      { label: 'Бөлім саны', value: String(a.length), bg: '#EAFBF4', fg: '#00BE86' }
+      { label: 'Бөлім саны', value: String(a.length), bg: '#EAFBF4', fg: '#0B9F72' }
     ]) + bars);
   exportPdf(html, 'qarzhy-zhalaqy-' + todayISO() + '.pdf');
 }
@@ -4457,7 +4457,7 @@ function rpBar(label, sum, pct, color){
     '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">' +
       '<span style="color:#0D1226">' + esc(label) + '</span>' +
       '<b style="color:#0D1226">' + sum + ' · ' + pct + '%</b></div>' +
-    '<div style="height:8px;background:#E9ECFF;border-radius:99px;overflow:hidden">' +
+    '<div style="height:8px;background:#EBEEFF;border-radius:99px;overflow:hidden">' +
       '<div style="height:8px;width:' + pct + '%;background:' + color + ';border-radius:99px"></div></div></div>';
 }
 
@@ -4487,7 +4487,7 @@ function buildReport(){
     accRows += rpRow(esc(a.name), money(a.bal, accCurSym(a)));
   });
   accsOf('debt').forEach(function(a){
-    accRows += rpRow(esc(a.name) + ' · несие', money(a.bal), '#FF4D67');
+    accRows += rpRow(esc(a.name) + ' · несие', money(a.bal), '#E5384F');
   });
 
   /* несиелер */
@@ -4506,7 +4506,7 @@ function buildReport(){
           (left > 0 ? left + ' ай' : '—') + '</td>' +
         '<td style="padding:9px 0;border-bottom:1px solid #E4E8F7;text-align:right;font-weight:700">' +
           money(a.pay || 0) + '</td>' +
-        '<td style="padding:9px 0;border-bottom:1px solid #E4E8F7;text-align:right;font-weight:700;color:#FF4D67">' +
+        '<td style="padding:9px 0;border-bottom:1px solid #E4E8F7;text-align:right;font-weight:700;color:#E5384F">' +
           money(a.bal) + '</td></tr>';
     });
     loanBlock =
@@ -4521,7 +4521,7 @@ function buildReport(){
         rows +
         '<tr><td colspan="3" style="padding:11px 0;font-weight:800">Барлығы айына</td>' +
         '<td style="padding:11px 0;text-align:right;font-weight:800;font-size:15px">' + money(payTotal) + '</td>' +
-        '<td style="padding:11px 0;text-align:right;font-weight:800;font-size:15px;color:#FF4D67">' +
+        '<td style="padding:11px 0;text-align:right;font-weight:800;font-size:15px;color:#E5384F">' +
           money(T.debts) + '</td></tr>' +
       '</table>' +
       '<div style="color:#5D6480;font-size:12.5px;margin-bottom:26px">' +
@@ -4536,7 +4536,7 @@ function buildReport(){
     var left = debtLeft(d);
     if(left <= 0) return;
     debtRows += rpRow(esc(d.who) + (d.dir === 'out' ? ' · маған қарыз' : ' · мен қарызбын'),
-      money(left), d.dir === 'out' ? '#00BE86' : '#FF4D67');
+      money(left), d.dir === 'out' ? '#0B9F72' : '#E5384F');
   });
 
   /* соңғы операциялар */
@@ -4552,7 +4552,7 @@ function buildReport(){
       '<td style="padding:7px 0;border-bottom:1px solid #E4E8F7;font-size:12px;color:#5D6480;white-space:nowrap">' +
         (a ? esc(a.name) : '—') + '</td>' +
       '<td style="padding:7px 0;border-bottom:1px solid #E4E8F7;text-align:right;font-weight:700;white-space:nowrap;' +
-        'color:' + (t.type === 'in' ? '#00BE86' : '#FF4D67') + '">' +
+        'color:' + (t.type === 'in' ? '#0B9F72' : '#E5384F') + '">' +
         (t.type === 'in' ? '+' : '−') + nf(t.amt) + ' ₸</td></tr>';
   });
 
@@ -4564,9 +4564,9 @@ function buildReport(){
        'font-family:Inter,-apple-system,Roboto,Arial,sans-serif;box-sizing:border-box">' +
 
     /* тақырып */
-    '<div style="display:flex;align-items:center;gap:16px;padding-bottom:22px;border-bottom:3px solid #021CF5">' +
-      '<div style="width:54px;height:54px;border-radius:16px;background:#021CF5;color:#fff;' +
-           'display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800">Q</div>' +
+    '<div style="display:flex;align-items:center;gap:16px;padding-bottom:22px;border-bottom:3px solid #2338E6">' +
+      '<div style="width:54px;height:54px;border-radius:16px;background:#2338E6;color:#fff;' +
+           'display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800">Қ</div>' +
       '<div style="flex:1">' +
         '<div style="font-size:26px;font-weight:800;letter-spacing:-.5px">Қаржы есебі</div>' +
         '<div style="color:#5D6480;font-size:14px;margin-top:2px">' +
@@ -4580,13 +4580,13 @@ function buildReport(){
     '<div style="display:flex;gap:14px;margin:26px 0 8px">' +
       '<div style="flex:1;background:#EAFBF4;border-radius:16px;padding:18px">' +
         '<div style="color:#5D6480;font-size:13px">Кіріс</div>' +
-        '<div style="font-size:23px;font-weight:800;color:#00BE86;margin-top:4px">' + money(sIn) + '</div></div>' +
+        '<div style="font-size:23px;font-weight:800;color:#0B9F72;margin-top:4px">' + money(sIn) + '</div></div>' +
       '<div style="flex:1;background:#FFEFF1;border-radius:16px;padding:18px">' +
         '<div style="color:#5D6480;font-size:13px">Шығын</div>' +
-        '<div style="font-size:23px;font-weight:800;color:#FF4D67;margin-top:4px">' + money(sOut) + '</div></div>' +
-      '<div style="flex:1;background:#E9ECFF;border-radius:16px;padding:18px">' +
+        '<div style="font-size:23px;font-weight:800;color:#E5384F;margin-top:4px">' + money(sOut) + '</div></div>' +
+      '<div style="flex:1;background:#EBEEFF;border-radius:16px;padding:18px">' +
         '<div style="color:#5D6480;font-size:13px">Нәтиже</div>' +
-        '<div style="font-size:23px;font-weight:800;color:#021CF5;margin-top:4px">' +
+        '<div style="font-size:23px;font-weight:800;color:#2338E6;margin-top:4px">' +
           (net >= 0 ? '+' : '') + money(net) + '</div></div>' +
     '</div>' +
     '<div style="color:#5D6480;font-size:13px;margin-bottom:26px">' +
@@ -4596,11 +4596,11 @@ function buildReport(){
     /* капитал */
     '<div style="font-size:17px;font-weight:800;margin:0 0 10px">Қаржылық жағдай</div>' +
     '<table style="width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:26px">' +
-      rpRow('Банктердегі ақша', money(T.banks), '#00BE86') +
+      rpRow('Банктердегі ақша', money(T.banks), '#0B9F72') +
       (T.goals ? rpRow('Мақсаттарда жиналған', money(T.goals), '#6D3FE8') : '') +
-      rpRow('Міндеттемелер · несиелер', money(T.debts), '#FF4D67') +
-      (T.lent ? rpRow('Маған қарыз', money(T.lent), '#00BE86') : '') +
-      (T.owed ? rpRow('Мен қарызбын', money(T.owed), '#FF4D67') : '') +
+      rpRow('Міндеттемелер · несиелер', money(T.debts), '#E5384F') +
+      (T.lent ? rpRow('Маған қарыз', money(T.lent), '#0B9F72') : '') +
+      (T.owed ? rpRow('Мен қарызбын', money(T.owed), '#E5384F') : '') +
       rpRow('<b style="color:#0D1226">Таза капитал</b>', '<span style="font-size:15px">' + money(T.net) + '</span>') +
       (T.invested ? rpRow('Салынған инвестиция (барлық уақыт)', money(T.invested), '#6D3FE8') : '') +
     '</table>' +
@@ -4609,10 +4609,10 @@ function buildReport(){
     '<div style="display:flex;gap:30px;margin-bottom:26px">' +
       '<div style="flex:1">' +
         '<div style="font-size:17px;font-weight:800;margin:0 0 12px">Шығын санаттары</div>' +
-        cats('out', sOut, 'linear-gradient(90deg,#FFA8B3,#FF4D67)') + '</div>' +
+        cats('out', sOut, 'linear-gradient(90deg,#FFA8B3,#E5384F)') + '</div>' +
       '<div style="flex:1">' +
         '<div style="font-size:17px;font-weight:800;margin:0 0 12px">Кіріс көздері</div>' +
-        cats('in', sIn, 'linear-gradient(90deg,#7CF2CE,#00BE86)') + '</div>' +
+        cats('in', sIn, 'linear-gradient(90deg,#7CF2CE,#0B9F72)') + '</div>' +
     '</div>' +
 
     loanBlock +

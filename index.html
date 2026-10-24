@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#021cf5">
+<meta name="theme-color" content="#2338e6">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-512.png">
@@ -11,36 +11,41 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Қаржы</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="preload" href="fonts/onest-cyrillic-ext-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/onest-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+  @font-face{font-family:'Onest';font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/onest-cyrillic-ext-wght-normal.woff2) format('woff2');unicode-range:U+0460-052F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F}
+  @font-face{font-family:'Onest';font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/onest-cyrillic-wght-normal.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+  @font-face{font-family:'Onest';font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/onest-latin-ext-wght-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+  @font-face{font-family:'Onest';font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/onest-latin-wght-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
   :root{
-    --g-deep:#010B4D; --g-mid:#021CF5; --g-bright:#3F5CFF; --g-soft:#E9ECFF;
-    --ink:#0D1226; --ink-2:#5D6480; --line:#DCE1F5; --bg:#F4F6FF; --red:#FF4D67;
+    --g-deep:#0A1163; --g-mid:#2338E6; --g-bright:#3C50EE; --g-soft:#EBEEFF;
+    --ink:#0E1330; --ink-2:#596183; --line:#E1E5F5; --bg:#F5F6FB; --red:#E5384F;
     --blue:#6D3FE8;
-    --accent:#021CF5;
-    --pos:#00BE86; --pos-soft:#DFF7EF; --pos-light:#5CE6BC;
-    --neg:#FF4D67; --neg-soft:#FFE7EA; --neg-light:#FF9AA8;
+    --accent:#2338E6;
+    --gold:#F5B83D; --gold-soft:#FFF3D6; --gold-deep:#8A5A00;
+    --pos:#0B9F72; --pos-soft:#DDF5EC; --pos-light:#52D9AE;
+    --neg:#E5384F; --neg-soft:#FFE8EB; --neg-light:#FF8E9D;
     --surface:#ffffff;
-    --tabbar:rgba(255,255,255,.95);
-    --warn-bg:#FFF3E0; --warn-fg:#B26A00;
+    --tabbar:rgba(255,255,255,.94);
+    --warn-bg:#FFF3D6; --warn-fg:#8A5A00;
     --danger-bg:#FDECEB; --danger-fg:#8A2F29;
     --blue-bg:#EFE9FF;
-    --shadow:rgba(10,20,80,.07);
-    --shadow-2:rgba(10,20,80,.14);
-    --sh1:rgba(10,20,80,.06);
-    --sh2:rgba(10,20,80,.20);
+    --shadow:rgba(14,19,48,.07);
+    --shadow-2:rgba(14,19,48,.16);
+    --sh1:rgba(14,19,48,.05);
+    --sh2:rgba(14,19,48,.16);
   }
   html[data-theme="dark"]{
-    --g-deep:#04061C; --g-mid:#1B34F0; --g-bright:#5A72FF; --g-soft:#1A1F3D;
-    --ink:#E9EBF7; --ink-2:#98A0C0; --line:#262C4F; --bg:#080B1C; --red:#FF6B7E;
-    --blue:#8B63FF;
-    --accent:#8FA0FF;
-    --pos:#2FE0A8; --pos-soft:#0F3A2E; --pos-light:#7CF2CE;
+    --g-deep:#05071F; --g-mid:#3347F0; --g-bright:#5668FF; --g-soft:#181E3F;
+    --ink:#EDEFFA; --ink-2:#9AA2C5; --line:#222849; --bg:#070A1A; --red:#FF6B7E;
+    --blue:#9170FF;
+    --accent:#8EA0FF;
+    --gold:#F7C455; --gold-soft:#3A2E12; --gold-deep:#F0B75E;
+    --pos:#34D6A2; --pos-soft:#0F3A2E; --pos-light:#7CF2CE;
     --neg:#FF6B7E; --neg-soft:#3A1A20; --neg-light:#FFA8B3;
-    --surface:#121732;
-    --tabbar:rgba(18,23,50,.96);
+    --surface:#101530;
+    --tabbar:rgba(16,21,48,.95);
     --warn-bg:#3A2E12; --warn-fg:#F0B75E;
     --danger-bg:#3A1B1A; --danger-fg:#FF9A93;
     --blue-bg:#221B45;
@@ -54,10 +59,9 @@
   html{background:var(--bg);min-height:100%;touch-action:manipulation}
   body{min-height:100dvh}
   body{
-    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-family:"Onest",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
     background:var(--bg);color:var(--ink);
     font-variant-numeric:tabular-nums;
-    font-feature-settings:"cv11","ss01";
     letter-spacing:-0.011em;
     line-height:1.45;
     -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
@@ -574,7 +578,7 @@
   }
 
   /* ---------- ашылу экраны (Q) ---------- */
-  #splash{position:fixed;inset:0;z-index:9999;background:#021CF5;
+  #splash{position:fixed;inset:0;z-index:9999;background:#0A1163;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
     animation:splashOut .45s ease 1.05s forwards}
   #splash img{width:112px;height:112px;border-radius:28px;display:block;
@@ -691,15 +695,117 @@
   html[data-theme="dark"] .card h2 small.tag.neg{color:var(--neg)}
   .warnbar.danger{background:var(--danger-bg);color:var(--danger-fg)}
   .ratebar .qi{color:#fff}
+
+  /* =====================================================
+     v9 · жаңа дизайн: Onest + көк-алтын бренд
+     ===================================================== */
+  :root{
+    --r-hero:30px; --r-card:20px; --r-tile:16px; --r-ctl:14px;
+    --elev:0 1px 2px var(--sh1), 0 10px 24px -14px var(--sh2);
+  }
+  body{letter-spacing:-.008em;font-feature-settings:"tnum" 1}
+  h1,h2,h3,.cap,.amt,.v{letter-spacing:-.022em}
+  .cap,.big{font-weight:800;letter-spacing:-.034em}
+  .stage-tot,.cap-in .cap-v{font-weight:800}
+
+  /* hero: бір түсті терең көк, жылтыр жоқ */
+  .hero,.hero.flat{
+    background:linear-gradient(168deg,#2A40F0 0%,var(--g-mid) 38%,var(--g-deep) 118%);
+    border-radius:0 0 var(--r-hero) var(--r-hero);
+    box-shadow:0 14px 34px -18px rgba(10,17,99,.6)}
+  html[data-theme="dark"] .hero,html[data-theme="dark"] .hero.flat{
+    background:linear-gradient(168deg,#22308F 0%,#141D63 45%,var(--g-deep) 120%)}
+  .hero h1{font-weight:800;letter-spacing:-.03em}
+  .hero-top.center .ht h1{font-size:22px}
+  .hero-top.center .mark{position:absolute;left:0;top:50%;margin-top:-20px;width:40px;height:40px;
+    border-radius:12px;box-shadow:0 4px 12px -4px rgba(0,0,0,.45)}
+  .cap{font-size:38px}
+  .cap-label{color:#C9D1FF;font-size:13.5px;font-weight:500}
+  .sub{color:#C9D1FF}
+
+  /* бір ғана ерекше элемент: алтын «+» */
+  .plus{background:linear-gradient(145deg,#FFDF8C,var(--gold) 60%,#E2A12A);color:var(--g-deep);
+    box-shadow:0 8px 18px -8px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.6);
+    font-weight:600;animation:none}
+
+  .pill{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);font-weight:600}
+  .mini,.wide,.ratebar{background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.14);border-radius:var(--r-tile)}
+  .dot{border-radius:9px;font-weight:700}
+  .dot.in{background:rgba(52,214,162,.38)} .dot.out{background:rgba(255,107,126,.38)}
+  .mini .v{font-weight:800}
+
+  /* карталар: бір көлеңке жүйесі, радиус иерархиясы */
+  .card{border-radius:var(--r-card);box-shadow:var(--elev);padding:18px 16px}
+  .card h2{font-size:16px;font-weight:700;letter-spacing:-.018em}
+  .quad button,.stat3 .c{border-radius:var(--r-tile);box-shadow:var(--elev)}
+  .quad button{font-weight:600;font-size:14.5px}
+  .quad .qi{border-radius:12px;background:var(--g-soft)}
+  .trio,.res,.cap-in{border-radius:var(--r-tile)}
+  .ico{border-radius:13px}
+  .chip,.inp,.seg,.unit,.toggle{border-radius:var(--r-ctl)}
+  .seg button,.unit button{border-radius:11px;font-weight:600}
+  .seg button.on{box-shadow:0 1px 3px var(--sh2)}
+  .btn{border-radius:var(--r-tile);font-weight:600;background:var(--g-mid)}
+  .btn.ghost{background:var(--g-soft);color:var(--accent)}
+  .btn.line{background:var(--surface)}
+  .btn.danger{background:var(--danger-bg);color:var(--neg)}
+  .btn:not(.line):not(.ghost):not(.dashed){box-shadow:0 8px 18px -10px rgba(35,56,230,.7)}
+  .btn.dashed{border-color:#B7C0FF;font-weight:600}
+  .sw.on,.cb.on{background:var(--g-mid);border-color:var(--g-mid)}
+  .chip.on{background:var(--g-mid);border-color:var(--g-mid)}
+  .tr-x span.cur{background:var(--g-mid)}
+  .ver{background:var(--gold-soft);color:var(--gold-deep);letter-spacing:.02em}
+  .tabbar{border-radius:22px}
+  .tabbar button{font-weight:600}
+  .tabbar button.on{background:var(--g-soft);color:var(--accent)}
+  .sheet{border-radius:26px 26px 0 0}
+
+  /* бас әріптер жоқ: сөйлем регистрі */
+  label.f,.cap-in .cap-label{text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:600}
+  .mnav .mn-l{text-transform:none;letter-spacing:.01em;font-weight:700;font-size:15px}
+
+  /* тұрақты қозғалыс жоқ: тек әрекетке жауап */
+  .dot.in,.dot.out,.plus,.ratebar span:first-child,.ico.blue,.wide .ic,.brand,
+  .hero .big::after,.brand::after,.bubbles.live .bub{animation:none !important}
+  .brand::after,.hero .big::after{display:none}
+  .page.on .hero,.page.on,.page.on .wrap>*,.wrap>*{animation:none !important}
+  .page.on .wrap>.ornament,.page.on .hero::before{animation:none !important}
+  .hero::before{opacity:.07}
+  .bub{animation:bubIn .5s cubic-bezier(.22,1.2,.36,1) backwards}
+  .ornament{opacity:.5}
+
+  /* көпіршіктегі мәтін шықпасын */
+  .bub{box-shadow:0 8px 18px -10px rgba(10,17,99,.55);padding:3px;overflow:hidden}
+  .bub .bv{font-size:12.5px;font-weight:800;white-space:nowrap}
+  .bub .bl{font-size:10px;font-weight:600;max-width:100%;
+    display:-webkit-box;-webkit-line-clamp:1;line-clamp:1;-webkit-box-orient:vertical}
+  .bub>div{max-width:100%}
+  .bub.sm .bv{font-size:11px}
+
+  /* подтема беттері (калькулятор) hero стилінде */
+  .subhead{background:linear-gradient(168deg,#2A40F0 0%,var(--g-mid) 40%,var(--g-deep) 120%);
+    color:#fff;border-bottom:0;border-radius:0 0 var(--r-hero) var(--r-hero);
+    padding:calc(16px + env(safe-area-inset-top)) 16px 20px;margin-bottom:0;
+    box-shadow:0 14px 34px -18px rgba(10,17,99,.6)}
+  html[data-theme="dark"] .subhead{background:linear-gradient(168deg,#22308F 0%,#141D63 45%,var(--g-deep) 120%)}
+  .subhead .back,.subhead .back.dark{background:rgba(255,255,255,.16);color:#fff}
+  .subhead-t{font-weight:800;color:#fff;font-size:21px}
+  .subhead .sub,.subhead .muted{color:#C9D1FF}
+
+  #splash{background:linear-gradient(160deg,#2338E6,#0A1163)}
+  #splash img{border-radius:28px;box-shadow:0 18px 40px -14px rgba(0,0,0,.6)}
+  #splash .nm{font-weight:700;font-size:18px;letter-spacing:0}
+  .toast{border-radius:var(--r-ctl);font-weight:500}
 </style>
 </head>
 <body>
-<div id="splash"><img src="icon-512.png" alt="Q"><div class="nm">Қаржы</div></div>
+<div id="splash"><img src="icon-512.png" alt="Қаржы"><div class="nm">Қаржы</div></div>
 
 <!-- ============ БАСТЫ ============ -->
 <section class="page on" id="p-home">
   <div class="hero">
     <div class="hero-top center">
+      <img class="mark" src="icon-192.png" alt="" width="40" height="40">
       <div class="ht"><h1>Қаржы</h1></div>
       <button class="plus" onclick="openTx()" aria-label="Операция қосу">+</button>
     </div>
