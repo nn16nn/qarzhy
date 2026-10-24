@@ -902,6 +902,12 @@
     </div>
   </div>
   <div class="wrap">
+    <div class="card" onclick="go('calc-split')" style="display:flex;align-items:center;gap:13px">
+      <div class="ico pos" data-i="salary"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="6.6" width="18.4" height="11.4" rx="2.4"/><circle cx="12" cy="12.3" r="2.6"/><path d="M6.2 12.3h.01M17.8 12.3h.01"/></svg></div>
+      <div><div style="font-weight:700;font-size:16px">Жалақы бөлу</div>
+        <div class="muted">Пайызбен бөлу · Жоспарды сақтау</div></div>
+      <div style="margin-left:auto;color:var(--ink-2)">›</div>
+    </div>
     <div class="card" onclick="go('calc-inv')" style="display:flex;align-items:center;gap:13px">
       <div class="ico" data-i="invest"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.4h16"/><path d="M7.4 16.4V12"/><path d="M11.8 16.4V7.4"/><path d="M16.2 16.4v-6.4"/><path d="M6.2 8.6 12 3.8l5.8 4.8"/></svg></div>
       <div><div style="font-weight:700;font-size:16px">Инвестиция калькуляторы</div>
@@ -925,6 +931,30 @@
       <div><div style="font-weight:700;font-size:16px">Салық калькуляторы</div>
         <div class="muted">ЖК · оңайлатылған декларация</div></div>
       <div style="margin-left:auto;color:var(--ink-2)">›</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ЖАЛАҚЫ БӨЛУ ============ -->
+<section class="page" id="p-calc-split">
+  <div class="subhead">
+    <button class="back dark" onclick="go('calc')" aria-label="Артқа">←</button>
+    <div><div class="subhead-t">Жалақы бөлу</div>
+      <div class="muted">Айлықты пайызбен бөліп, жоспарды сақтап қою</div></div>
+  </div>
+  <div class="wrap">
+    <label class="f">Айлық жалақы, ₸</label>
+    <input class="inp soft" id="sp-sum" type="number" inputmode="decimal" placeholder="0" oninput="splitSum()">
+    <div id="sp-total"></div>
+    <div id="sp-list"></div>
+    <button class="btn line" onclick="splitAdd()">+ Бөлім қосу</button>
+    <div class="row2" style="gap:10px;margin-top:10px">
+      <button class="btn" onclick="splitSaveBtn()" style="margin:0">Жоспарды сақтау</button>
+      <button class="btn line" onclick="splitReset()" style="margin:0">Бастапқы жоспар</button>
+    </div>
+    <div class="row2" style="gap:10px;margin-top:10px">
+      <button class="btn line" onclick="exportSplitPdf()" style="margin:0">PDF-ке шығару</button>
+      <button class="btn line" onclick="exportSplitXlsx()" style="margin:0">Excel-ге шығару</button>
     </div>
   </div>
 </section>

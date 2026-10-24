@@ -7,7 +7,7 @@ var store = {
   set: function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; } }
 };
 var brId = null;
-var DB = { tx:[], goals:[], accounts:[], btx:[], debts:[], limits:{}, lastBackup:null, lang:'kk', theme:'auto', rate:null };
+var DB = { tx:[], goals:[], accounts:[], btx:[], debts:[], limits:{}, split:null, lastBackup:null, lang:'kk', theme:'auto', rate:null };
 
 function load(){
   try{
@@ -16,6 +16,7 @@ function load(){
       var d = JSON.parse(raw);
       DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[]; DB.debts = d.debts||[];
       DB.limits = d.limits||{};
+      DB.split = d.split||null;
       DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto';
       DB.lastBackup = d.lastBackup||null; DB.rate = d.rate||null;
       DB.updated = d.updated||null;
@@ -103,6 +104,8 @@ function applyDB(d){
   if(!d) return;
   DB.tx = d.tx || []; DB.goals = d.goals || []; DB.accounts = d.accounts || [];
   DB.btx = d.btx || []; DB.debts = d.debts || []; DB.limits = d.limits || {};
+  DB.split = d.split || null;
+  SPLIT = null; if(splitTimer){ clearTimeout(splitTimer); splitTimer = null; }
   DB.lastBackup = d.lastBackup || null; DB.lang = d.lang || 'kk';
   DB.theme = d.theme || 'auto'; DB.rate = d.rate || null;
   DB.updated = d.updated || null;
@@ -292,7 +295,7 @@ var CATS = {
   out:[["Тамақ","🍜"],["Ойын-сауық","🎬"],["Байланыс","📱"],["Әке-шешеме","🏠"],
        ["Көлік","🚌"],["Киім","👕"],["Тұрғын үй","🏢"],["Денсаулық","💊"],["Білім","📚"],["Сыйлық","🎁"],
        ["Инвестиция","📊"],["Несие төлемі","💳"],["Басқа","✦"]],
-  in:[["Жалақы","💼"],["Бизнес","📈"],["Фриланс","💻"],["Инвестиция","📊"],["Несие алу","💳"],["Сыйлық","🎁"],["Басқа","✦"]]
+  in:[["Жалақы","💼"],["Бизнес","📈"],["Фриланс","💻"],["Инвестиция","📊"],["Кэшбэк","🪙"],["Несие алу","💳"],["Сыйлық","🎁"],["Басқа","✦"]]
 };
 var ACC_ICONS = ["card","bank","wallet","phone","invest","chart","coin","house"];
 function accIconHtml(a, cls){
@@ -435,6 +438,7 @@ function go(v, silent){
   for(var j=0;j<btns.length;j++) btns[j].classList.toggle('on', btns[j].dataset.tab===v);
   window.scrollTo(0,0);
   render();
+  if(v === 'calc-split') openSplit();
 
   saveView();
   /* Android-тың «артқа» түймесі қосымшадан шығармай, алдыңғы бетке қайтсын */
@@ -1702,13 +1706,17 @@ var OUT_KEYS = [
   [/(подарок|сыйлық|gift|цвет|букет)/i, 'Сыйлық']
 ];
 var IN_KEYS = [
+  [/(кэш\s?б[эе][кц]|кеш\s?б[эе][кц]|cash\s?back|қайтарым)/i, 'Кэшбэк'],
   [/(зарплат|жалақы|salary|аванс|оклад|payroll)/i, 'Жалақы'],
   [/(дивиденд|инвест|брокер|freedom|депозит|вклад|вознагражд|процент по)/i, 'Инвестиция'],
   [/(кредит выдан|несие алу|займ получ|кредит получ|транш)/i, 'Несие алу'],
   [/(бизнес|kaspi pay|оплата от|выручк|эквайринг|(^|[^а-яё])(ип|тоо|жк|жшс)([^а-яё]|$))/i, 'Бизнес'],
   [/(фриланс|freelance|upwork|услуг|гонорар)/i, 'Фриланс']
 ];
-var IN_WORDS  = /(пополнен|поступлен|зачислен|перевод от|получен|возврат|refund|кіріс|түсім|қабылданд|салынды|income|credit)/i;
+var IN_WORDS  = /(пополнен|поступлен|зачислен|перевод от|получен|возврат|refund|кіріс|түсім|қабылданд|салынды|income|credit|кэш\s?б[эе][кц]|кеш\s?б[эе][кц]|cash\s?back|бонус|қайтарым)/i;
+/* кэшбэк: жол ішіндегі «Кэшбэк 50.00» бөлігі (сатып алу жолына қосылып тұрса) және жолдың өзі кэшбэк екенін анықтау */
+var CB_WORD = /(кэш\s?б[эе][кц]|кеш\s?б[эе][кц]|cash\s?back|қайтарым)/i;
+var CB_FRAG = /(кэш\s?б[эе][кц]\w*|кеш\s?б[эе][кц]\w*|cash\s?back|қайтарым)[^\d\n+\-−–]{0,30}[+\-−–]?\s*\d[\d   ]*(?:[.,]\d{1,2})?\s*(?:₸|тг|тнг|KZT|%)?/ig;
 var OUT_WORDS = /(покупк|оплат|снятие|перевод на|списан|платеж|шығын|төлем|аударым|payment|withdraw|debit|перевод в)/i;
 
 function loadScript(url){
@@ -1958,17 +1966,18 @@ function extractOne(line){
   // уақыт
   rest = rest.replace(/\b\d{1,2}:\d{2}(:\d{2})?\b/g, ' ');
 
-  // сомалар
-  var re = /([+\-−–])?\s*(\d{1,3}(?:[ \u00A0\u202F]\d{3})+(?:[.,]\d{1,2})?|\d+[.,]\d{2}|\d{3,})\s*(₸|тг|тнг|KZT|₽|\$|USD|EUR)?/g;
-  var best = null, mm;
-  while((mm = re.exec(rest)) !== null){
-    var v = toNum(mm[2]);
-    if(!isFinite(v) || v <= 0 || v > 999999999) continue;
-    var score = (mm[3] ? 3 : 0) + (mm[1] ? 2 : 0) + (/[.,]\d{2}$/.test(mm[2]) ? 1 : 0);
-    if(!best || score > best.score || (score === best.score && v > best.v)){
-      best = { v: v, sign: mm[1], score: score, raw: mm[0] };
-    }
+  // кэшбэк: сатып алу жолына қосылып тұрған «Кэшбэк 50.00» бөлігі негізгі соманы шатастырмасын,
+  // ал жолдың өзі кэшбэк болса — оны кіріс ретінде аламыз
+  var isCb = false, lineT = line;
+  if(CB_WORD.test(line)){
+    var rest2 = rest.replace(CB_FRAG, ' ');
+    var b2 = pickAmount(rest2);
+    if(b2 && b2.score > 0){ rest = rest2; lineT = line.replace(CB_FRAG, ' '); }
+    else isCb = true;
   }
+
+  // сомалар
+  var best = pickAmount(rest);
   if(!best) return null;
 
   // түсініктеме
@@ -1983,11 +1992,34 @@ function extractOne(line){
   var type = 'out';
   if(best.sign === '+') type = 'in';
   else if(best.sign === '-' || best.sign === '−' || best.sign === '–') type = 'out';
-  else if(IN_WORDS.test(line) && !OUT_WORDS.test(line)) type = 'in';
-  else if(OUT_WORDS.test(line)) type = 'out';
+  else if(isCb) type = 'in';
+  else if(IN_WORDS.test(lineT) && !OUT_WORDS.test(lineT)) type = 'in';
+  else if(OUT_WORDS.test(lineT)) type = 'out';
+
+  /* кэшбэк кірісі — ақшаның қайтуы, оның шығынға ешқандай қатысы жоқ */
+  if(isCb && type === 'in'){
+    if(best.v < 1) return null;
+    return { date: d, amt: best.v, type: 'in', note: note || 'Кэшбэк', cat: 'Кэшбэк' };
+  }
 
   if(best.v < 1) return null;
-  return { date: d, amt: best.v, type: type, note: note || '—', cat: guessCat(type, line) };
+  return { date: d, amt: best.v, type: type, note: note || '—',
+           cat: (type === 'in' && CB_WORD.test(line)) ? 'Кэшбэк' : guessCat(type, lineT) };
+}
+
+/* жолдан ең ықтимал соманы таңдау: валюта белгісі, таңба, тиын бар болса — басымдық */
+function pickAmount(rest){
+  var re = /([+\-−–])?\s*(\d{1,3}(?:[ \u00A0\u202F]\d{3})+(?:[.,]\d{1,2})?|\d+[.,]\d{2}|\d{3,})\s*(₸|тг|тнг|KZT|₽|\$|USD|EUR)?/g;
+  var best = null, mm;
+  while((mm = re.exec(rest)) !== null){
+    var v = toNum(mm[2]);
+    if(!isFinite(v) || v <= 0 || v > 999999999) continue;
+    var score = (mm[3] ? 3 : 0) + (mm[1] ? 2 : 0) + (/[.,]\d{2}$/.test(mm[2]) ? 1 : 0);
+    if(!best || score > best.score || (score === best.score && v > best.v)){
+      best = { v: v, sign: mm[1], score: score, raw: mm[0] };
+    }
+  }
+  return best;
 }
 
 function guessCat(type, text){
@@ -2479,6 +2511,7 @@ var TR = [
 ["Білім","Образование","Education"],["Сыйлық","Подарки","Gifts"],["Басқа","Другое","Other"],
 ["Жалақы","Зарплата","Salary"],["Бизнес","Бизнес","Business"],["Фриланс","Фриланс","Freelance"],
 ["Инвестиция","Инвестиции","Investments"],["Несие алу","Получение кредита","Loan received"],
+["Кэшбэк","Кэшбэк","Cashback"],
 
 /* --- айлар мен күндер --- */
 ["Қаңтар","Январь","January"],["Ақпан","Февраль","February"],["Наурыз","Март","March"],
@@ -2563,6 +2596,15 @@ var TR = [
 ["Тиімді жылдық өсім","Эффективная годовая доходность","Effective annual return"],
 ["Айына орташа табыс","Средний доход в месяц","Average monthly return"],
 
+["Жалақы бөлу","Распределение зарплаты","Salary split"],
+["Айлықты пайызбен бөліп, жоспарды сақтап қою","Разделить зарплату по процентам и сохранить план","Split your salary by percentages and save the plan"],
+["Айлық жалақы, ₸","Зарплата в месяц, ₸","Monthly salary, ₸"],
+["Пайызбен бөлу · Жоспарды сақтау","Проценты · Сохранение плана","Percentages · Saved plan"],
+["+ Бөлім қосу","+ Добавить раздел","+ Add a part"],["Бастапқы жоспар","План по умолчанию","Default plan"],
+["Жоспарды сақтау","Сохранить план","Save plan"],["Жоспар сақталды.","План сохранён.","Plan saved."],
+["Жалақыны жазыңыз.","Введите зарплату.","Enter your salary."],
+["Пайыздың қосындысы 100% болуы керек.","Сумма процентов должна быть 100%.","Percentages must add up to 100%."],
+["Кемінде бір бөлім қалуы керек.","Должен остаться хотя бы один раздел.","At least one part must remain."],
 ["Салық калькуляторы","Налоговый калькулятор","Tax calculator"],
 ["ЖК · оңайлатылған декларация","ИП · упрощённая декларация","Sole trader · simplified"],
 ["ЖК · оңайлатылған декларация (910-форма)","ИП · упрощённая декларация (форма 910)","Sole trader · simplified (form 910)"],
@@ -3221,7 +3263,7 @@ var CAT_ICON = {
   'Тамақ':'food','Көлік':'car','Тұрғын үй':'house','Байланыс':'phone','Киім':'shirt',
   'Денсаулық':'health','Несие төлемі':'card','Ойын-сауық':'fun','Білім':'book',
   'Сыйлық':'gift','Басқа':'star',
-  'Жалақы':'salary','Бизнес':'biz','Фриланс':'laptop','Инвестиция':'invest','Несие алу':'card',
+  'Жалақы':'salary','Бизнес':'biz','Фриланс':'laptop','Инвестиция':'invest','Кэшбэк':'coin','Несие алу':'card',
   'Аударым':'swap'
 };
 
@@ -3958,6 +4000,185 @@ function calcTax(){
     '</div>' +
     '<p class="muted" style="padding:0 4px">Бұл — шамамен есеп, ресми құжат емес. Мөлшерлемелер мен МРП/МЗП жыл сайын өзгереді, ' +
     'жеңілдіктер мен ерекше жағдайлар ескерілмеген. Нақты сомасын salyk.kz немесе бухгалтерден растаңыз.</p>';
+}
+
+/* ================= ЖАЛАҚЫНЫ ПАЙЫЗБЕН БӨЛУ ================= */
+/* Жоспар (жалақы мен бөлімдер) DB.split ішінде сақталады — қосымшаны жапқанда да қалады */
+var SPLIT_DEF = [
+  { name: 'Қажеттілік', pct: 50 },
+  { name: 'Инвестиция', pct: 20 },
+  { name: 'Жинақ',      pct: 20 },
+  { name: 'Өзіме',      pct: 10 }
+];
+var SPLIT_COL = ['#021CF5', '#6D3FE8', '#00BE86', '#FF9F1C', '#FF4D67', '#0EA5E9', '#8B5CF6', '#14B8A6'];
+var SPLIT = null, splitTimer = null;
+
+function splitInit(){
+  if(SPLIT) return;
+  var s = DB.split;
+  var items = (s && s.items && s.items.length) ? s.items : SPLIT_DEF;
+  SPLIT = {
+    sum: (s && s.sum) || 0,
+    items: items.map(function(x){ return { name: String(x.name || ''), pct: +x.pct || 0 }; })
+  };
+}
+function splitCommit(){
+  if(splitTimer){ clearTimeout(splitTimer); splitTimer = null; }
+  if(!SPLIT) return;
+  DB.split = {
+    sum: SPLIT.sum,
+    items: SPLIT.items.map(function(x){ return { name: x.name, pct: x.pct }; })
+  };
+  save();
+}
+function splitSaveSoon(){
+  if(splitTimer) clearTimeout(splitTimer);
+  splitTimer = setTimeout(splitCommit, 500);
+}
+function splitTotal(){
+  var t = 0;
+  SPLIT.items.forEach(function(x){ t += x.pct; });
+  return Math.round(t * 100) / 100;
+}
+/* әр бөлімнің сомасы; пайыз 100 болса, теңгеге дөңгелектеу айырмасын ең үлкен бөлімге қосамыз */
+function splitAmounts(){
+  var sum = Math.round(SPLIT.sum || 0), big = 0;
+  var a = SPLIT.items.map(function(x, i){
+    if(x.pct > SPLIT.items[big].pct) big = i;
+    return Math.round(sum * x.pct / 100);
+  });
+  if(a.length && splitTotal() === 100){
+    var got = 0;
+    a.forEach(function(v){ got += v; });
+    a[big] += sum - got;
+  }
+  return a;
+}
+
+function openSplit(){
+  if(splitTimer) splitCommit();
+  SPLIT = null;
+  splitInit();
+  var si = document.getElementById('sp-sum');
+  if(si) si.value = SPLIT.sum ? SPLIT.sum : '';
+  renderSplit();
+}
+function renderSplit(){
+  var box = document.getElementById('sp-list');
+  if(!box || !SPLIT) return;
+  var h = '';
+  SPLIT.items.forEach(function(x, i){
+    h += '<div class="card" style="padding:14px">' +
+      '<div style="display:flex;gap:8px;align-items:center">' +
+        '<input class="inp soft" id="sp-n-' + i + '" value="' + esc(x.name) + '" placeholder="Атауы" ' +
+          'oninput="splitName(' + i + ',this.value)" style="margin:0;flex:1;min-width:0">' +
+        '<input class="inp soft" id="sp-p-' + i + '" type="number" inputmode="decimal" value="' + x.pct + '" ' +
+          'oninput="splitPct(' + i + ',this.value)" style="margin:0;width:76px;text-align:right">' +
+        '<b>%</b>' +
+        '<button class="btn line" onclick="splitDel(' + i + ')" aria-label="Өшіру" ' +
+          'style="margin:0;width:44px;height:44px;padding:0">✕</button>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">' +
+        '<span class="muted">Сома</span><b id="sp-a-' + i + '" style="font-size:17px"></b></div>' +
+      '<div style="height:8px;background:var(--line);border-radius:99px;margin-top:8px;overflow:hidden">' +
+        '<div id="sp-b-' + i + '" style="height:8px;width:0;background:' + SPLIT_COL[i % SPLIT_COL.length] +
+          ';border-radius:99px;transition:width .2s"></div></div>' +
+    '</div>';
+  });
+  box.innerHTML = h;
+  updateSplit();
+}
+function updateSplit(){
+  if(!SPLIT) return;
+  var a = splitAmounts(), tot = splitTotal(), sum = Math.round(SPLIT.sum || 0);
+  a.forEach(function(v, i){
+    var el = document.getElementById('sp-a-' + i);
+    if(el) el.textContent = money(v);
+    var b = document.getElementById('sp-b-' + i);
+    if(b) b.style.width = Math.max(0, Math.min(100, SPLIT.items[i].pct)) + '%';
+  });
+  var t = document.getElementById('sp-total');
+  if(!t) return;
+  var diff = Math.round((100 - tot) * 100) / 100, txt, col;
+  if(diff === 0){ txt = 'Барлығы 100% · толық бөлінді'; col = 'var(--pos)'; }
+  else if(diff > 0){ txt = 'Барлығы ' + tot + '% · әлі ' + diff + '% бөлінбеген'; col = 'var(--neg)'; }
+  else { txt = 'Барлығы ' + tot + '% · ' + (-diff) + '% артық'; col = 'var(--neg)'; }
+  t.innerHTML = '<div class="res"><div class="lab">Жалақы</div><div class="big">' + money(sum) + '</div>' +
+    '<div style="margin-top:8px;font-weight:700;font-size:13.5px;color:' + col + '">' + txt + '</div></div>';
+}
+function splitSum(){
+  splitInit();
+  SPLIT.sum = num('sp-sum');
+  updateSplit();
+  splitSaveSoon();
+}
+function splitName(i, v){
+  if(!SPLIT || !SPLIT.items[i]) return;
+  SPLIT.items[i].name = v;
+  splitSaveSoon();
+}
+function splitPct(i, v){
+  if(!SPLIT || !SPLIT.items[i]) return;
+  var n = parseFloat(v);
+  SPLIT.items[i].pct = isNaN(n) ? 0 : Math.max(0, n);
+  updateSplit();
+  splitSaveSoon();
+}
+function splitAdd(){
+  splitInit();
+  var left = Math.max(0, Math.round((100 - splitTotal()) * 100) / 100);
+  SPLIT.items.push({ name: 'Жаңа бөлім', pct: left });
+  splitCommit();
+  renderSplit();
+}
+function splitDel(i){
+  if(!SPLIT || SPLIT.items.length <= 1){ toast('Кемінде бір бөлім қалуы керек.'); return; }
+  SPLIT.items.splice(i, 1);
+  splitCommit();
+  renderSplit();
+}
+function splitReset(){
+  splitInit();
+  SPLIT.items = SPLIT_DEF.map(function(x){ return { name: x.name, pct: x.pct }; });
+  splitCommit();
+  renderSplit();
+}
+function splitSaveBtn(){
+  splitInit();
+  splitCommit();
+  toast('Жоспар сақталды.');
+}
+/* PDF/Excel үшін: жалақы жазылған және пайыз дәл 100 болуы керек */
+function splitReady(){
+  splitInit();
+  if(!(SPLIT.sum > 0)){ toast('Жалақыны жазыңыз.'); return null; }
+  if(splitTotal() !== 100){ toast('Пайыздың қосындысы 100% болуы керек.'); return null; }
+  return splitAmounts();
+}
+function exportSplitPdf(){
+  var a = splitReady();
+  if(!a) return;
+  var sum = Math.round(SPLIT.sum), bars = '';
+  SPLIT.items.forEach(function(x, i){
+    bars += rpBar(x.name || '—', money(a[i]), x.pct, SPLIT_COL[i % SPLIT_COL.length]);
+  });
+  var html = calcWrap(
+    calcHead('Жалақы бөлу', 'Пайыздық жоспар · ' + a.length + ' бөлім') +
+    calcCards([
+      { label: 'Жалақы', value: money(sum), bg: '#F4F6FF', fg: '#0D1226' },
+      { label: 'Бөлім саны', value: String(a.length), bg: '#EAFBF4', fg: '#00BE86' }
+    ]) + bars);
+  exportPdf(html, 'qarzhy-zhalaqy-' + todayISO() + '.pdf');
+}
+function exportSplitXlsx(){
+  var a = splitReady();
+  if(!a) return;
+  var sum = Math.round(SPLIT.sum);
+  var rows = [['Жалақы бөлу'], ['Жасалған күні', fullDate(todayISO())], [], ['Жалақы', sum], [],
+              ['Бөлім', 'Пайыз, %', 'Сома']];
+  SPLIT.items.forEach(function(x, i){ rows.push([x.name, x.pct, a[i]]); });
+  rows.push([], ['Барлығы', 100, sum]);
+  exportXlsx([{ name: 'Жалақы бөлу', rows: rows }], 'qarzhy-zhalaqy-' + todayISO() + '.xlsx');
 }
 
 /* ================= PDF ЕСЕП ================= */
