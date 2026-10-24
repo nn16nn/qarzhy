@@ -14,7 +14,7 @@
 <link rel="preload" href="fonts/onest-cyrillic-ext-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/onest-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <script>
-(function(){try{var d=JSON.parse(localStorage.getItem('qarzhy_v1')||'{}'),s=d.skin||'classic',t=d.theme||'auto';
+(function(){try{var d=JSON.parse(localStorage.getItem('qarzhy_v1')||'{}'),s=d.skin||'glass',t=d.theme||'auto';
 var dk=s==='neon'||t==='dark'||(t==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
 var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('data-theme',dk?'dark':'light');}catch(e){}})();
 </script>
@@ -1181,6 +1181,98 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   #splash .sp-mark{--q-ring:#fff;width:110px;height:110px;display:block;filter:drop-shadow(0 14px 26px rgba(0,0,0,.3))}
   html[data-skin="neon"] #splash .sp-mark{--q-ring:#00E5FF;filter:drop-shadow(0 0 16px rgba(0,229,255,.8))}
   .hero.flat .balance .cap,.hero.flat .balance{color:#fff}
+
+  /* =====================================================
+     v18 · ШЫНЫ стилі (әдепкі): мөлдір, бұлыңғыр қабаттар
+     ===================================================== */
+  html[data-skin="glass"]{
+    --surface:rgba(255,255,255,.52); --line:rgba(255,255,255,.7);
+    --accent:#5B5CF0; --g-mid:#5B5CF0; --g-soft:rgba(91,92,240,.12); --blue:#5B5CF0;
+    --ink:#1A1640; --ink-2:#5F5A86; --navy:#2B2580;
+    --glass-blur:blur(22px) saturate(1.7);
+    --glass-edge:inset 0 1px 0 rgba(255,255,255,.85), inset 0 -1px 0 rgba(255,255,255,.25);
+    --elev:0 10px 30px -14px rgba(70,50,170,.28);
+    --tabbar:rgba(255,255,255,.5);
+  }
+  html[data-skin="glass"][data-theme="dark"]{
+    --surface:rgba(255,255,255,.07); --line:rgba(255,255,255,.14);
+    --accent:#A9B2FF; --g-mid:#6C6DF5; --g-soft:rgba(169,178,255,.14); --blue:#A9B2FF;
+    --ink:#F1F0FF; --ink-2:#B4B0D8; --navy:#E6E4FF;
+    --glass-edge:inset 0 1px 0 rgba(255,255,255,.14), inset 0 -1px 0 rgba(255,255,255,.04);
+    --elev:0 12px 34px -16px rgba(0,0,0,.7);
+    --tabbar:rgba(22,20,52,.45);
+  }
+  html[data-skin="glass"] body{background:
+    radial-gradient(42% 30% at 8% 6%,#8FA6FF 0%,transparent 70%),
+    radial-gradient(40% 28% at 96% 18%,#F0A3FF 0%,transparent 70%),
+    radial-gradient(46% 30% at 20% 62%,#9EE7F5 0%,transparent 70%),
+    radial-gradient(48% 32% at 92% 78%,#FFC1A1 0%,transparent 70%),
+    linear-gradient(180deg,#EEF0FF,#F7EEFF);background-attachment:fixed}
+  html[data-skin="glass"][data-theme="dark"] body{background:
+    radial-gradient(42% 30% at 8% 6%,#3B3FB8 0%,transparent 70%),
+    radial-gradient(40% 28% at 96% 18%,#7A2A93 0%,transparent 70%),
+    radial-gradient(46% 30% at 20% 62%,#14607A 0%,transparent 70%),
+    radial-gradient(48% 32% at 92% 78%,#7A3A2C 0%,transparent 70%),
+    linear-gradient(180deg,#0D0B24,#140C26);background-attachment:fixed}
+
+  html[data-skin="glass"] .card,html[data-skin="glass"] .mini,html[data-skin="glass"] .quad button,
+  html[data-skin="glass"] .iconbtn:not(.avatar),html[data-skin="glass"] .qa-i,html[data-skin="glass"] .tabbar,
+  html[data-skin="glass"] .seg,html[data-skin="glass"] .inp,html[data-skin="glass"] .chip,html[data-skin="glass"] .modestrip .mcard,
+  html[data-skin="glass"] .ratebar,html[data-skin="glass"] #p-home .monthbar button,html[data-skin="glass"] .hero.flat .back,
+  html[data-skin="glass"] .hero.flat .mnav .mn,html[data-skin="glass"] .hero.flat .search,html[data-skin="glass"] .skin,
+  html[data-skin="glass"] .trio,html[data-skin="glass"] .res,html[data-skin="glass"] .toggle{
+    background:var(--surface) !important;border:1px solid var(--line) !important;
+    -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+    box-shadow:var(--glass-edge),var(--elev) !important}
+  html[data-skin="glass"] .trio,html[data-skin="glass"] .res{box-shadow:var(--glass-edge) !important}
+  html[data-skin="glass"] .row+.row,html[data-skin="glass"] .kv{border-color:rgba(120,110,200,.14)}
+
+  /* баланс картасы: түсті шыны */
+  html[data-skin="glass"] .balance,html[data-skin="glass"] #goal-list .goal:first-child{
+    background:linear-gradient(135deg,rgba(98,112,255,.78),rgba(168,92,255,.62) 55%,rgba(255,128,170,.55)) !important;
+    border:1px solid rgba(255,255,255,.55) !important;
+    -webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 24px 44px -22px rgba(90,60,220,.65) !important}
+  html[data-skin="glass"][data-theme="dark"] .balance,html[data-skin="glass"][data-theme="dark"] #goal-list .goal:first-child{
+    background:linear-gradient(135deg,rgba(90,96,255,.45),rgba(150,70,230,.38) 55%,rgba(230,100,150,.3)) !important;
+    border-color:rgba(255,255,255,.18) !important}
+  html[data-skin="glass"] .balance::after{content:"";position:absolute;inset:-40% -10% auto auto;width:70%;height:90%;
+    background:radial-gradient(closest-side,rgba(255,255,255,.35),transparent);pointer-events:none}
+  html[data-skin="glass"] .bl-delta{background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.35)}
+
+  /* түймелер */
+  html[data-skin="glass"] .qa-i{color:var(--accent)}
+  html[data-skin="glass"] .qa button:first-child .qa-i,html[data-skin="glass"] .tabbar .fab{
+    background:linear-gradient(145deg,#7C8BFF,#A55CFF) !important;color:#fff !important;
+    border:1px solid rgba(255,255,255,.6) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 12px 24px -10px rgba(110,80,240,.8) !important}
+  html[data-skin="glass"] .tabbar .fab{border:4px solid rgba(255,255,255,.55) !important}
+  html[data-skin="glass"][data-theme="dark"] .tabbar .fab{border-color:rgba(255,255,255,.12) !important}
+  html[data-skin="glass"] .btn:not(.line):not(.ghost):not(.dashed):not(.danger),html[data-skin="glass"] .pseg button.on,
+  html[data-skin="glass"] .hero.flat .plus,html[data-skin="glass"] .chip.on,html[data-skin="glass"] .hero.flat .seg.glass button.on,
+  html[data-skin="glass"] .seg button.on{
+    background:linear-gradient(135deg,#6E7BFF,#A55CFF) !important;color:#fff !important;border-color:transparent !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 10px 20px -12px rgba(110,80,240,.85) !important}
+  html[data-skin="glass"] .seg button.on.danger{background:linear-gradient(135deg,#FF7A8A,#F0466A) !important}
+  html[data-skin="glass"] .btn.ghost,html[data-skin="glass"] .btn.line,html[data-skin="glass"] .btn.dashed{
+    background:var(--surface) !important;border:1px solid var(--line) !important;color:var(--accent);
+    -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)}
+  html[data-skin="glass"] .tabbar button.on{color:var(--accent)}
+  html[data-skin="glass"] .iconbtn.avatar{background:linear-gradient(145deg,#7C8BFF,#A55CFF);border:1px solid rgba(255,255,255,.6)}
+
+  /* терезе */
+  html[data-skin="glass"] .sheet{background:rgba(255,255,255,.72) !important;border-top:1px solid rgba(255,255,255,.8);
+    -webkit-backdrop-filter:blur(30px) saturate(1.6);backdrop-filter:blur(30px) saturate(1.6)}
+  html[data-skin="glass"][data-theme="dark"] .sheet{background:rgba(24,20,56,.72) !important;border-top-color:rgba(255,255,255,.14)}
+  html[data-skin="glass"] .scrim{background:rgba(40,30,110,.25);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+  html[data-skin="glass"] .ct-i{-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  html[data-skin="glass"] .ring .rf{stroke:url(#qlg)}
+  html[data-skin="glass"] .fill{background:linear-gradient(90deg,#6E7BFF,#A55CFF)}
+  @media (prefers-reduced-transparency: reduce){
+    html[data-skin="glass"]{--surface:rgba(255,255,255,.92)}
+    html[data-skin="glass"][data-theme="dark"]{--surface:rgba(28,24,60,.95)}
+  }
+  html[data-skin="glass"] .tabbar{background:rgba(255,255,255,.74) !important}
+  html[data-skin="glass"][data-theme="dark"] .tabbar{background:rgba(24,20,56,.78) !important}
 </style>
 </head>
 <body>

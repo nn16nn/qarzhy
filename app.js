@@ -17,7 +17,7 @@ function load(){
       DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[]; DB.debts = d.debts||[];
       DB.limits = d.limits||{};
       DB.split = d.split||null; DB.recur = d.recur||[];
-      DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto'; DB.skin = d.skin||'classic';
+      DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto'; DB.skin = d.skin||'glass';
       DB.lastBackup = d.lastBackup||null; DB.rate = d.rate||null;
       DB.updated = d.updated||null;
       if(!DB.accounts.length){
@@ -107,7 +107,7 @@ function applyDB(d){
   DB.split = d.split || null; DB.recur = d.recur || [];
   SPLIT = null; if(splitTimer){ clearTimeout(splitTimer); splitTimer = null; }
   DB.lastBackup = d.lastBackup || null; DB.lang = d.lang || 'kk';
-  DB.theme = d.theme || 'auto'; DB.skin = d.skin || DB.skin || 'classic'; DB.rate = d.rate || null;
+  DB.theme = d.theme || 'auto'; DB.skin = d.skin || DB.skin || 'glass'; DB.rate = d.rate || null;
   DB.updated = d.updated || null;
   if(!DB.accounts.length) DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:d.start||0,cur:'KZT'}];
 }
@@ -3051,7 +3051,7 @@ var SKINS = [
   ['sunset','Күн батуы',['#FF8A00','#E52E71','#7B3FF2']],
   ['mono','Минимал',['#111111','#8A8A8A','#E9E9E9']]
 ];
-function skinMode(){ return DB.skin || 'classic'; }
+function skinMode(){ return DB.skin || 'glass'; }
 function applyTheme(){
   var sk = skinMode();
   var dark = sk === 'neon' ? true : isDark();
