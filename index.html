@@ -796,6 +796,54 @@
   #splash img{border-radius:28px;box-shadow:0 18px 40px -14px rgba(0,0,0,.6)}
   #splash .nm{font-weight:700;font-size:18px;letter-spacing:0}
   .toast{border-radius:var(--r-ctl);font-weight:500}
+
+/* Qarzhy Blue Fintech redesign */
+:root{
+ --g-deep:#063DA8; --g-mid:#0877F9; --g-bright:#126BEB; --g-soft:#E8F2FF;
+ --ink:#10213F; --ink-2:#6B7B95; --line:#E2EAF5; --bg:#F4F8FD;
+ --blue:#0877F9; --accent:#0877F9; --surface:#FFFFFF;
+ --tabbar:rgba(255,255,255,.96); --shadow:rgba(12,55,110,.07); --shadow-2:rgba(12,55,110,.14);
+ --sh1:rgba(12,55,110,.04); --sh2:rgba(12,55,110,.14); --blue-bg:#EAF3FF;
+}
+html[data-theme="dark"]{
+ --g-deep:#061B45; --g-mid:#126BEB; --g-bright:#3288FF; --g-soft:#132B4D;
+ --ink:#F1F6FF; --ink-2:#9CB0CD; --line:#233B5D; --bg:#071426; --blue:#69A9FF;
+ --accent:#69A9FF; --surface:#0D2038; --tabbar:rgba(13,32,56,.96); --blue-bg:#132B4D;
+ --shadow:rgba(0,0,0,.25); --shadow-2:rgba(0,0,0,.42); --sh1:rgba(0,0,0,.22); --sh2:rgba(0,0,0,.42);
+}
+body{background:var(--bg);letter-spacing:-.012em}
+.hero{background:radial-gradient(120% 100% at 8% 0%,rgba(75,164,255,.65) 0%,transparent 56%),linear-gradient(145deg,#0877F9 0%,#0752C7 58%,#063DA8 100%);border-radius:0 0 30px 30px;padding-bottom:26px;box-shadow:0 12px 30px rgba(7,91,205,.15)}
+.hero.flat{background:linear-gradient(145deg,#0877F9,#0647B5)}
+.hero h1{font-size:28px;font-weight:850;letter-spacing:-.04em}
+.cap{font-size:37px;letter-spacing:-.045em}
+.plus{border-radius:17px;color:#0877F9;box-shadow:0 7px 18px rgba(0,32,100,.2)}
+.back{border-radius:15px}
+.mini,.wide{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.2);backdrop-filter:blur(10px)}
+.card{border:1px solid rgba(221,232,247,.78);border-radius:23px;box-shadow:0 5px 22px rgba(19,63,119,.045);padding:17px}
+.card h2{font-size:16px}
+.wrap{padding:15px}
+.ico{border-radius:15px;background:var(--g-soft);color:var(--accent)}
+.trio{background:var(--g-soft);border:1px solid rgba(8,119,249,.05)}
+.modestrip .mcard{border-radius:19px;box-shadow:0 4px 15px rgba(13,55,110,.06)}
+.modestrip .mcard.on{border-color:#0877F9;background:linear-gradient(180deg,#fff,#F1F7FF)}
+html[data-theme="dark"] .modestrip .mcard.on{background:linear-gradient(180deg,#102746,#0D2038)}
+.btn{background:linear-gradient(135deg,#1685FF,#0758D4);border-radius:16px;box-shadow:0 7px 17px rgba(8,103,224,.2);font-weight:750}
+.btn.ghost{background:var(--g-soft);color:var(--accent);box-shadow:none}
+.inp,select,input,textarea{border-radius:15px}
+.inp:focus,input:focus,select:focus,textarea:focus{outline:2px solid rgba(8,119,249,.22);border-color:#0877F9}
+.tabbar{border-radius:24px;border-color:rgba(216,230,247,.9);box-shadow:0 8px 32px rgba(15,52,101,.12);backdrop-filter:blur(22px)}
+.sheet{border-radius:28px 28px 0 0;box-shadow:0 -10px 42px rgba(8,33,75,.18)}
+.grab{background:#C8D5E7}
+.pill{border-radius:999px}
+.bud-row .track{background:var(--g-soft)}
+html[data-theme="dark"] .card{border-color:var(--line)}
+html[data-theme="dark"] .tabbar{border-color:var(--line)}
+html[data-theme="dark"] .hero,html[data-theme="dark"] .hero.flat,html[data-theme="dark"] .subhead{background:linear-gradient(160deg,#0E4FB8 0%,#0A2F7A 50%,#061B45 120%)}
+.subhead{background:linear-gradient(145deg,#0877F9,#0647B5)}
+.plus{color:#063DA8}
+@media(min-width:700px){.wrap{max-width:760px;margin:0 auto}.hero{padding-left:max(22px,calc((100% - 720px)/2));padding-right:max(22px,calc((100% - 720px)/2))}.tabbar{max-width:740px;margin:0 auto}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
 </style>
 </head>
 <body>
