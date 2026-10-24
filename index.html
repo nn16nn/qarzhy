@@ -1071,6 +1071,92 @@
   /* ашылу экраны */
   #splash{background:linear-gradient(160deg,#1F66FF,#0B2A7A) !important}
   html[data-theme="dark"] .pseg button.on{background:var(--g-mid) !important}
+
+  /* =====================================================
+     v16 · дизайн стильдері (data-skin)
+     ===================================================== */
+  .skins{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+  .skin{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 6px 9px;border-radius:16px;
+    border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:12.5px;font-weight:600;min-height:44px}
+  .skin.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--g-soft)}
+  .sk-sw{width:100%;height:38px;border-radius:11px;display:block}
+
+  /* ---------- НЕОН ---------- */
+  html[data-skin="neon"]{
+    --bg:#05040D; --surface:#0D0B1E; --line:rgba(0,229,255,.18); --ink:#F2F4FF; --ink-2:#A3A3D1;
+    --accent:#00E5FF; --g-mid:#00B8E6; --g-soft:rgba(0,229,255,.10); --blue:#B14BFF; --blue-bg:rgba(177,75,255,.14);
+    --pos:#39FF88; --pos-soft:rgba(57,255,136,.12); --neg:#FF3D7F; --neg-soft:rgba(255,61,127,.14); --red:#FF3D7F;
+    --navy:#00E5FF; --coral:#FF3DF0; --tabbar:rgba(13,11,30,.92);
+    --elev:0 0 0 1px rgba(0,229,255,.06), 0 14px 30px -18px rgba(0,229,255,.35);
+  }
+  html[data-skin="neon"] body{background:
+    radial-gradient(60% 40% at 0% 0%,rgba(177,75,255,.22),transparent 70%),
+    radial-gradient(60% 40% at 100% 30%,rgba(0,229,255,.16),transparent 70%),
+    radial-gradient(70% 40% at 50% 100%,rgba(255,61,240,.14),transparent 70%),#05040D;background-attachment:fixed}
+  html[data-skin="neon"] .ah-wm{background:linear-gradient(90deg,#00E5FF,#FF3DF0);-webkit-background-clip:text;background-clip:text;color:transparent}
+  html[data-skin="neon"] .balance{background:linear-gradient(135deg,#1A0B45 0%,#0B1640 60%,#06102E 100%) !important;
+    box-shadow:0 0 0 1px rgba(0,229,255,.55),0 0 26px rgba(0,229,255,.35),0 0 60px rgba(177,75,255,.25) !important}
+  html[data-skin="neon"] .balance .cap{text-shadow:0 0 18px rgba(0,229,255,.55)}
+  html[data-skin="neon"] .spark path[stroke]{stroke:#00E5FF;filter:drop-shadow(0 0 5px #00E5FF)}
+  html[data-skin="neon"] .spark circle{fill:#FF3DF0;filter:drop-shadow(0 0 6px #FF3DF0)}
+  html[data-skin="neon"] .bl-delta{background:rgba(57,255,136,.14);color:#39FF88}
+  html[data-skin="neon"] .qa-i{background:transparent;border:1.5px solid rgba(0,229,255,.6);color:#00E5FF;box-shadow:0 0 14px -2px rgba(0,229,255,.45)}
+  html[data-skin="neon"] .qa button:first-child .qa-i{background:#00E5FF;color:#05040D;border-color:#00E5FF;box-shadow:0 0 22px rgba(0,229,255,.7)}
+  html[data-skin="neon"] .tabbar .fab{background:linear-gradient(145deg,#00E5FF,#B14BFF) !important;color:#05040D !important;
+    border-color:#05040D;box-shadow:0 0 24px rgba(0,229,255,.6),0 0 40px rgba(177,75,255,.4)}
+  html[data-skin="neon"] .tabbar{border-color:rgba(0,229,255,.25) !important;box-shadow:0 0 30px -10px rgba(0,229,255,.4)}
+  html[data-skin="neon"] .tabbar button.on{color:#00E5FF;text-shadow:0 0 10px rgba(0,229,255,.7)}
+  html[data-skin="neon"] .card,html[data-skin="neon"] .mini,html[data-skin="neon"] .quad button{background:rgba(13,11,30,.82) !important}
+  html[data-skin="neon"] .amt.in{text-shadow:0 0 10px rgba(57,255,136,.55)}
+  html[data-skin="neon"] .amt.out{text-shadow:0 0 10px rgba(255,61,127,.5)}
+  html[data-skin="neon"] .ico.cc{box-shadow:0 0 16px -3px rgba(255,255,255,.35);filter:saturate(1.35) brightness(1.08)}
+  html[data-skin="neon"] .btn:not(.line):not(.ghost):not(.dashed):not(.danger),
+  html[data-skin="neon"] .hero.flat .plus,html[data-skin="neon"] .pseg button.on,
+  html[data-skin="neon"] .chip.on,html[data-skin="neon"] .hero.flat .seg.glass button.on{
+    background:linear-gradient(135deg,#00E5FF,#B14BFF) !important;color:#05040D !important;border-color:transparent;
+    box-shadow:0 0 20px -4px rgba(0,229,255,.7) !important}
+  html[data-skin="neon"] .iconbtn.avatar{background:linear-gradient(145deg,#FF3DF0,#B14BFF);box-shadow:0 0 16px rgba(255,61,240,.5)}
+  html[data-skin="neon"] #goal-list .goal:first-child{background:linear-gradient(135deg,#1A0B45,#06102E);box-shadow:0 0 0 1px rgba(255,61,240,.5),0 0 28px rgba(255,61,240,.3)}
+  html[data-skin="neon"] .ring .rf{stroke:#00E5FF;filter:drop-shadow(0 0 4px #00E5FF)}
+  html[data-skin="neon"] #goal-list .goal:first-child .ring .rf{stroke:#FF3DF0;filter:drop-shadow(0 0 4px #FF3DF0)}
+  html[data-skin="neon"] .fill{background:linear-gradient(90deg,#00E5FF,#B14BFF) !important;box-shadow:0 0 10px rgba(0,229,255,.6)}
+  html[data-skin="neon"] .hero.flat h1{text-shadow:0 0 18px rgba(0,229,255,.35)}
+
+  /* ---------- ШЫНЫ ---------- */
+  html[data-skin="glass"]{--surface:rgba(255,255,255,.62);--line:rgba(255,255,255,.75);--accent:#5868F2;--g-mid:#5868F2;--g-soft:rgba(88,104,242,.12);--tabbar:rgba(255,255,255,.6)}
+  html[data-skin="glass"][data-theme="dark"]{--surface:rgba(20,22,48,.55);--line:rgba(255,255,255,.12);--accent:#9AA6FF;--g-mid:#6A78FF;--g-soft:rgba(154,166,255,.14);--tabbar:rgba(20,22,48,.6)}
+  html[data-skin="glass"] body{background:radial-gradient(70% 50% at 0% 0%,#A7B8FF,transparent 70%),radial-gradient(70% 50% at 100% 20%,#F3B2FF,transparent 70%),radial-gradient(80% 50% at 50% 100%,#FFC9A8,transparent 70%),#EEF0FF;background-attachment:fixed}
+  html[data-skin="glass"][data-theme="dark"] body{background:radial-gradient(70% 50% at 0% 0%,#2A2F8A,transparent 70%),radial-gradient(70% 50% at 100% 20%,#5B1F72,transparent 70%),radial-gradient(80% 50% at 50% 100%,#6B2B3A,transparent 70%),#0B0C20;background-attachment:fixed}
+  html[data-skin="glass"] .card,html[data-skin="glass"] .mini,html[data-skin="glass"] .quad button,html[data-skin="glass"] .tabbar,
+  html[data-skin="glass"] .iconbtn,html[data-skin="glass"] .sheet{-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4)}
+  html[data-skin="glass"] .sheet{background:rgba(255,255,255,.88)}
+  html[data-skin="glass"][data-theme="dark"] .sheet{background:rgba(16,18,40,.92)}
+  html[data-skin="glass"] .balance{background:linear-gradient(135deg,rgba(106,139,255,.95),rgba(179,107,255,.9) 60%,rgba(255,143,177,.85)) !important;
+    box-shadow:0 20px 40px -20px rgba(120,90,255,.7) !important;border:1px solid rgba(255,255,255,.5)}
+  html[data-skin="glass"] .tabbar .fab,html[data-skin="glass"] .qa button:first-child .qa-i{background:linear-gradient(145deg,#6A8BFF,#B36BFF) !important}
+  html[data-skin="glass"] .iconbtn.avatar{background:linear-gradient(145deg,#6A8BFF,#B36BFF)}
+
+  /* ---------- КҮН БАТУЫ ---------- */
+  html[data-skin="sunset"]{--accent:#7B3FF2;--g-mid:#7B3FF2;--g-soft:#F2EBFF;--bg:#FFF7F3;--line:#F4E6E0;--navy:#3A1A6E}
+  html[data-skin="sunset"][data-theme="dark"]{--accent:#B48CFF;--g-mid:#7B3FF2;--g-soft:#24183F;--bg:#120A1C;--surface:#1B1229;--line:#2E2140;--navy:#E9DDFF}
+  html[data-skin="sunset"] .balance,html[data-skin="sunset"] #goal-list .goal:first-child{background:radial-gradient(120% 130% at 100% 0%,#FFB347 0%,transparent 50%),linear-gradient(135deg,#FF8A00 0%,#E52E71 55%,#7B3FF2 100%) !important;
+    box-shadow:0 20px 36px -20px rgba(229,46,113,.75) !important}
+  html[data-skin="sunset"] .tabbar .fab,html[data-skin="sunset"] .qa button:first-child .qa-i{background:linear-gradient(145deg,#FF8A00,#E52E71) !important}
+  html[data-skin="sunset"] .iconbtn.avatar{background:linear-gradient(145deg,#E52E71,#7B3FF2)}
+
+  /* ---------- МИНИМАЛ ---------- */
+  html[data-skin="mono"]{--accent:#111;--g-mid:#111;--g-soft:#F0F0F0;--bg:#FAFAFA;--line:#E7E7E7;--navy:#111;--ink:#111;--ink-2:#6E6E6E;--blue:#111;--elev:none}
+  html[data-skin="mono"][data-theme="dark"]{--accent:#F2F2F2;--g-mid:#F2F2F2;--g-soft:#1E1E1E;--bg:#0B0B0B;--surface:#141414;--line:#262626;--navy:#F2F2F2;--ink:#F2F2F2;--ink-2:#9A9A9A;--blue:#F2F2F2}
+  html[data-skin="mono"] .balance,html[data-skin="mono"] #goal-list .goal:first-child{background:#111 !important;box-shadow:none !important}
+  html[data-skin="mono"][data-theme="dark"] .balance,html[data-skin="mono"][data-theme="dark"] #goal-list .goal:first-child{background:#1C1C1C !important;border:1px solid #333}
+  html[data-skin="mono"] .tabbar .fab,html[data-skin="mono"] .qa button:first-child .qa-i{background:var(--accent) !important;color:var(--bg) !important;box-shadow:none}
+  html[data-skin="mono"] .btn:not(.line):not(.ghost):not(.dashed):not(.danger),html[data-skin="mono"] .pseg button.on,html[data-skin="mono"] .chip.on,
+  html[data-skin="mono"] .hero.flat .plus{background:var(--accent) !important;color:var(--bg) !important;border-color:var(--accent);box-shadow:none !important}
+  html[data-skin="mono"] .ico.cc{background:var(--g-soft) !important;color:var(--ink) !important}
+  html[data-skin="mono"] .iconbtn.avatar{background:var(--accent);color:var(--bg)}
+  html[data-skin="mono"] .card,html[data-skin="mono"] .tabbar{box-shadow:none}
+  html[data-skin="mono"] .ah-brand img{filter:grayscale(1) contrast(1.4)}
+  html[data-skin="mono"] .ico.cc,html[data-skin="mono"] .ico.cc .svi{color:var(--ink) !important}
 </style>
 </head>
 <body>
@@ -1499,6 +1585,11 @@
     <div class="card">
       <h2>Тақырып</h2>
       <div class="chips" id="theme-chips" style="margin-bottom:0"></div>
+    </div>
+    <div class="card">
+      <h2>Дизайн стилі</h2>
+      <div class="skins" id="skin-chips"></div>
+      <p class="muted" style="margin:10px 0 0">Неон стилі әрдайым қараңғы.</p>
     </div>
     <div class="card">
       <h2>Тіл</h2>

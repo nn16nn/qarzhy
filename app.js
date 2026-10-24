@@ -17,7 +17,7 @@ function load(){
       DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[]; DB.debts = d.debts||[];
       DB.limits = d.limits||{};
       DB.split = d.split||null; DB.recur = d.recur||[];
-      DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto';
+      DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto'; DB.skin = d.skin||'classic';
       DB.lastBackup = d.lastBackup||null; DB.rate = d.rate||null;
       DB.updated = d.updated||null;
       if(!DB.accounts.length){
@@ -107,7 +107,7 @@ function applyDB(d){
   DB.split = d.split || null; DB.recur = d.recur || [];
   SPLIT = null; if(splitTimer){ clearTimeout(splitTimer); splitTimer = null; }
   DB.lastBackup = d.lastBackup || null; DB.lang = d.lang || 'kk';
-  DB.theme = d.theme || 'auto'; DB.rate = d.rate || null;
+  DB.theme = d.theme || 'auto'; DB.skin = d.skin || DB.skin || 'classic'; DB.rate = d.rate || null;
   DB.updated = d.updated || null;
   if(!DB.accounts.length) DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:d.start||0,cur:'KZT'}];
 }
@@ -933,7 +933,7 @@ function importData(el){
 function wipe(){
   if(!confirm(tr('Барлық дерек өшіріледі. Жалғастырасыз ба?'))) return;
   DB={tx:[],goals:[],accounts:[{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:0,cur:'KZT'}],
-      btx:[],debts:[],limits:{},split:null,recur:[],lastBackup:DB.lastBackup,lang:DB.lang,theme:DB.theme,rate:DB.rate};
+      btx:[],debts:[],limits:{},split:null,recur:[],lastBackup:DB.lastBackup,lang:DB.lang,theme:DB.theme,skin:DB.skin,rate:DB.rate};
   SPLIT=null;
   SNAPS.forEach(function(x){ idbDel('snap:'+x.day); });
   SNAPS=[]; idbSet('snaps',[]).catch(function(){});
@@ -1189,6 +1189,7 @@ function render(){
   fillIcons();
   drawLangChips();
   drawThemeChips();
+  drawSkinChips();
   translateDom(document.body);
 
   /* --- goals --- */
@@ -2381,7 +2382,7 @@ function importConfirm(){
 var TR = [
 /* --- навигация --- */
 ["Басты","Главная","Home"],["Қаржы","Финансы","Finance"],["Операция","Операции","Activity"],
-["Нәтиже","Нәтиже","Stats"],["Статистика","Статистика","Statistics"],["Шоттар","Счета","Accounts"],["Профиль","Профиль","Profile"],["Кіріс қосу","Добавить доход","Add income"],["Шығын қосу","Добавить расход","Add expense"],["Баптау","Настройки","Settings"],
+["Нәтиже","Нәтиже","Stats"],["Статистика","Статистика","Statistics"],["Шоттар","Счета","Accounts"],["Профиль","Профиль","Profile"],["Дизайн стилі","Стиль оформления","Design style"],["Классик","Классика","Classic"],["Неон","Неон","Neon"],["Шыны","Стекло","Glass"],["Күн батуы","Закат","Sunset"],["Минимал","Минимал","Minimal"],["Кіріс қосу","Добавить доход","Add income"],["Шығын қосу","Добавить расход","Add expense"],["Баптау","Настройки","Settings"],
 ["Шолу","Обзор","Overview"],["Операциялар","Операции","Transactions"],
 ["Мақсаттар","Цели","Goals"],["Есептегіш","Есептегіш","Calculator"],["Бюджет — санат лимиттері","Бюджет — лимиты по категориям","Budget — category limits"],
 
@@ -3043,11 +3044,37 @@ function isDark(){
   if(m === 'light') return false;
   return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 }
+var SKINS = [
+  ['classic','Классик',['#1463FF','#0B2A7A','#FF6F61']],
+  ['neon','Неон',['#00E5FF','#B14BFF','#FF3DF0']],
+  ['glass','Шыны',['#6A8BFF','#B36BFF','#FF8FB1']],
+  ['sunset','Күн батуы',['#FF8A00','#E52E71','#7B3FF2']],
+  ['mono','Минимал',['#111111','#8A8A8A','#E9E9E9']]
+];
+function skinMode(){ return DB.skin || 'classic'; }
 function applyTheme(){
-  var dark = isDark();
+  var sk = skinMode();
+  var dark = sk === 'neon' ? true : isDark();
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-skin', sk);
   var mt = document.querySelector('meta[name="theme-color"]');
-  if(mt) mt.setAttribute('content', dark ? '#070F1F' : '#F6F8FC');
+  if(mt) mt.setAttribute('content', sk === 'neon' ? '#05040D' : (dark ? '#070F1F' : '#F6F8FC'));
+}
+function setSkin(k){ DB.skin = k; save(); applyTheme(); render(); }
+function drawSkinChips(){
+  var box = document.getElementById('skin-chips');
+  if(!box) return;
+  box.innerHTML = '';
+  SKINS.forEach(function(k){
+    var b = document.createElement('button');
+    var on = skinMode() === k[0];
+    b.type = 'button';
+    b.className = 'skin' + (on ? ' on' : '');
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.innerHTML = '<span class="sk-sw" style="background:linear-gradient(135deg,' + k[2][0] + ',' + k[2][1] + ' 60%,' + k[2][2] + ')"></span><span>' + tr(k[1]) + '</span>';
+    b.onclick = function(){ setSkin(k[0]); };
+    box.appendChild(b);
+  });
 }
 function setTheme(m){
   DB.theme = m; save(); applyTheme(); render();
