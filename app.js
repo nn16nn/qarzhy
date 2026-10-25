@@ -5498,28 +5498,37 @@ function monthStats(ym){
   var top = Object.keys(cats).sort(function(a, b){ return cats[b] - cats[a]; }).slice(0, 3).map(function(c){ return [c, cats[c]]; });
   return { inS: inS, outS: outS, top: top };
 }
-function drawReport(){
-  var box = document.getElementById('home-report'); if(!box) return;
-  var n = new Date();
-  var pm = new Date(n.getFullYear(), n.getMonth() - 1, 1), ppm = new Date(n.getFullYear(), n.getMonth() - 2, 1);
-  var ym = iso(pm).slice(0, 7);
-  if(n.getDate() > 10 || (DB.pref && DB.pref.repSeen === ym)){ box.innerHTML = ''; return; }
+function reportHtml(ym, closable){
+  var p = ym.split('-'), pm = new Date(+p[0], +p[1] - 1, 1), ppm = new Date(+p[0], +p[1] - 2, 1);
   var a = monthStats(ym), b = monthStats(iso(ppm).slice(0, 7));
-  if(!a.inS && !a.outS){ box.innerHTML = ''; return; }
+  if(!a.inS && !a.outS) return '';
   var diff = b.outS ? Math.round((a.outS - b.outS) / b.outS * 100) : null;
+  var net = a.inS - a.outS;
   var top = a.top.map(function(c){
-    return '<div class="kv"><span><i class="dotc" style="background:' + catColor('out', c[0]) + ';margin-right:8px"></i>' + esc(tr(c[0])) + '</span><b>' + money(c[1]) + '</b></div>';
+    var pc = a.outS ? Math.round(c[1] / a.outS * 100) : 0;
+    return '<div class="kv"><span><i class="dotc" style="background:' + catColor('out', c[0]) + ';margin-right:8px"></i>' + esc(tr(c[0])) + ' · ' + pc + '%</span><b>' + money(c[1]) + '</b></div>';
   }).join('');
-  box.innerHTML = '<div class="card report">' +
-    '<button class="rep-x" onclick="event.stopPropagation();closeReport(\'' + ym + '\')" aria-label="' + tr('Жабу') + '">✕</button>' +
+  return '<div class="card report' + (closable ? '' : ' inline') + '">' +
+    (closable ? '<button class="rep-x" onclick="event.stopPropagation();closeReport(\'' + ym + '\')" aria-label="' + tr('Жабу') + '">✕</button>' : '') +
     '<h2>' + MONTHS[pm.getMonth()] + ' ' + tr('қорытындысы') + '</h2>' +
     '<div class="two" style="margin:0 0 10px">' +
       '<div class="rep-c"><span>' + tr('Кіріс') + '</span><b style="color:var(--pos)">+' + money(a.inS) + '</b></div>' +
       '<div class="rep-c"><span>' + tr('Шығын') + '</span><b style="color:var(--neg)">−' + money(a.outS) + '</b></div></div>' +
-    (diff !== null ? '<p class="muted" style="margin:0 0 8px">' + tr('Шығын алдыңғы аймен салыстырғанда') + ' <b style="color:' + (diff > 0 ? 'var(--neg)' : 'var(--pos)') + '">' + (diff > 0 ? '+' : '') + diff + '%</b></p>' : '') +
-    (top ? '<div class="muted" style="font-weight:600;margin:4px 0 2px">' + tr('Ең көп жұмсалған') + '</div>' + top : '') +
-    '<button class="btn ghost sm" style="margin-top:12px;width:100%" onclick="reportOpenStats()">' + tr('Толығырақ') + '</button>' +
+    '<div class="kv"><span>' + tr('Ай нәтижесі') + '</span><b style="color:' + (net >= 0 ? 'var(--pos)' : 'var(--neg)') + '">' + (net >= 0 ? '+' : '−') + money(Math.abs(net)) + '</b></div>' +
+    (diff !== null ? '<div class="kv"><span>' + tr('Шығын алдыңғы аймен салыстырғанда') + '</span><b style="color:' + (diff > 0 ? 'var(--neg)' : 'var(--pos)') + '">' + (diff > 0 ? '+' : '') + diff + '%</b></div>' : '') +
+    (top ? '<div class="muted" style="font-weight:600;margin:10px 0 2px">' + tr('Ең көп жұмсалған') + '</div>' + top : '') +
+    (closable ? '<button class="btn ghost sm" style="margin-top:12px;width:100%" onclick="reportOpenStats()">' + tr('Толығырақ') + '</button>' : '') +
   '</div>';
+}
+function drawReport(){
+  var box = document.getElementById('home-report');
+  if(box){
+    var n = new Date(), ym = iso(new Date(n.getFullYear(), n.getMonth() - 1, 1)).slice(0, 7);
+    box.innerHTML = (n.getDate() > 10 || (DB.pref && DB.pref.repSeen === ym)) ? '' : reportHtml(ym, true);
+  }
+  /* статистика бетінде — таңдалған айдың қорытындысы әрқашан */
+  var sb = document.getElementById('s-report');
+  if(sb) sb.innerHTML = (statPer === 'month') ? reportHtml(iso(statMonStart()).slice(0, 7), false) : '';
 }
 function closeReport(ym){ if(!DB.pref) DB.pref = {}; DB.pref.repSeen = ym; save(); render(); }
 function reportOpenStats(){ go('stat'); statPer = 'month'; statMon = -1; applyStatMon(); render(); }

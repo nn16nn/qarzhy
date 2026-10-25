@@ -1373,6 +1373,16 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   .sub-row .sub2{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield;appearance:textfield}
+  .selbar{flex-direction:column;align-items:stretch;gap:8px;padding:10px}
+  .selbar.on{display:flex}
+  .sb-top{display:flex;align-items:center;justify-content:space-between;padding:0 2px 0 6px}
+  .sb-top b{font-size:13.5px}
+  .sb-top .sel-off{width:34px;height:34px;padding:0;border-radius:50%;background:var(--g-soft);color:var(--ink-2);font-size:14px}
+  .sb-btns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  .sb-btns button{padding:11px 4px;min-height:42px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sel-cat{background:var(--accent);color:#fff}
+  .report.inline .rep-x{display:none}
+  body:has(.selbar.on) .toast{bottom:calc(196px + env(safe-area-inset-bottom))}
 </style>
 </head>
 <body>
@@ -1505,7 +1515,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   <div class="wrap">
     <p class="muted" style="padding:0 6px 8px">Операцияны солға сырғытсаңыз — өшіріледі, оңға сырғытсаңыз — түзетіледі.</p>
     <div class="card">
-      <h2>Тізім <small class="act" onclick="selStart('tx')">Таңдау</small></h2>
+      <h2>Тізім <small class="act" onclick="selStart('tx');toast(tr('Операцияларды белгілеп, «Санат» не «Өшіру» басыңыз'))">Таңдау · Санат</small></h2>
       <div id="ops-list"></div>
     </div>
   </div>
@@ -1531,6 +1541,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   </div>
   <div class="wrap">
     <div class="modestrip" id="s-modes"></div>
+    <div id="s-report"></div>
 
     <div class="card stage">
       <div class="stage-head">
@@ -2197,12 +2208,13 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
 </div>
 
 <div class="selbar" id="selbar">
-  <b id="sel-n">0</b>
-  <button class="sel-all" id="sel-all-btn" onclick="selAll()">Барлығы</button>
-  <button class="sel-all" onclick="selInvert()">Кері</button>
-  <button class="sel-all" id="sel-cat-btn" onclick="selCatOpen()">Санат</button>
-  <button class="sel-del" onclick="selDelete()">Өшіру</button>
-  <button class="sel-off" onclick="selStop()">Болдырмау</button>
+  <div class="sb-top"><b id="sel-n">0</b><button class="sel-off" onclick="selStop()" aria-label="Болдырмау">✕</button></div>
+  <div class="sb-btns">
+    <button class="sel-all" id="sel-all-btn" onclick="selAll()">Барлығы</button>
+    <button class="sel-all" onclick="selInvert()">Кері</button>
+    <button class="sel-cat" id="sel-cat-btn" onclick="selCatOpen()">Санат</button>
+    <button class="sel-del" onclick="selDelete()">Өшіру</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
