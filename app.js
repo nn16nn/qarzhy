@@ -122,8 +122,11 @@ function save(){
   saveTimer = setTimeout(flushSave, 300);
 }
 /* IndexedDB-ге кідіріссіз жазу: бет жабылар алдында, қайта жүктелер алдында */
+var idbChecked = false, idbPending = false;
 function flushSave(){
   if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; }
+  /* IndexedDB-дегі деректі тексермей тұрып оның үстінен жазбаймыз */
+  if(!idbChecked){ idbPending = true; return Promise.resolve(); }
   return idbSet('db', JSON.parse(JSON.stringify(DB))).catch(function(){});
 }
 /* localStorage-тағы көшірме */
@@ -5067,18 +5070,28 @@ function boot(){
 
 /* IndexedDB мен localStorage-тің қайсысы жаңа болса, соны аламыз:
    IndexedDB-ге жазу кідіріспен жүреді, сондықтан бет жабылып қалса localStorage жаңарақ болуы мүмкін */
+/* Бірінші сурет бірден шықсын: localStorage-те дерек болса, IndexedDB-ні күтпей іске қосамыз.
+   Кейін IndexedDB жаңарақ болып шықса, соны алып қайта саламыз. */
+var booted = false, ls0Updated = null;
+(function(){
+  var ls0 = lsData();
+  if(ls0 && (ls0.tx || ls0.accounts)){ ls0Updated = ls0.updated || ''; load(); boot(); booted = true; }
+})();
 idbGet('db').then(function(v){
   var idbHas = !!(v && (v.tx || v.accounts));
-  var ls = lsData();
+  var ls = booted ? { updated: ls0Updated } : lsData();
   var lsNewer = !!(ls && (!idbHas || (ls.updated || '') > (v.updated || '')));
+  idbChecked = true;
   if(idbHas && !lsNewer){
     applyDB(v);
+    if(booted){ applyTheme(); drawAccs(); render(); try{ localStorage.setItem('qarzhy_v1', JSON.stringify(DB)); }catch(e){} }
+    idbPending = false;
   } else {
-    load();
-    if(DB.tx.length || DB.accounts.length) flushSave();
+    if(!booted) load();
+    if(DB.tx.length || DB.accounts.length || idbPending){ idbPending = false; flushSave(); }
   }
-  boot();
+  if(!booted){ boot(); booted = true; }
 }).catch(function(){
-  load();
-  boot();
+  idbChecked = true;
+  if(!booted){ load(); boot(); booted = true; }
 });
