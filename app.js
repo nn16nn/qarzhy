@@ -297,7 +297,7 @@ function rateAgo(){
 var CATS = {
   out:[["Тамақ","🍜"],["Ойын-сауық","🎬"],["Байланыс","📱"],["Әке-шешеме","🏠"],
        ["Көлік","🚌"],["Киім","👕"],["Тұрғын үй","🏢"],["Денсаулық","💊"],["Білім","📚"],["Сыйлық","🎁"],
-       ["Инвестиция","📊"],["Несие төлемі","💳"],["Басқа","✦"]],
+       ["Инвестиция","📊"],["Несие төлемі","💳"],["Аударымдар","↗"],["Басқа","✦"]],
   in:[["Жалақы","💼"],["Бизнес","📈"],["Фриланс","💻"],["Инвестиция","📊"],["Кэшбэк","🪙"],["Несие алу","💳"],["Сыйлық","🎁"],["Басқа","✦"]]
 };
 var ACC_ICONS = ["card","bank","wallet","phone","invest","chart","coin","house"];
@@ -1876,7 +1876,25 @@ function onImportFile(el){
     for(var i = 0; i < BANKS.length; i++){
       if(BANKS[i][2] && BANKS[i][2].test(head)){ IMP.bank = BANKS[i]; break; }
     }
-    var rows = extractRows(lines);
+    var rows;
+    IMP.fc = null;
+    if(IMP.mode !== 'broker' && isFreedomCard(lines)){
+      rows = parseFreedomCard(lines);
+      var fci = freedomCardInfo(lines);
+      IMP.bank = BANKS.filter(function(b){ return /freedom/i.test(b[0]); })[0] || IMP.bank;
+      var haveF = {};
+      DB.tx.forEach(function(t){ haveF[t.acc + '|' + t.date + '|' + Math.round(t.amt) + '|' + t.type] = 1; });
+      rows.forEach(function(r){
+        r.dup = false;
+        r.on = !r.fx && !r.pending;
+      });
+      rows.sort(function(a,b){ return a.date < b.date ? 1 : -1; });
+      IMP.fc = { bal: fci.bal, from: fci.from, to: fci.to, replace: true, setBal: fci.bal !== null, haveF: haveF };
+      /* Freedom шоты бар болса — соны таңдаймыз */
+      DB.accounts.forEach(function(a){ if(a.kind === 'asset' && /freedom|фридом/i.test(a.name)) IMP.acc = a.id; });
+    } else {
+      rows = extractRows(lines);
+    }
     if(!rows.length){
       impStatus('<div class="card"><div class="empty">Бұл файлдан операция табылмады.<br>Excel (.xlsx) нұсқасын жүктеп көріңіз — ол әрқашан дәлірек оқылады.</div></div>');
       return;
@@ -2098,7 +2116,7 @@ function extractOne(line){
 
 /* жолдан ең ықтимал соманы таңдау: валюта белгісі, таңба, тиын бар болса — басымдық */
 function pickAmount(rest){
-  var re = /([+\-−–])?\s*(\d{1,3}(?:[ \u00A0\u202F]\d{3})+(?:[.,]\d{1,2})?|\d+[.,]\d{2}|\d{3,})\s*(₸|тг|тнг|KZT|₽|\$|USD|EUR)?/g;
+  var re = /([+\-−–])?\s*(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d{1,3}(?:[ \u00A0\u202F]\d{3})+(?:[.,]\d{1,2})?|\d+[.,]\d{2}|\d{3,})\s*(₸|тг|тнг|KZT|₽|\$|USD|EUR)?/g;
   var best = null, mm;
   while((mm = re.exec(rest)) !== null){
     var v = toNum(mm[2]);
@@ -2115,6 +2133,97 @@ function guessCat(type, text){
   var keys = type === 'in' ? IN_KEYS : OUT_KEYS;
   for(var i = 0; i < keys.length; i++) if(keys[i][0].test(text)) return keys[i][1];
   return type === 'in' ? 'Басқа' : 'Басқа';
+}
+
+
+/* ================= FREEDOM BANK (Super Card) ҮЗІНДІСІ ================= */
+/* Жол: «24.10.2026 -5,100.00 ₸ KZT Төлем мәліметтер…». Сома үтірмен мыңдыққа бөлінген, нүктемен тиын. */
+var FC_ROW = /^(\d{2})\.(\d{2})\.(\d{4})\s+([+\-−])\s?([\d,]+\.\d{2})\s*(₸|\$|€|₽|¥|₺|AED)?\s*(KZT|USD|EUR|RUB|CNY|TRY|AED)\s*(.*)$/;
+var FC_ROW2 = /^(\d{2})\.(\d{2})\.(\d{4})\s+(KZT|USD|EUR|RUB|CNY|TRY|AED)\s+(.*)$/;
+var FC_AMT = /^([+\-−])\s?([\d,]+\.\d{2})\s*(₸|\$|€|₽|¥|₺|AED)?$/;
+var FC_OPS = ['Сатып алу','Төлем','Аудару','Толықтыру','Қолма-қол ақша алу','Несие бойынша төлем','Қарызды өтеу','Овердрафт','Басқа'];
+function isFreedomCard(lines){
+  var head = lines.slice(0, 60).join(' ');
+  if(!/(Фридом Банк|Freedom Bank|bankffin|Super Card)/i.test(head)) return false;
+  var n = 0;
+  for(var i = 0; i < lines.length && n < 3; i++) if(FC_ROW.test(lines[i])) n++;
+  return n >= 3;
+}
+function freedomCardInfo(lines){
+  var info = { bal: null, from: null, to: null };
+  lines.slice(0, 80).forEach(function(l){
+    var m = l.match(/KZ\w+KZT\s+KZT\s+([\d,]+\.\d{2})/);
+    if(m && info.bal === null) info.bal = toNum(m[1]);
+    var p = l.match(/(\d{2})\.(\d{2})\.(\d{4})\s*-\s*(\d{2})\.(\d{2})\.(\d{4})/);
+    if(p && !info.from){ info.from = p[3]+'-'+p[2]+'-'+p[1]; info.to = p[6]+'-'+p[5]+'-'+p[4]; }
+  });
+  return info;
+}
+/* мәлімет жолдары жазба жолының үстінде де, астында да тұрады:
+   екі жазба арасындағы «жетім» жолдардың алғашқы жартысы — жоғарғы жазбанікі, қалғаны — төменгісінікі */
+function fcIsRow(x){ return FC_ROW.test(x) || FC_ROW2.test(x); }
+function fcOrphan(x){ return x && !fcIsRow(x) && !FC_AMT.test(x) && !/^(Күні|Анықтама|QR|https?:|Сома$|жатыр$)/i.test(x) && !/check-receipt|түпнұсқалығын|сканерлеңіз/i.test(x); }
+function fcContext(lines, i){
+  var up = [], dn = [], j;
+  for(j = i - 1; j >= 0 && !fcIsRow(lines[j]) && !/^Күні Сома/i.test(lines[j]); j--) up.unshift(lines[j]);
+  var upStart = j;
+  for(j = i + 1; j < lines.length && !fcIsRow(lines[j]) && !/^Күні Сома/i.test(lines[j]); j++) dn.push(lines[j]);
+  /* үстіндегілерден жоғарғы жазбаға тиесілі жартысын алып тастаймыз */
+  if(upStart >= 0 && fcIsRow(lines[upStart])) up = up.slice(Math.floor(up.length / 2));
+  /* астындағылардың тек өз жартысын аламыз (егер келесісі де жазба болса) */
+  if(j < lines.length && fcIsRow(lines[j])) dn = dn.slice(0, Math.floor(dn.length / 2));
+  return up.concat(dn).filter(fcOrphan).join(' ');
+}
+function parseFreedomCard(lines){
+  var out = [];
+  for(var i = 0; i < lines.length; i++){
+    var m = lines[i].match(FC_ROW);
+    if(!m){
+      /* сома бөлек жолға түсіп кеткен жол: «25.08.2026 KZT Толықтыру …» + «+182,127.00 ₸» */
+      var m2 = lines[i].match(FC_ROW2);
+      if(!m2) continue;
+      var a2 = (lines[i+1] || '').match(FC_AMT), a2i = i+1;
+      if(!a2){ a2 = (lines[i-1] || '').match(FC_AMT); a2i = i-1; }
+      if(!a2) continue;
+      m = [lines[i], m2[1], m2[2], m2[3], a2[1], a2[2], a2[3], m2[4], m2[5]];
+    }
+    var date = m[3] + '-' + m[2] + '-' + m[1];
+    var plus = m[4] === '+';
+    var amt = toNum(m[5]);
+    var cur = m[7];
+    var rest = (m[8] || '').trim();
+    var op = '';
+    FC_OPS.forEach(function(o){ if(!op && rest.indexOf(o) === 0) op = o; });
+    var pending = /қарастырылып/i.test(rest) || (/^Сома\b/i.test(lines[i-1] || '') && /жатыр/i.test(lines[i+1] || ''));
+    if(pending) rest = rest.replace(/қарастырылып\s*(жатыр)?/i, '').trim();
+    var detail = op ? rest.slice(op.length).trim() : rest;
+    /* мәлімет бос болса — үстіндегі жолдан (күні жоқ жол) аламыз */
+    if(!detail){
+      var up = lines[i-1] || '';
+      if(up && !FC_ROW.test(up) && !/^(Күні|Сома|Анықтама|QR|https?:)/i.test(up)) detail = up.trim();
+    }
+    if(!(amt > 0)) continue;
+    /* санатты анықтау үшін көршілес мәлімет жолдарын да аламыз */
+    var ctx = detail + ' ' + fcContext(lines, i);
+    var own = /(своими счетами|own funds|өз шоттар)/i.test(ctx);
+    var type = plus ? 'in' : 'out';
+    var cat;
+    if(own) cat = 'Инвестиция';
+    else if(type === 'in') cat = guessCat('in', ctx);
+    else {
+      cat = guessCat('out', ctx);
+      if(cat === 'Басқа' && op === 'Аудару') cat = 'Аударымдар';
+    }
+    if(!/account=|requisites/i.test(detail) || !ctx) {} else {
+      var pm = ctx.match(/Payment for ([^\s]+(?: [^\s]+)?) with/i);
+      if(pm) detail = pm[1] + ' · ' + detail.replace(/account=/i, '');
+    }
+    var note = ((op && op !== 'Басқа' ? op + ' · ' : '') + detail).replace(/\s{2,}/g, ' ').trim();
+    if(note.length > 70) note = note.slice(0, 70);
+    out.push({ date: date, amt: amt, type: type, cat: cat, note: note || op || '—',
+               cur: cur, pending: pending, fx: cur !== 'KZT' });
+  }
+  return out;
 }
 
 /* --- нәтижені көрсету --- */
@@ -2192,6 +2301,7 @@ function renderImport(){
 
   var nIn = 0, nOut = 0, sIn = 0, sOut = 0;
   IMP.rows.forEach(function(r){
+    if(r.fx || r.pending) return;
     if(r.type === 'in'){ nIn++; sIn += r.amt; } else { nOut++; sOut += r.amt; }
   });
   head.innerHTML =
@@ -2254,6 +2364,31 @@ function renderImportList(box){
   var isBr = IMP.mode === 'broker';
   var ba = isBr ? acc(IMP.brAcc) : null;
   var bsym = isBr ? accCurSym(ba) : '₸';
+
+  if(!isBr && IMP.fc){
+    var fcBox = document.createElement('div');
+    fcBox.className = 'card';
+    var accNow = acc(IMP.acc);
+    var inPer = IMP.fc.from ? DB.tx.filter(function(t){ return t.acc === IMP.acc && t.date >= IMP.fc.from && t.date <= IMP.fc.to; }).length : 0;
+    var kzt = IMP.rows.filter(function(r){ return !r.fx; });
+    var sIn = 0, sOut = 0;
+    kzt.forEach(function(r){ if(r.on){ if(r.type === 'in') sIn += r.amt; else sOut += r.amt; } });
+    fcBox.innerHTML = '<h2>Freedom Bank үзіндісі</h2>' +
+      (IMP.fc.from ? '<div class="kv"><span>Кезең</span><b>' + fullDate(IMP.fc.from) + ' – ' + fullDate(IMP.fc.to) + '</b></div>' : '') +
+      '<div class="kv"><span>Теңге операциялары</span><b>' + kzt.length + '</b></div>' +
+      '<div class="kv"><span>Кіріс / шығын</span><b><span style="color:var(--pos)">+' + nf(sIn) + '</span> / <span style="color:var(--neg)">−' + nf(sOut) + '</span></b></div>' +
+      (IMP.fc.bal !== null ? '<div class="kv"><span>Банктегі қалдық (KZT)</span><b>' + money(IMP.fc.bal) + '</b></div>' : '');
+    function optRow(key, label){
+      var t = document.createElement('div');
+      t.className = 'toggle'; t.style.margin = '10px 0 0';
+      t.innerHTML = '<div style="flex:1;font-size:13.5px;line-height:1.45">' + label + '</div><div class="sw' + (IMP.fc[key] ? ' on' : '') + '"><i></i></div>';
+      t.onclick = function(){ IMP.fc[key] = !IMP.fc[key]; renderImport(); };
+      fcBox.appendChild(t);
+    }
+    if(inPer) optRow('replace', '<b>Бұрынғы ' + inPer + ' операцияны ауыстыру</b><br><span class="muted">«' + esc(accNow ? accNow.name : '') + '» шотындағы осы кезеңнің ескі (қате) жазбалары өшіріліп, орнына осы үзінді қосылады</span>');
+    if(IMP.fc.bal !== null) optRow('setBal', '<b>Шот қалдығын банкпен теңестіру</b><br><span class="muted">Импорттан кейін қалдық ' + money(IMP.fc.bal) + ' болады</span>');
+    box.appendChild(fcBox);
+  }
 
   var tools = document.createElement('div');
   tools.className = 'card';
@@ -2333,6 +2468,16 @@ function renderImportList(box){
       bd.className = 'badge'; bd.textContent = 'бұрын қосылған';
       meta.appendChild(bd);
     }
+    if(r.pending){
+      var bp = document.createElement('span');
+      bp.className = 'badge'; bp.textContent = 'банк әлі растамаған';
+      meta.appendChild(bp);
+    }
+    if(r.fx){
+      var bx = document.createElement('span');
+      bx.className = 'badge'; bx.textContent = r.cur + ' шоты — қосылмайды';
+      meta.appendChild(bx);
+    }
     txt.appendChild(meta);
 
     var am = document.createElement('div');
@@ -2366,24 +2511,37 @@ function renderImportList(box){
   box.appendChild(cancel);
 }
 
-function impAll(v){ IMP.rows.forEach(function(r){ r.on = v; }); renderImport(); }
-function impOnlyNew(){ IMP.rows.forEach(function(r){ r.on = !r.dup; }); renderImport(); }
+function impAll(v){ IMP.rows.forEach(function(r){ r.on = v && !r.fx; }); renderImport(); }
+function impOnlyNew(){ IMP.rows.forEach(function(r){ r.on = !r.dup && !r.fx && !r.pending; }); renderImport(); }
 
 function importConfirm(){
   var sel = IMP.rows.filter(function(r){ return r.on; });
   if(!sel.length){ toast('Бірде-бір жазба белгіленбеген'); return; }
 
   if(!IMP.acc){ toast('Алдымен шот қосыңыз'); return; }
+  sel = sel.filter(function(r){ return !r.fx; });
+  var removed = 0;
+  if(IMP.fc && IMP.fc.replace && IMP.fc.from){
+    var keep = [];
+    DB.tx.forEach(function(t){
+      if(t.acc === IMP.acc && t.date >= IMP.fc.from && t.date <= IMP.fc.to){ applyTx(t, -1); removed++; }
+      else keep.push(t);
+    });
+    DB.tx = keep;
+  }
   sel.forEach(function(r){
     var t = { id: newId(), type: r.type, cat: r.cat, amt: r.amt, date: r.date,
               note: r.note === '—' ? '' : r.note, acc: IMP.acc, loan: null };
     DB.tx.push(t);
     applyTx(t, 1);
   });
+  if(IMP.fc && IMP.fc.setBal && IMP.fc.bal !== null){
+    var ta = acc(IMP.acc); if(ta) ta.bal = IMP.fc.bal;
+  }
   save();
-  IMP.rows = [];
+  IMP.rows = []; IMP.fc = null;
   document.getElementById('imp-result').innerHTML = '';
-  toast(sel.length + ' операция қосылды');
+  toast(sel.length + ' операция қосылды' + (removed ? ' · ' + removed + ' ескі жазба ауыстырылды' : ''));
   go('ops');
 }
 
@@ -3397,7 +3555,7 @@ var CAT_ICON = {
   'Денсаулық':'health','Несие төлемі':'card','Ойын-сауық':'fun','Білім':'book',
   'Сыйлық':'gift','Басқа':'star',
   'Жалақы':'salary','Бизнес':'biz','Фриланс':'laptop','Инвестиция':'invest','Кэшбэк':'coin','Несие алу':'card',
-  'Аударым':'swap'
+  'Аударым':'swap','Аударымдар':'swap'
 };
 
 /* HTML-дегі data-i="..." орындарын SVG-мен толтыру */
@@ -3423,7 +3581,7 @@ var CAT_COL = {
   'Тамақ':'#F04452','Ойын-сауық':'#8B5CF6','Байланыс':'#0EA5E9','Әке-шешеме':'#F59E0B',
   'Көлік':'#2F6BFF','Киім':'#EC4899','Тұрғын үй':'#1D4ED8','Денсаулық':'#10B981','Білім':'#6366F1',
   'Сыйлық':'#F97316','Инвестиция':'#7C3AED','Несие төлемі':'#E11D48','Кэшбэк':'#14B8A6',
-  'Жалақы':'#17B26A','Бизнес':'#0891B2','Фриланс':'#2563EB','Несие алу':'#64748B','Басқа':'#64748B'
+  'Аударымдар':'#0EA5E9','Жалақы':'#17B26A','Бизнес':'#0891B2','Фриланс':'#2563EB','Несие алу':'#64748B','Басқа':'#64748B'
 };
 function catColor(type, cat){
   if(type === 'tr') return '#2F6BFF';
