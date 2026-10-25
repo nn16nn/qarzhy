@@ -1343,6 +1343,36 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   .brand.logo img{width:100%;height:100%;object-fit:contain;display:block}
   .brand.sm.logo{padding:3px}
   html[data-skin="mono"] .brand.logo{filter:grayscale(1)}
+
+  /* ===== v28 · жаңа мүмкіндіктер ===== */
+  .tip{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);border:1.5px dashed var(--line);
+    border-radius:18px;padding:14px;margin:0 0 12px;color:var(--ink);font-size:13.5px;line-height:1.4}
+  .tip>.svi{color:var(--accent);flex:none;width:26px;height:26px}
+  .tip span{flex:1;color:var(--ink-2)} .tip b{color:var(--ink)} .tip i{font-style:normal;color:var(--ink-2);font-size:20px}
+  .daily{cursor:pointer}
+  .dl-top{display:flex;justify-content:space-between;align-items:baseline;font-size:13.5px;color:var(--ink-2);font-weight:600}
+  .dl-top small{font-size:12px;font-weight:600}
+  .dl-v{font-size:30px;font-weight:800;letter-spacing:-.03em;margin:4px 0 2px}
+  .dl-sub{font-size:12.8px;color:var(--ink-2)}
+  .dl-foot{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-2);margin-top:8px;font-weight:600}
+  .report{position:relative}
+  .rep-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;border:0;background:var(--g-soft);color:var(--ink-2);font-size:14px}
+  .rep-c{background:var(--g-soft);border-radius:14px;padding:11px 12px;display:flex;flex-direction:column;gap:4px}
+  .rep-c span{font-size:12.5px;color:var(--ink-2)} .rep-c b{font-size:16px}
+  .sub-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+  .mini-btn{border:0;border-radius:12px;padding:9px 12px;font-weight:700;font-size:13px;background:var(--accent);color:#fff;min-height:38px;flex:none}
+  .mini-btn.ghost{background:var(--g-soft);color:var(--ink-2);padding:9px 11px}
+  .catgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 6px;margin-bottom:16px}
+  .amt-head{display:flex;justify-content:space-between;align-items:center;margin:0 0 7px 3px}
+  .ocr-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--accent);
+    background:var(--g-soft);border-radius:12px;padding:8px 12px;cursor:pointer;min-height:36px}
+  .ocr-btn .svi{width:18px;height:18px}
+  .ocr-st{font-size:12.8px;color:var(--accent);background:var(--g-soft);border-radius:12px;padding:8px 11px;margin:0 0 10px}
+  .ocr-st.warn{color:var(--warn-fg);background:var(--warn-bg)}
+  .selbar button{padding:10px 10px}
+  .sub-row .sub2{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]{-moz-appearance:textfield;appearance:textfield}
 </style>
 </head>
 <body>
@@ -1389,6 +1419,9 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
       <div class="mini" role="button" tabindex="0" onclick="go('stat');setStatKind('in')"><div class="t"><span class="dot in"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7 7 7-7"/></svg></span>Кіріс</div><div class="v" id="h-in">0 ₸</div></div>
       <div class="mini" role="button" tabindex="0" onclick="go('stat');setStatKind('out')"><div class="t"><span class="dot out"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7-7 7 7"/></svg></span>Шығын</div><div class="v" id="h-out">0 ₸</div></div>
     </div>
+
+    <div id="home-report"></div>
+    <div id="home-daily"></div>
 
     <div class="card">
       <h2>Соңғы операциялар <small class="act" onclick="go('ops')">Барлығы ›</small></h2>
@@ -1842,6 +1875,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     </div>
   </div>
   <div class="wrap">
+    <div id="rc-found"></div>
     <div class="card">
       <div id="rc-list"></div>
       <button class="btn dashed" style="margin:12px 0 0" onclick="openRecur()">Төлем қосу</button>
@@ -1971,6 +2005,29 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
 
 <div class="scrim" id="scrim" onclick="closeSheets()"></div>
 
+
+<!-- Sheet: топтап санат -->
+<div class="sheet" id="sheet-selcat">
+  <div class="grab"></div>
+  <h3>Санатын өзгерту</h3>
+  <p class="muted" style="margin:-6px 0 12px">Таңдалған операциялар осы санатқа ауысады</p>
+  <div id="selcat-list"></div>
+  <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
+</div>
+
+<!-- Sheet: айлық жоспар -->
+<div class="sheet" id="sheet-plan">
+  <div class="grab"></div>
+  <h3>Айлық шығын жоспары</h3>
+  <p class="muted" style="margin:-6px 0 12px">Айына қанша жұмсауды жоспарлайсыз? Қалған сома ай соңына дейінгі күндерге бөлініп, күндік лимит шығады.</p>
+  <label class="f">Айына, ₸</label>
+  <input class="inp big" id="plan-amt" type="number" inputmode="numeric" placeholder="0">
+  <div class="muted" id="plan-hint" style="margin:-4px 0 14px 3px"></div>
+  <button class="btn" onclick="savePlan()">Сақтау</button>
+  <button class="btn danger hide" id="plan-del" onclick="delPlan()">Күндік лимитті өшіру</button>
+  <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
+</div>
+
 <!-- Sheet: transaction -->
 <div class="sheet" id="sheet-tx">
   <div class="grab"></div>
@@ -1980,7 +2037,9 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     <button id="seg-in" onclick="setType('in')">Кіріс</button>
     <button id="seg-tr" onclick="setType('tr')">Аударым</button>
   </div>
-  <label class="f">Сома</label>
+  <div class="amt-head"><label class="f" style="margin:0">Сома</label>
+    <label class="ocr-btn"><input type="file" accept="image/*" capture="environment" class="hide" onchange="scanReceipt(this)"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M8 9h8M8 12h8M8 15h5"/></svg>Чектен</label></div>
+  <div class="ocr-st hide" id="ocr-st"></div>
   <input class="inp big" id="f-amt" type="number" inputmode="decimal" placeholder="0">
   <div id="f-cat-box">
     <label class="f">Санат</label>
@@ -2141,6 +2200,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   <b id="sel-n">0</b>
   <button class="sel-all" id="sel-all-btn" onclick="selAll()">Барлығы</button>
   <button class="sel-all" onclick="selInvert()">Кері</button>
+  <button class="sel-all" id="sel-cat-btn" onclick="selCatOpen()">Санат</button>
   <button class="sel-del" onclick="selDelete()">Өшіру</button>
   <button class="sel-off" onclick="selStop()">Болдырмау</button>
 </div>

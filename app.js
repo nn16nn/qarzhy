@@ -1212,6 +1212,9 @@ function render(){
   drawDebts();
   drawRecur();
   drawCashback();
+  drawDaily();
+  drawReport();
+  drawSubs();
   calcDep();
   calcTax();
   drawWarnings();
@@ -1934,6 +1937,15 @@ function onImportFile(el){
       IMP.fc = { bal: fci.bal, from: fci.from, to: fci.to, replace: true, setBal: fci.bal !== null, haveF: haveF };
       /* Freedom шоты бар болса — соны таңдаймыз */
       DB.accounts.forEach(function(a){ if(a.kind === 'asset' && /freedom|фридом/i.test(a.name)) IMP.acc = a.id; });
+    } else if(IMP.mode !== 'broker' && isKaspi(lines)){
+      rows = parseKaspi(lines);
+      var kpi = kaspiInfo(lines);
+      IMP.bank = BANKS.filter(function(b){ return /kaspi/i.test(b[0]); })[0] || IMP.bank;
+      var haveK = {};
+      DB.tx.forEach(function(t){ haveK[t.date + '|' + Math.round(t.amt) + '|' + t.type] = 1; });
+      rows.forEach(function(r){ r.dup = !!haveK[r.date + '|' + Math.round(r.amt) + '|' + r.type]; r.on = !r.dup; });
+      DB.accounts.forEach(function(a){ if(a.kind === 'asset' && /kaspi|каспи/i.test(a.name)) IMP.acc = a.id; });
+      IMP.fc = { title: 'Kaspi Gold үзіндісі', bal: kpi.bal, from: kpi.from, to: kpi.to, replace: false, setBal: kpi.bal !== null };
     } else {
       rows = extractRows(lines);
     }
@@ -2446,7 +2458,7 @@ function renderImportList(box){
     var kzt = IMP.rows.filter(function(r){ return !r.fx; });
     var sIn = 0, sOut = 0;
     kzt.forEach(function(r){ if(r.on){ if(r.type === 'in') sIn += r.amt; else sOut += r.amt; } });
-    fcBox.innerHTML = '<h2>Freedom Bank үзіндісі</h2>' +
+    fcBox.innerHTML = '<h2>' + (IMP.fc.title || 'Freedom Bank үзіндісі') + '</h2>' +
       (IMP.fc.from ? '<div class="kv"><span>Кезең</span><b>' + fullDate(IMP.fc.from) + ' – ' + fullDate(IMP.fc.to) + '</b></div>' : '') +
       '<div class="kv"><span>Теңге операциялары</span><b>' + kzt.length + '</b></div>' +
       '<div class="kv"><span>Кіріс / шығын</span><b><span style="color:var(--pos)">+' + nf(sIn) + '</span> / <span style="color:var(--neg)">−' + nf(sOut) + '</span></b></div>' +
@@ -5153,6 +5165,8 @@ function drawSelBar(){
   if(!SEL.on) return;
   var total = selIdsOf(SEL.kind).length;
   document.getElementById('sel-n').textContent = selCount() + ' / ' + total;
+  var scb = document.getElementById('sel-cat-btn');
+  if(scb) scb.classList.toggle('hide', SEL.kind !== 'tx');
   document.getElementById('sel-all-btn').textContent =
     selCount() >= total && total > 0 ? tr('Белгіні алу') : tr('Барлығы');
 }
@@ -5306,6 +5320,320 @@ function boot(){
   render();
   restoreView();
   handleShortcut();
+}
+
+/* ================= 1. ТОПТАП САНАТ ӨЗГЕРТУ ================= */
+function selCatOpen(){
+  if(!selCount()){ toast('Ештеңе таңдалмаған'); return; }
+  var box = document.getElementById('selcat-list'); if(!box) return;
+  var types = {};
+  DB.tx.forEach(function(t){ if(SEL.ids[t.id] && t.type !== 'tr') types[t.type] = 1; });
+  box.innerHTML = '';
+  ['out','in'].forEach(function(tp){
+    if(!types[tp]) return;
+    var h = document.createElement('label'); h.className = 'f';
+    h.textContent = tp === 'out' ? 'Шығын санаттары' : 'Кіріс санаттары';
+    box.appendChild(h);
+    var g = document.createElement('div'); g.className = 'catgrid';
+    CATS[tp].forEach(function(c){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'ctile';
+      b.style.setProperty('--cc', catColor(tp, c[0]));
+      b.innerHTML = '<span class="ct-i">' + catSvg(tp, c[0]) + '</span><span class="ct-l">' + tr(c[0]) + '</span>';
+      b.onclick = function(){ selCatApply(tp, c[0]); };
+      g.appendChild(b);
+    });
+    box.appendChild(g);
+  });
+  if(!box.children.length){ toast('Аударымдардың санаты болмайды'); return; }
+  openSheet('sheet-selcat');
+}
+function selCatApply(tp, cat){
+  var n = 0;
+  DB.tx.forEach(function(t){
+    if(SEL.ids[t.id] && t.type === tp){ t.cat = cat; n++; learnCat(t.type, t.note, cat); }
+  });
+  save(); closeSheets();
+  SEL.on = false; SEL.ids = {};
+  render();
+  toast(n + ' операция «' + tr(cat) + '» санатына ауысты');
+}
+
+/* ================= 2. КҮНДІК ЛИМИТ ================= */
+function dailyInfo(){
+  var plan = DB.pref && DB.pref.monthPlan;
+  if(!plan) return null;
+  var n = new Date(), ym = todayISO().slice(0, 7), td = todayISO();
+  var spent = 0, today = 0;
+  DB.tx.forEach(function(t){
+    if(t.type !== 'out' || t.date.slice(0, 7) !== ym) return;
+    spent += t.amt; if(t.date === td) today += t.amt;
+  });
+  var dim = new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate();
+  var daysLeft = dim - n.getDate() + 1;
+  var perDay = Math.max(0, (plan - (spent - today)) / daysLeft);
+  return { plan: plan, spent: spent, today: today, perDay: perDay, leftToday: perDay - today,
+           daysLeft: daysLeft, remain: plan - spent };
+}
+function drawDaily(){
+  var box = document.getElementById('home-daily'); if(!box) return;
+  var d = dailyInfo();
+  if(!d){
+    box.innerHTML = '<button class="tip" onclick="openPlan()">' + svgIcon('target') +
+      '<span><b>Күндік лимитті қосыңыз</b><br>Айлық шығын жоспарын жазсаңыз, күнде қанша жұмсауға болатыны есептеледі</span><i>›</i></button>';
+    return;
+  }
+  var pct = Math.min(100, Math.round(d.spent / d.plan * 100));
+  var over = d.leftToday < 0;
+  box.innerHTML = '<div class="card daily" role="button" tabindex="0" onclick="openPlan()">' +
+    '<div class="dl-top"><span>' + tr('Бүгін жұмсауға болады') + '</span><small>' + d.daysLeft + ' ' + tr('күн қалды') + '</small></div>' +
+    '<div class="dl-v" style="color:' + (over ? 'var(--neg)' : 'var(--pos)') + '">' + (over ? '−' : '') + money(Math.abs(Math.round(d.leftToday))) + '</div>' +
+    '<div class="dl-sub">' + (over ? tr('Бүгінгі лимиттен асып кетті') : tr('Бүгін жұмсалды') + ': ' + money(d.today)) +
+      ' · ' + tr('күніне') + ' ~' + money(Math.round(d.perDay)) + '</div>' +
+    '<div class="track" style="margin-top:12px"><div class="fill' + (pct >= 100 ? ' neg' : '') + '" style="width:' + pct + '%"></div></div>' +
+    '<div class="dl-foot"><span>' + tr('Айлық жоспар') + ' ' + money(d.plan) + '</span><span>' + tr('Қалды') + ' ' + money(Math.max(0, d.remain)) + '</span></div>' +
+  '</div>';
+}
+function openPlan(){
+  var v = DB.pref && DB.pref.monthPlan;
+  document.getElementById('plan-amt').value = v || '';
+  /* ұсыныс: соңғы 3 айдың орташа шығыны */
+  var n = new Date(), sum = 0;
+  for(var i = 1; i <= 3; i++){
+    var d = new Date(n.getFullYear(), n.getMonth() - i, 1), ym = iso(d).slice(0, 7);
+    DB.tx.forEach(function(t){ if(t.type === 'out' && t.date.slice(0, 7) === ym) sum += t.amt; });
+  }
+  var avg = Math.round(sum / 3 / 1000) * 1000;
+  document.getElementById('plan-hint').textContent = avg ? tr('Соңғы 3 айдың орташа шығыны') + ': ' + money(avg) : '';
+  document.getElementById('plan-del').classList.toggle('hide', !v);
+  openSheet('sheet-plan');
+}
+function savePlan(){
+  var v = parseFloat(document.getElementById('plan-amt').value);
+  if(!v || v <= 0){ toast('Соманы жазыңыз'); return; }
+  if(!DB.pref) DB.pref = {};
+  DB.pref.monthPlan = Math.round(v);
+  save(); closeSheets(); render(); toast('Сақталды');
+}
+function delPlan(){
+  if(DB.pref) delete DB.pref.monthPlan;
+  save(); closeSheets(); render(); toast('Күндік лимит өшірілді');
+}
+
+/* ================= 3. ЖАЗЫЛЫМДАРДЫ ТАБУ ================= */
+function findSubs(){
+  var n = new Date(), since = iso(new Date(n.getFullYear(), n.getMonth() - 6, 1));
+  var recent = iso(new Date(n.getFullYear(), n.getMonth(), n.getDate() - 45));
+  var groups = {};
+  DB.tx.forEach(function(t){
+    if(t.type !== 'out' || t.date < since || !t.note) return;
+    var k = merchKey(t.note); if(!k) return;
+    (groups[k] = groups[k] || []).push(t);
+  });
+  var no = (DB.pref && DB.pref.subsNo) || {};
+  var have = {};
+  (DB.recur || []).forEach(function(r){ have[merchKey(r.name)] = 1; });
+  var out = [];
+  Object.keys(groups).forEach(function(k){
+    if(no[k] || have[k]) return;
+    var list = groups[k];
+    var byM = {};
+    list.forEach(function(t){ var m = t.date.slice(0, 7); (byM[m] = byM[m] || []).push(t); });
+    var months = Object.keys(byM);
+    if(months.length < 3) return;
+    /* айына бір-екі рет қана — күнделікті дүкендер емес */
+    if(list.length > months.length * 2) return;
+    var amts = list.map(function(t){ return t.amt; }).sort(function(a, b){ return a - b; });
+    var med = amts[Math.floor(amts.length / 2)];
+    var close = months.filter(function(m){ return byM[m].some(function(t){ return Math.abs(t.amt - med) <= med * 0.2; }); });
+    if(close.length < 3) return;
+    var last = list.reduce(function(a, t){ return t.date > a ? t.date : a; }, '');
+    if(last < recent) return;
+    var days = {}, accs = {};
+    list.forEach(function(t){ var d = +t.date.slice(8); days[d] = (days[d] || 0) + 1; accs[t.acc] = (accs[t.acc] || 0) + 1; });
+    var day = +Object.keys(days).sort(function(a, b){ return days[b] - days[a]; })[0];
+    var acc0 = Object.keys(accs).sort(function(a, b){ return accs[b] - accs[a]; })[0];
+    var nm = list[list.length - 1].note.replace(/^(Сатып алу|Төлем|Аудару)\s*·\s*/i, '').slice(0, 32);
+    out.push({ key: k, name: nm, amt: med, day: day, cat: list[0].cat, acc: acc0, months: months.length });
+  });
+  return out.sort(function(a, b){ return b.amt - a.amt; }).slice(0, 8);
+}
+function drawSubs(){
+  var box = document.getElementById('rc-found'); if(!box) return;
+  var subs = findSubs();
+  if(!subs.length){ box.innerHTML = ''; return; }
+  var h = '<div class="card"><h2>' + tr('Табылған тұрақты төлемдер') + ' <small>' + subs.length + '</small></h2>' +
+    '<p class="muted" style="margin:-4px 0 6px">' + tr('Операциялардан ай сайын қайталанатын төлемдер табылды') + '</p>';
+  subs.forEach(function(s, i){
+    h += '<div class="sub-row"><div class="ico cc" style="background:' + catColor('out', s.cat) + '">' + catSvg('out', s.cat) + '</div>' +
+      '<div style="flex:1;min-width:0"><div class="name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(s.name) + '</div>' +
+      '<div class="sub2">~' + money(Math.round(s.amt)) + ' · ' + tr('айына') + ' · ' + s.day + '-' + tr('күні') + '</div></div>' +
+      '<button class="mini-btn" onclick="addSub(' + i + ')">' + tr('Қосу') + '</button>' +
+      '<button class="mini-btn ghost" onclick="noSub(' + i + ')" aria-label="' + tr('Жоқ') + '">✕</button></div>';
+  });
+  box.innerHTML = h + '</div>';
+  box._subs = subs;
+}
+function addSub(i){
+  var box = document.getElementById('rc-found'), s = box && box._subs && box._subs[i]; if(!s) return;
+  if(!DB.recur) DB.recur = [];
+  DB.recur.push({ id: newId(), name: s.name, amt: Math.round(s.amt), day: Math.min(28, s.day), cat: s.cat, acc: s.acc, paid: null });
+  save(); render(); toast('Қайталанатын төлемге қосылды');
+}
+function noSub(i){
+  var box = document.getElementById('rc-found'), s = box && box._subs && box._subs[i]; if(!s) return;
+  if(!DB.pref) DB.pref = {};
+  if(!DB.pref.subsNo) DB.pref.subsNo = {};
+  DB.pref.subsNo[s.key] = 1;
+  save(); render();
+}
+
+/* ================= 4. АЙЛЫҚ ҚОРЫТЫНДЫ ================= */
+function monthStats(ym){
+  var inS = 0, outS = 0, cats = {};
+  DB.tx.forEach(function(t){
+    if(t.date.slice(0, 7) !== ym || t.type === 'tr') return;
+    if(t.type === 'in') inS += t.amt; else { outS += t.amt; cats[t.cat] = (cats[t.cat] || 0) + t.amt; }
+  });
+  var top = Object.keys(cats).sort(function(a, b){ return cats[b] - cats[a]; }).slice(0, 3).map(function(c){ return [c, cats[c]]; });
+  return { inS: inS, outS: outS, top: top };
+}
+function drawReport(){
+  var box = document.getElementById('home-report'); if(!box) return;
+  var n = new Date();
+  var pm = new Date(n.getFullYear(), n.getMonth() - 1, 1), ppm = new Date(n.getFullYear(), n.getMonth() - 2, 1);
+  var ym = iso(pm).slice(0, 7);
+  if(n.getDate() > 10 || (DB.pref && DB.pref.repSeen === ym)){ box.innerHTML = ''; return; }
+  var a = monthStats(ym), b = monthStats(iso(ppm).slice(0, 7));
+  if(!a.inS && !a.outS){ box.innerHTML = ''; return; }
+  var diff = b.outS ? Math.round((a.outS - b.outS) / b.outS * 100) : null;
+  var top = a.top.map(function(c){
+    return '<div class="kv"><span><i class="dotc" style="background:' + catColor('out', c[0]) + ';margin-right:8px"></i>' + esc(tr(c[0])) + '</span><b>' + money(c[1]) + '</b></div>';
+  }).join('');
+  box.innerHTML = '<div class="card report">' +
+    '<button class="rep-x" onclick="event.stopPropagation();closeReport(\'' + ym + '\')" aria-label="' + tr('Жабу') + '">✕</button>' +
+    '<h2>' + MONTHS[pm.getMonth()] + ' ' + tr('қорытындысы') + '</h2>' +
+    '<div class="two" style="margin:0 0 10px">' +
+      '<div class="rep-c"><span>' + tr('Кіріс') + '</span><b style="color:var(--pos)">+' + money(a.inS) + '</b></div>' +
+      '<div class="rep-c"><span>' + tr('Шығын') + '</span><b style="color:var(--neg)">−' + money(a.outS) + '</b></div></div>' +
+    (diff !== null ? '<p class="muted" style="margin:0 0 8px">' + tr('Шығын алдыңғы аймен салыстырғанда') + ' <b style="color:' + (diff > 0 ? 'var(--neg)' : 'var(--pos)') + '">' + (diff > 0 ? '+' : '') + diff + '%</b></p>' : '') +
+    (top ? '<div class="muted" style="font-weight:600;margin:4px 0 2px">' + tr('Ең көп жұмсалған') + '</div>' + top : '') +
+    '<button class="btn ghost sm" style="margin-top:12px;width:100%" onclick="reportOpenStats()">' + tr('Толығырақ') + '</button>' +
+  '</div>';
+}
+function closeReport(ym){ if(!DB.pref) DB.pref = {}; DB.pref.repSeen = ym; save(); render(); }
+function reportOpenStats(){ go('stat'); statPer = 'month'; statMon = -1; applyStatMon(); render(); }
+
+/* ================= 5. KASPI GOLD ҮЗІНДІСІ ================= */
+var KASPI_ROW = /^(\d{2})\.(\d{2})\.(\d{2,4})\s+([+\-−–])\s?([\d\s ]+,\d{2})\s?₸\s+(Покупки|Покупка|Пополнения|Пополнение|Переводы|Перевод|Снятия|Снятие|Разное|Сатып алу|Толықтыру|Аударымдар|Аударым|Ақша алу|Шешу|Әртүрлі|Басқа)\s*(.*)$/i;
+function isKaspi(lines){
+  var head = lines.slice(0, 40).join(' ');
+  if(!/kaspi|каспи/i.test(head)) return false;
+  var n = 0;
+  for(var i = 0; i < lines.length && n < 3; i++) if(KASPI_ROW.test(lines[i])) n++;
+  return n >= 3;
+}
+function kaspiInfo(lines){
+  var info = { bal: null, from: null, to: null };
+  var head = lines.slice(0, 60);
+  head.forEach(function(l){
+    var p = l.match(/с\s*(\d{2})\.(\d{2})\.(\d{2,4})\s*по\s*(\d{2})\.(\d{2})\.(\d{2,4})/i) ||
+            l.match(/(\d{2})\.(\d{2})\.(\d{2,4})\s*[-–]\s*(\d{2})\.(\d{2})\.(\d{2,4})/);
+    if(p && !info.from){
+      var y1 = p[3].length === 2 ? '20' + p[3] : p[3], y2 = p[6].length === 2 ? '20' + p[6] : p[6];
+      info.from = y1 + '-' + p[2] + '-' + p[1]; info.to = y2 + '-' + p[5] + '-' + p[4];
+    }
+  });
+  /* «Доступно на 31.10.24 +12 345,67 ₸» — соңғысы кезең соңындағы қалдық */
+  var last = null;
+  head.forEach(function(l){
+    var m = l.match(/(Доступно на|Қолжетімді)\s*\d{2}\.\d{2}\.\d{2,4}\s*([+\-−]?)\s?([\d\s ]+,\d{2})/i);
+    if(m) last = (m[2] && m[2] !== '+' ? -1 : 1) * toNum(m[3]);
+  });
+  info.bal = last;
+  return info;
+}
+function parseKaspi(lines){
+  var out = [];
+  lines.forEach(function(l){
+    var m = l.match(KASPI_ROW); if(!m) return;
+    var y = m[3].length === 2 ? '20' + m[3] : m[3];
+    var date = y + '-' + m[2] + '-' + m[1];
+    var plus = m[4] === '+';
+    var amt = toNum(m[5]); if(!(amt > 0)) return;
+    var op = m[6], detail = (m[7] || '').trim();
+    var type = plus ? 'in' : 'out', cat;
+    if(/перевод|аударым/i.test(op)) cat = type === 'out' ? 'Аударымдар' : guessCat('in', detail);
+    else if(/сняти|ақша алу|шешу/i.test(op)) cat = 'Басқа';
+    else cat = guessCat(type, detail);
+    out.push({ date: date, amt: amt, type: type, cat: cat, note: (op + ' · ' + detail).slice(0, 70) });
+  });
+  return out.sort(function(a, b){ return a.date < b.date ? 1 : -1; });
+}
+
+/* ================= 6. ЧЕКТІҢ СУРЕТІНЕН ҚОСУ ================= */
+var CDN_OCR = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+function parseReceipt(text){
+  var lines = String(text || '').split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
+  var res = { amt: null, date: null, note: '' };
+  var best = 0;
+  var numsOf = function(l){
+    var re = /(\d{1,3}(?:[ \u00A0]\d{3})+|\d+)(?:[.,](\d{2}))?(?![\d%])/g, m, out = [];
+    while((m = re.exec(l)) !== null){
+      var v = parseFloat(m[1].replace(/[ \u00A0]/g, '') + (m[2] ? '.' + m[2] : ''));
+      if(v > 0 && v < 10000000) out.push(v);
+    }
+    return out;
+  };
+  /* басымдық: «Итого / Жиыны / К оплате» → «Всего» → «Сумма» */
+  [/(итог|жиыны|к оплате|төлеуге|барлығы|total)/i, /(всего|төленді)/i, /(сумма)/i].some(function(re){
+    for(var i = 0; i < lines.length; i++){
+      if(!re.test(lines[i])) continue;
+      var ns = numsOf(lines[i].replace(re, ' '));
+      if(!ns.length) ns = numsOf(lines[i + 1] || '');
+      if(ns.length){ best = ns[ns.length - 1]; return true; }
+    }
+    return false;
+  });
+  if(!best){
+    lines.forEach(function(l){
+      var re = /(\d{1,3}(?:[  ]\d{3})*|\d+)[.,](\d{2})\b/g, m;
+      while((m = re.exec(l)) !== null){
+        var v = parseFloat(m[1].replace(/[  ]/g, '') + '.' + m[2]);
+        if(v > best && v < 10000000) best = v;
+      }
+    });
+  }
+  if(best) res.amt = best;
+  for(var i = 0; i < lines.length && !res.date; i++){
+    var d = lines[i].match(/\b(\d{2})[.\/-](\d{2})[.\/-](\d{2,4})\b/);
+    if(d){
+      var y = d[3].length === 2 ? '20' + d[3] : d[3];
+      if(+d[2] >= 1 && +d[2] <= 12 && +d[1] >= 1 && +d[1] <= 31) res.date = y + '-' + d[2] + '-' + d[1];
+    }
+  }
+  var shop = lines.filter(function(l){ return /(тоо|too|ип |ip |ao |ао |магазин|супермаркет|market|аптека|кафе|ресторан)/i.test(l + ' '); })[0];
+  if(!shop) shop = lines.filter(function(l){ return /[A-Za-zА-Яа-яӘәҒғҚқҢңӨөҰұҮүІі]{4,}/.test(l); })[0];
+  res.note = (shop || '').replace(/\s{2,}/g, ' ').slice(0, 50);
+  return res;
+}
+function scanReceipt(input){
+  var f = input.files && input.files[0]; input.value = '';
+  if(!f) return;
+  var st = document.getElementById('ocr-st');
+  if(st){ st.classList.remove('hide'); st.textContent = tr('Чек оқылып жатыр… (бірінші рет интернет керек)'); }
+  loadScript(CDN_OCR).then(function(){
+    return window.Tesseract.recognize(f, 'rus+eng');
+  }).then(function(r){
+    var p = parseReceipt(r && r.data && r.data.text);
+    if(p.amt) document.getElementById('f-amt').value = p.amt;
+    if(p.date) document.getElementById('f-date').value = p.date;
+    if(p.note){ document.getElementById('f-note').value = p.note; noteChanged(); }
+    if(st) st.textContent = p.amt ? tr('Чектен алынды — тексеріп, сақтаңыз') : tr('Сома табылмады — қолмен жазыңыз');
+    if(!p.amt && st) st.classList.add('warn');
+  }).catch(function(){
+    if(st) st.textContent = tr('Чекті оқу мүмкін болмады. Интернетті тексеріп, қайта көріңіз.');
+  });
 }
 
 /* IndexedDB мен localStorage-тің қайсысы жаңа болса, соны аламыз:
