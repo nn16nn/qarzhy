@@ -307,13 +307,13 @@ function accIconHtml(a, cls){
    Банктердің нақты логотиптері салынбайды — тек түсі мен бас әрпі. */
 var BANKS = [
   ['Kaspi Bank',          'card',  /kaspi|каспи|каспий/i,                 'K',  '#F14635', '#FFFFFF'],
-  ['Halyk Bank',          'bank',  /halyk|халык|халық|народный банк/i,    'H',  '#00815F', '#F1A400'],
-  ['Freedom SuperApp',    'bank',  /freedom|фридом|ffin/i,                'F',  '#02B140', '#FFFFFF'],
+  ['Halyk Bank',          'bank',  /halyk|халык|халық|народный банк/i,    'H',  '#00815F', '#F1A400', 'banks/halyk.png'],
+  ['Freedom SuperApp',    'bank',  /freedom|фридом|ffin/i,                'F',  '#02B140', '#FFFFFF', 'banks/freedom.png'],
   ['Jusan Bank',          'card',  /jusan|жусан|жусан/i,                  'J',  '#EDB110', '#1E3F7A'],
   ['ForteBank',           'card',  /forte|форте/i,                        'Fo', '#A31551', '#FFFFFF'],
   ['Bereke Bank',         'bank',  /bereke|береке/i,                      'B',  '#023DFF', '#FFFFFF'],
   ['Bank CenterCredit',   'bank',  /centercredit|центркредит|\bbcc\b|бцк/i,'BCC','#00AB75', '#FFFFFF'],
-  ['Otbasy Bank',         'house', /otbasy|отбасы|жилстрой/i,             'O',  '#008B8A', '#FFFFFF'],
+  ['Otbasy Bank',         'house', /otbasy|отбасы|жилстрой/i,             'O',  '#F04B37', '#FFFFFF', 'banks/otbasy.png'],
   ['Home Credit Bank',    'card',  /home ?credit|хоум ?кредит/i,          'HC', '#E2001A', '#FFFFFF'],
   ['Qazaq Bank',          'bank',  /qazaq|назарбанк/i,                    'Q',  '#0F766E', '#FFFFFF'],
   ['Қолма-қол',           'wallet',/^қолма-қол|^наличн|^cash/i,           '₸',  '#0B9F72', '#FFFFFF']
@@ -332,15 +332,17 @@ function bankOf(name){
 /* ескі код үшін: [әріп, фон, мәтін түсі] */
 function brandOf(name){
   var b = bankOf(name);
-  return b ? [b[3], b[4], b[5]] : null;
+  return b ? [b[3], b[4], b[5], b[6] || null] : null;
 }
 function brandSm(br){
   if(!br) return '';
+  if(br[3]) return '<span class="brand sm logo"><img src="' + br[3] + '" alt="" loading="lazy"></span>';
   return '<span class="brand sm' + (br[0].length > 1 ? ' w' : '') + '" style="background:' + br[1] + ';color:' + (br[2] || '#fff') + '">' + br[0] + '</span>';
 }
 function accBadge(a, small){
   var b = brandOf(a.name);
   if(!b) return '<div class="ico'+(small?' sm':'')+'">'+accIconHtml(a)+'</div>';
+  if(b[3]) return '<div class="brand logo'+(small?' sm':'')+'"><img src="'+b[3]+'" alt=""></div>';
   return '<div class="brand'+(small?' sm':'')+(b[0].length > 1 ? ' w' : '')+'" style="background:'+b[1]+';color:'+(b[2]||'#fff')+'">'+b[0]+'</div>';
 }
 
