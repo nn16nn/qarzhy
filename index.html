@@ -1331,6 +1331,13 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   .tabbar{transform:translateZ(0)}
   .spark path[stroke]{vector-effect:non-scaling-stroke}
   html[data-skin="neon"] .card,html[data-skin="neon"] .mini,html[data-skin="neon"] .quad button{background:#0D0B1E !important}
+
+  /* v21 · ашылатын терезелер ішінде бұлыңғырлау жоқ — жылжыту жеңіл */
+  html[data-skin="glass"] .sheet,html[data-skin="glass"] .sheet *{-webkit-backdrop-filter:none !important;backdrop-filter:none !important}
+  html[data-skin="glass"] .sheet{background:#FAF9FF !important}
+  html[data-skin="glass"][data-theme="dark"] .sheet{background:#161332 !important}
+  .sheet{-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;contain:paint}
+  .sheet .chips{touch-action:pan-y}
 </style>
 </head>
 <body>
