@@ -1282,6 +1282,55 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   .brand.sm{border-radius:8px}
   .brand.sm.w{font-size:9.5px}
   html[data-skin="mono"] .brand{filter:grayscale(1)}
+
+  /* =====================================================
+     v20 · жылжыту өнімділігі: фон бөлек қабатта,
+     backdrop-filter тек бекітілген элементтерде
+     ===================================================== */
+  html[data-skin="glass"] body,html[data-skin="neon"] body{background:transparent !important;background-attachment:scroll !important}
+  html[data-skin="glass"]{background:#EEF0FF}
+  html[data-skin="glass"][data-theme="dark"]{background:#0D0B24}
+  html[data-skin="neon"]{background:#05040D}
+  html[data-skin="glass"] body::before,html[data-skin="neon"] body::before{content:"";position:fixed;inset:0;z-index:-1;
+    pointer-events:none;transform:translateZ(0);will-change:transform}
+  html[data-skin="glass"] body::before{background:
+    radial-gradient(42% 30% at 8% 6%,#8FA6FF 0%,transparent 70%),
+    radial-gradient(40% 28% at 96% 18%,#F0A3FF 0%,transparent 70%),
+    radial-gradient(46% 30% at 20% 62%,#9EE7F5 0%,transparent 70%),
+    radial-gradient(48% 32% at 92% 78%,#FFC1A1 0%,transparent 70%),
+    linear-gradient(180deg,#EEF0FF,#F7EEFF)}
+  html[data-skin="glass"][data-theme="dark"] body::before{background:
+    radial-gradient(42% 30% at 8% 6%,#3B3FB8 0%,transparent 70%),
+    radial-gradient(40% 28% at 96% 18%,#7A2A93 0%,transparent 70%),
+    radial-gradient(46% 30% at 20% 62%,#14607A 0%,transparent 70%),
+    radial-gradient(48% 32% at 92% 78%,#7A3A2C 0%,transparent 70%),
+    linear-gradient(180deg,#0D0B24,#140C26)}
+  html[data-skin="neon"] body::before{background:
+    radial-gradient(60% 40% at 0% 0%,rgba(177,75,255,.22),transparent 70%),
+    radial-gradient(60% 40% at 100% 30%,rgba(0,229,255,.16),transparent 70%),
+    radial-gradient(70% 40% at 50% 100%,rgba(255,61,240,.14),transparent 70%),#05040D}
+
+  /* шыны: жылжитын элементтерде бұлыңғырлау жоқ (артында тек тұрақты фон тұр) */
+  html[data-skin="glass"]{--surface:rgba(255,255,255,.62)}
+  html[data-skin="glass"][data-theme="dark"]{--surface:rgba(255,255,255,.08)}
+  html[data-skin="glass"] .page *,html[data-skin="glass"] .balance,html[data-skin="glass"] .scrim{
+    -webkit-backdrop-filter:none !important;backdrop-filter:none !important}
+  html[data-skin="glass"] .tabbar{-webkit-backdrop-filter:blur(14px) saturate(1.5) !important;backdrop-filter:blur(14px) saturate(1.5) !important}
+  html[data-skin="glass"] .sheet{-webkit-backdrop-filter:blur(18px) !important;backdrop-filter:blur(18px) !important}
+  html[data-skin="glass"] .scrim{background:rgba(40,30,110,.32)}
+  html[data-skin="glass"] .balance,html[data-skin="glass"] #goal-list .goal:first-child{
+    background:linear-gradient(135deg,rgba(98,112,255,.9),rgba(168,92,255,.8) 55%,rgba(255,128,170,.75)) !important}
+  html[data-skin="glass"][data-theme="dark"] .balance,html[data-skin="glass"][data-theme="dark"] #goal-list .goal:first-child{
+    background:linear-gradient(135deg,rgba(90,96,255,.55),rgba(150,70,230,.45) 55%,rgba(230,100,150,.36)) !important}
+  /* басқа стильдерде мәзірге бұлыңғырлау керек емес */
+  html:not([data-skin="glass"]) .tabbar{-webkit-backdrop-filter:none !important;backdrop-filter:none !important}
+
+  /* тізім жолдары мен карталар — жеке қабаттағы жеңіл бояу */
+  .swipe .row{will-change:auto}
+  .swipe.drag .row{will-change:transform}
+  .tabbar{transform:translateZ(0)}
+  .spark path[stroke]{vector-effect:non-scaling-stroke}
+  html[data-skin="neon"] .card,html[data-skin="neon"] .mini,html[data-skin="neon"] .quad button{background:#0D0B1E !important}
 </style>
 </head>
 <body>
