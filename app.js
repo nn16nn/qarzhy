@@ -17,7 +17,7 @@ function load(){
       DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[]; DB.debts = d.debts||[];
       DB.limits = d.limits||{};
       DB.split = d.split||null; DB.recur = d.recur||[];
-      DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto'; DB.skin = d.skin||'glass';
+      DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto'; DB.skin = d.skin||'glass'; DB.rules = d.rules||{}; DB.pref = d.pref||{};
       DB.lastBackup = d.lastBackup||null; DB.rate = d.rate||null;
       DB.updated = d.updated||null;
       if(!DB.accounts.length){
@@ -108,6 +108,7 @@ function applyDB(d){
   SPLIT = null; if(splitTimer){ clearTimeout(splitTimer); splitTimer = null; }
   DB.lastBackup = d.lastBackup || null; DB.lang = d.lang || 'kk';
   DB.theme = d.theme || 'auto'; DB.skin = d.skin || DB.skin || 'glass'; DB.rate = d.rate || null;
+  DB.rules = d.rules || DB.rules || {}; DB.pref = d.pref || DB.pref || {};
   DB.updated = d.updated || null;
   if(!DB.accounts.length) DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:d.start||0,cur:'KZT'}];
 }
@@ -504,7 +505,11 @@ function setType(t){
   document.getElementById('f-to-box').classList.toggle('hide', !moves);
   document.getElementById('f-acc-lab').textContent =
     t==='tr' ? 'Қай шоттан' : (t==='in'?'Қай шотқа түсті':'Қай шоттан');
-  if(!moves){ fCat = CATS[t][0][0]; drawCats(); }
+  if(!moves){
+    var pc = DB.pref && DB.pref['cat_' + t];
+    fCat = (pc && CATS[t].some(function(c){ return c[0] === pc; })) ? pc : CATS[t][0][0];
+    drawCats();
+  }
   if(!fEdit){ var tt=document.getElementById('tx-title'); if(tt) tt.textContent = tr(t==='in'?'Кіріс қосу':(t==='tr'?'Аударым':'Шығын қосу')); }
   drawAccs();
 }
@@ -584,13 +589,38 @@ function openTx(editId){
   document.getElementById('f-amt').value = t ? t.amt : '';
   document.getElementById('f-note').value = t ? (t.note||'') : '';
   document.getElementById('f-date').value = t ? t.date : todayISO();
-  fAcc = t ? t.acc : fAcc;
+  fAcc = t ? t.acc : (fAcc || (DB.pref && DB.pref.acc && acc(DB.pref.acc) ? DB.pref.acc : null));
   fTo  = t ? t.to : null;
   fLoan= t ? t.loan : null;
   setType(t ? t.type : 'out');
   /* setType әдепкі санатпен сызады да, несиені тастап жібереді — түзетілетін жазбаныкін қайтарамыз */
   if(t && t.type!=='tr'){ fCat = t.cat; fLoan = t.loan || null; drawCats(); drawAccs(); }
+  fillNoteList();
   openSheet('sheet-tx');
+  /* жаңа операцияда сома өрісі бірден ашылсын */
+  if(!t) setTimeout(function(){ var a = document.getElementById('f-amt'); if(a){ try{ a.focus({ preventScroll: true }); }catch(e){ a.focus(); } } }, 320);
+}
+/* түсініктеме өрісіне бұрынғы жазбалардан ұсыныс */
+function fillNoteList(){
+  var dl = document.getElementById('note-list'); if(!dl) return;
+  var seen = {}, out = [];
+  DB.tx.slice().sort(function(a,b){ return a.date < b.date ? 1 : -1; }).forEach(function(t){
+    var n = (t.note || '').trim();
+    if(!n || n.length > 40 || seen[n.toLowerCase()] || out.length >= 40) return;
+    seen[n.toLowerCase()] = 1; out.push(n);
+  });
+  dl.innerHTML = out.map(function(n){ return '<option value="' + esc(n) + '">'; }).join('');
+}
+function noteChanged(){
+  if(fType === 'tr') return;
+  var v = document.getElementById('f-note').value;
+  var c = ruleCat(fType, v);
+  if(!c){
+    var last = null;
+    DB.tx.forEach(function(t){ if(t.type === fType && t.note && t.note.trim().toLowerCase() === v.trim().toLowerCase()) last = t; });
+    if(last) c = last.cat;
+  }
+  if(c && c !== fCat && CATS[fType].some(function(x){ return x[0] === c; })){ fCat = c; drawCats(); drawAccs(); }
 }
 function saveTx(){
   var amt=parseFloat(document.getElementById('f-amt').value);
@@ -613,13 +643,25 @@ function saveTx(){
       DB.tx = DB.tx.map(function(x){ return x.id===old.id ? t : x; });
       applyTx(t, 1);
       fEdit=null;
-      save(); closeSheets(); render(); toast('Өзгертілді');
+      var more = 0;
+      if(t.type !== 'tr' && old.cat !== t.cat && t.note){
+        learnCat(t.type, t.note, t.cat);
+        var k = merchKey(t.note);
+        if(k) DB.tx.forEach(function(x){
+          if(x.id !== t.id && x.type === t.type && x.cat === 'Басқа' && merchKey(x.note) === k){ x.cat = t.cat; more++; }
+        });
+      }
+      save(); closeSheets(); render();
+      toast(more ? 'Өзгертілді · тағы ' + more + ' операция «' + tr(t.cat) + '» санатына' : 'Өзгертілді');
       return;
     }
     fEdit=null;
   }
   DB.tx.push(t);
   applyTx(t, 1);
+  if(!DB.pref) DB.pref = {};
+  DB.pref.acc = fAcc;
+  if(fType !== 'tr'){ DB.pref['cat_' + fType] = fCat; if(t.note) learnCat(fType, t.note, fCat); }
   save(); closeSheets(); render();
   toast(fType==='in'?'Кіріс қосылды':(fType==='tr'?'Аударым жасалды':'Шығын қосылды'));
 }
@@ -1895,6 +1937,7 @@ function onImportFile(el){
     } else {
       rows = extractRows(lines);
     }
+    applyRules(rows);
     if(!rows.length){
       impStatus('<div class="card"><div class="empty">Бұл файлдан операция табылмады.<br>Excel (.xlsx) нұсқасын жүктеп көріңіз — ол әрқашан дәлірек оқылады.</div></div>');
       return;
@@ -2135,6 +2178,36 @@ function guessCat(type, text){
   return type === 'in' ? 'Басқа' : 'Басқа';
 }
 
+
+
+/* ================= САНАТТЫ ҮЙРЕНУ (дүкен → санат) ================= */
+/* Пайдаланушы санатты бір рет өзгертсе, сол дүкен/алушының келесі операциялары да сол санатқа түседі */
+function merchKey(note){
+  var s = String(note || '').toLowerCase()
+    .replace(/^(сатып алу|төлем|аудару|толықтыру|покупка|оплата|перевод)\s*·\s*/i, '')
+    .replace(/[0-9]+/g, ' ').replace(/[^a-zа-яёәғқңөұүһі\s]/gi, ' ')
+    .replace(/\b(kz|kaz|g|kkz|too|тоо|ip|ип|ltd|llc)\b/gi, ' ')
+    .replace(/\s+/g, ' ').trim();
+  var w = s.split(' ').filter(function(x){ return x.length > 1; }).slice(0, 3);
+  return w.length ? w.join(' ') : '';
+}
+function catRules(){ return DB.rules || (DB.rules = {}); }
+function learnCat(type, note, cat){
+  var k = merchKey(note);
+  if(!k || !cat || cat === 'Басқа') return;
+  catRules()[type + '|' + k] = cat;
+}
+function ruleCat(type, note){
+  var k = merchKey(note);
+  return k ? catRules()[type + '|' + k] || null : null;
+}
+function applyRules(rows){
+  rows.forEach(function(r){
+    var c = ruleCat(r.type, r.note);
+    if(c) r.cat = c;
+  });
+  return rows;
+}
 
 /* ================= FREEDOM BANK (Super Card) ҮЗІНДІСІ ================= */
 /* Жол: «24.10.2026 -5,100.00 ₸ KZT Төлем мәліметтер…». Сома үтірмен мыңдыққа бөлінген, нүктемен тиын. */
@@ -2460,7 +2533,16 @@ function renderImportList(box){
         if(r.cat === c[0]) op.selected = true;
         sc.appendChild(op);
       });
-      sc.onchange = function(){ r.cat = sc.value; };
+      sc.onchange = function(){
+        r.cat = sc.value;
+        learnCat(r.type, r.note, r.cat);
+        /* осы дүкеннің тізімдегі басқа «Басқа» жолдары да сол санатқа */
+        var k = merchKey(r.note), n = 0;
+        if(k) IMP.rows.forEach(function(x){
+          if(x !== r && x.type === r.type && x.cat === 'Басқа' && merchKey(x.note) === k){ x.cat = r.cat; n++; }
+        });
+        if(n){ toast('Тағы ' + n + ' жол «' + tr(r.cat) + '» санатына ауысты'); renderImport(); }
+      };
       meta.appendChild(st); meta.appendChild(sc);
     }
     if(r.dup){

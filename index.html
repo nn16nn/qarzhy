@@ -1386,8 +1386,8 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
       <button onclick="shiftMonth(-1)" aria-label="Алдыңғы ай">‹</button><span id="h-month">—</span><button onclick="shiftMonth(1)" aria-label="Келесі ай">›</button>
     </div>
     <div class="two inout">
-      <div class="mini"><div class="t"><span class="dot in"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7 7 7-7"/></svg></span>Кіріс</div><div class="v" id="h-in">0 ₸</div></div>
-      <div class="mini"><div class="t"><span class="dot out"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7-7 7 7"/></svg></span>Шығын</div><div class="v" id="h-out">0 ₸</div></div>
+      <div class="mini" role="button" tabindex="0" onclick="go('stat');setStatKind('in')"><div class="t"><span class="dot in"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7 7 7-7"/></svg></span>Кіріс</div><div class="v" id="h-in">0 ₸</div></div>
+      <div class="mini" role="button" tabindex="0" onclick="go('stat');setStatKind('out')"><div class="t"><span class="dot out"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7-7 7 7"/></svg></span>Шығын</div><div class="v" id="h-out">0 ₸</div></div>
     </div>
 
     <div class="card">
@@ -2000,7 +2000,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   <label class="f">Күні</label>
   <input class="inp" id="f-date" type="date">
   <label class="f">Түсініктеме</label>
-  <input class="inp" id="f-note" type="text" placeholder="Міндетті емес">
+  <input class="inp" id="f-note" type="text" placeholder="Міндетті емес" list="note-list" autocomplete="off" oninput="noteChanged()"><datalist id="note-list"></datalist>
   <button class="btn" onclick="saveTx()">Сақтау</button>
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
 </div>
