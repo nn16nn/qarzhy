@@ -1460,12 +1460,35 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   .acc-card .ac-logo.qimg{width:32px;height:32px;border-radius:9px}
   .brand.logo.full{padding:0 !important;overflow:hidden}
   .brand.logo.full img{object-fit:cover;transform:scale(1.04)}
-  /* банк логотиптері: тек шаршы жиегі неонмен жарқырайды, логотиптің өзі өзгермейді */
-  .brand.logo{background:#fff !important;
-    box-shadow:0 0 0 1.5px var(--bc,#00E5FF),0 0 10px -1px var(--bc,#00E5FF),0 0 22px -6px var(--bc,#00E5FF) !important}
+  /* банк логотиптері: ақ шаршы, жұқа жиек; неон жиек — тек Неон стилінде */
+  .brand.logo{background:#fff !important;box-shadow:inset 0 0 0 1px rgba(20,27,45,.08),0 3px 8px -5px rgba(0,0,0,.35) !important}
   .brand.logo img{filter:none !important}
-  .chip.on .brand.logo{box-shadow:0 0 0 2px #fff,0 0 14px var(--bc,#00E5FF) !important}
-  html[data-skin="mono"] .brand.logo{filter:none}
+  html[data-skin="neon"] .brand.logo{box-shadow:0 0 0 1.5px var(--bc,#00E5FF),0 0 10px -1px var(--bc,#00E5FF),0 0 22px -6px var(--bc,#00E5FF) !important}
+
+  /* ===== v39 · шот карталары, бейтарап шығын ===== */
+  .cards{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+    margin:6px -16px 0;padding:0 16px 14px;scrollbar-width:none;overscroll-behavior-x:contain}
+  .cards::-webkit-scrollbar{display:none}
+  .cards>.hc{flex:0 0 100%;scroll-snap-align:center;margin:0}
+  .bcard{position:relative;overflow:hidden;border-radius:24px;padding:20px;color:#fff;min-height:172px;
+    display:flex;flex-direction:column;cursor:pointer;
+    background:radial-gradient(120% 120% at 100% 0%,rgba(255,255,255,.22),transparent 55%),linear-gradient(135deg,var(--c1),var(--c2));
+    box-shadow:0 20px 36px -22px var(--c2)}
+  .bcard::after{content:"";position:absolute;right:-40px;bottom:-60px;width:180px;height:180px;border-radius:50%;
+    background:rgba(255,255,255,.08)}
+  .bcard .bc-top{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px}
+  .bcard .bc-top .brand{width:34px;height:34px;border-radius:10px;box-shadow:none !important}
+  .bcard .bc-top .ico{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.2);color:#fff}
+  .bcard .bc-k{margin-top:auto;font-size:13px;opacity:.8}
+  .bcard .bc-v{font-size:30px;font-weight:800;letter-spacing:-.03em;margin-top:2px}
+  .bcard .bc-chip{position:absolute;top:20px;right:20px;width:36px;height:26px;border-radius:6px;
+    background:linear-gradient(135deg,#F7D98B,#C99A3A);opacity:.9}
+  .cdots{display:flex;justify-content:center;gap:6px;margin:-4px 0 4px;min-height:6px}
+  .cdots i{width:6px;height:6px;border-radius:3px;background:var(--line);transition:width .2s,background .2s}
+  .cdots i.on{width:18px;background:var(--accent)}
+  /* шығын — бейтарап қою түс, қызыл тек түймелерде; кіріс — жасыл */
+  html[data-skin="coral"] .amt.out,html[data-skin="classic"] .amt.out{color:var(--ink)}
+  html[data-skin="coral"] .dayhead span:last-child{color:var(--ink-2)}
 </style>
 </head>
 <body>
@@ -1495,11 +1518,14 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   </header>
 
   <div class="wrap">
-    <div class="balance" onclick="go('accounts')">
+    <div class="cards" id="h-cards">
+    <div class="balance hc" onclick="go('accounts')">
       <div class="bl-top"><span>Жалпы баланс</span><span class="bl-delta" id="h-pill">—</span></div>
       <div class="cap" id="h-net">0 ₸</div>
       <svg class="spark" id="h-spark" viewBox="0 0 300 70" preserveAspectRatio="none" aria-hidden="true"></svg>
     </div>
+    </div>
+    <div class="cdots" id="h-dots" aria-hidden="true"></div>
 
     <div class="qa">
       <button onclick="openTxType('in')"><span class="qa-i"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>Кіріс қосу</button>

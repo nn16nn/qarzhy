@@ -662,7 +662,7 @@ function saveTx(){
   if(!DB.pref) DB.pref = {};
   DB.pref.acc = fAcc;
   if(fType !== 'tr'){ DB.pref['cat_' + fType] = fCat; if(t.note) learnCat(fType, t.note, fCat); }
-  save(); closeSheets(); render();
+  save(); closeSheets(); render(); buzz();
   toast(fType==='in'?'Кіріс қосылды':(fType==='tr'?'Аударым жасалды':'Шығын қосылды'));
 }
 function applyTx(t, sign){
@@ -1046,6 +1046,40 @@ function drawSpark(net){
     '<path d="'+dpath+'" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'+
     '<circle cx="'+last[0]+'" cy="'+last[1]+'" r="3.6" fill="#fff"/>';
 }
+/* басты бет: шот карталары (сырғытып ауыстырылады) */
+function shade(hex, k){
+  var n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  var f = function(c){ return Math.max(0, Math.min(255, Math.round(c * k))); };
+  return '#' + [f(r), f(g), f(b)].map(function(c){ return c.toString(16).padStart(2, '0'); }).join('');
+}
+function drawAccCards(){
+  var box = document.getElementById('h-cards'); if(!box) return;
+  [].slice.call(box.querySelectorAll('.bcard')).forEach(function(e){ e.remove(); });
+  accsOf('asset').forEach(function(a){
+    var br = brandOf(a.name);
+    var c = br ? br[1] : '#2A3350';
+    var d = document.createElement('div');
+    d.className = 'bcard hc';
+    d.style.setProperty('--c1', shade(c, 1.08));
+    d.style.setProperty('--c2', shade(c, 0.62));
+    d.innerHTML = '<div class="bc-top">' + (br ? accBadge(a, true) : '<div class="ico">' + accIconHtml(a) + '</div>') +
+      '<span>' + esc(a.name) + '</span></div><div class="bc-chip"></div>' +
+      '<div class="bc-k">' + tr('Қалдық') + '</div><div class="bc-v">' + money(a.bal, accCurSym(a)) + '</div>';
+    d.onclick = function(){ openAccView(a.id); };
+    box.appendChild(d);
+  });
+  var dots = document.getElementById('h-dots'), n = box.querySelectorAll('.hc').length;
+  if(dots){
+    dots.innerHTML = n > 1 ? new Array(n + 1).join('<i></i>') : '';
+    var upd = function(){
+      var i = Math.round(box.scrollLeft / Math.max(1, box.clientWidth));
+      [].forEach.call(dots.children, function(e, j){ e.classList.toggle('on', j === i); });
+    };
+    if(!box._b){ box._b = 1; box.addEventListener('scroll', function(){ upd(); }, { passive: true }); }
+    upd();
+  }
+}
+function buzz(){ try{ if(navigator.vibrate) navigator.vibrate(12); }catch(e){} }
 function openTxType(t){ openTx(); setType(t); }
 
 /* ================= RENDER ================= */
@@ -1057,6 +1091,7 @@ function render(){
   /* --- home --- */
   animNum(document.getElementById('h-net'), T.net);
   drawSpark(T.net);
+  drawAccCards();
   var bell=document.getElementById('h-bell');
   if(bell){ var rw=0; try{ (DB.recur||[]).forEach(function(r){ var st=recurState(r); if(!st.paid && (st.late||st.soon)) rw++; }); }catch(e){} bell.classList.toggle('hide', !rw); }
   document.getElementById('h-month').textContent=MONTHS[cur.getMonth()]+' '+cur.getFullYear();
@@ -3309,12 +3344,9 @@ function isDark(){
 var SKINS = [
   ['coral','Qarzhy',['#141B2D','#F0453A','#FF8A70']],
   ['classic','Классик',['#1463FF','#0B2A7A','#FF6F61']],
-  ['neon','Неон',['#00E5FF','#B14BFF','#FF3DF0']],
-  ['glass','Шыны',['#6A8BFF','#B36BFF','#FF8FB1']],
-  ['sunset','Күн батуы',['#FF8A00','#E52E71','#7B3FF2']],
-  ['mono','Минимал',['#111111','#8A8A8A','#E9E9E9']]
+  ['neon','Неон',['#00E5FF','#B14BFF','#FF3DF0']]
 ];
-function skinMode(){ return DB.skin || 'coral'; }
+function skinMode(){ var k = DB.skin || 'coral'; return /^(coral|classic|neon)$/.test(k) ? k : 'coral'; }
 function applyTheme(){
   var sk = skinMode();
   var dark = sk === 'neon' ? true : isDark();
