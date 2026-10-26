@@ -17,7 +17,7 @@ function load(){
       DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[]; DB.debts = d.debts||[];
       DB.limits = d.limits||{};
       DB.split = d.split||null; DB.recur = d.recur||[];
-      DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto'; DB.skin = d.skin||'glass'; DB.rules = d.rules||{}; DB.pref = d.pref||{};
+      DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto'; DB.skin = d.skin||'coral'; DB.rules = d.rules||{}; DB.pref = d.pref||{};
       DB.lastBackup = d.lastBackup||null; DB.rate = d.rate||null;
       DB.updated = d.updated||null;
       if(!DB.accounts.length){
@@ -107,7 +107,7 @@ function applyDB(d){
   DB.split = d.split || null; DB.recur = d.recur || [];
   SPLIT = null; if(splitTimer){ clearTimeout(splitTimer); splitTimer = null; }
   DB.lastBackup = d.lastBackup || null; DB.lang = d.lang || 'kk';
-  DB.theme = d.theme || 'auto'; DB.skin = d.skin || DB.skin || 'glass'; DB.rate = d.rate || null;
+  DB.theme = d.theme || 'auto'; DB.skin = d.skin || DB.skin || 'coral'; DB.rate = d.rate || null;
   DB.rules = d.rules || DB.rules || {}; DB.pref = d.pref || DB.pref || {};
   DB.updated = d.updated || null;
   if(!DB.accounts.length) DB.accounts = [{id:'a1',name:'Қолма-қол',kind:'asset',icon:'wallet',bal:d.start||0,cur:'KZT'}];
@@ -3307,20 +3307,21 @@ function isDark(){
   return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 }
 var SKINS = [
+  ['coral','Qarzhy',['#141B2D','#F0453A','#FF8A70']],
   ['classic','Классик',['#1463FF','#0B2A7A','#FF6F61']],
   ['neon','Неон',['#00E5FF','#B14BFF','#FF3DF0']],
   ['glass','Шыны',['#6A8BFF','#B36BFF','#FF8FB1']],
   ['sunset','Күн батуы',['#FF8A00','#E52E71','#7B3FF2']],
   ['mono','Минимал',['#111111','#8A8A8A','#E9E9E9']]
 ];
-function skinMode(){ return DB.skin || 'glass'; }
+function skinMode(){ return DB.skin || 'coral'; }
 function applyTheme(){
   var sk = skinMode();
   var dark = sk === 'neon' ? true : isDark();
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   document.documentElement.setAttribute('data-skin', sk);
   var mt = document.querySelector('meta[name="theme-color"]');
-  if(mt) mt.setAttribute('content', sk === 'neon' ? '#05040D' : (dark ? '#070F1F' : '#F6F8FC'));
+  if(mt) mt.setAttribute('content', sk === 'neon' ? '#05040D' : (dark ? (sk === 'coral' ? '#0E1220' : '#070F1F') : (sk === 'coral' ? '#F6F6F8' : '#F6F8FC')));
 }
 function setSkin(k){ DB.skin = k; save(); applyTheme(); render(); }
 function drawSkinChips(){
@@ -5296,6 +5297,8 @@ function bindKeyActivate(){
   });
 }
 function boot(){
+  if(!DB.pref) DB.pref = {};
+  if(DB.pref.brandV !== 3){ DB.skin = 'coral'; DB.pref.brandV = 3; save(); }
   migrateBrokers();
   bindKeyActivate();
   initHistory();

@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F8FC">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="qicon-192.png">
-<link rel="apple-touch-icon" href="qicon-512.png">
+<link rel="icon" href="qicon2-192.png">
+<link rel="apple-touch-icon" href="qicon2-512.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -14,7 +14,7 @@
 <link rel="preload" href="fonts/onest-cyrillic-ext-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/onest-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <script>
-(function(){try{var d=JSON.parse(localStorage.getItem('qarzhy_v1')||'{}'),s=d.skin||'glass',t=d.theme||'auto';
+(function(){try{var d=JSON.parse(localStorage.getItem('qarzhy_v1')||'{}');if(!d.pref||d.pref.brandV!==3)d.skin='coral';var s=d.skin||'coral',t=d.theme||'auto';
 var dk=s==='neon'||t==='dark'||(t==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
 var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('data-theme',dk?'dark':'light');}catch(e){}})();
 </script>
@@ -1383,6 +1383,75 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   .sel-cat{background:var(--accent);color:#fff}
   .report.inline .rep-x{display:none}
   body:has(.selbar.on) .toast{bottom:calc(196px + env(safe-area-inset-bottom))}
+
+  /* =====================================================
+     v30 · QARZHY бренді: қою көк + маржан-қызыл (әдепкі)
+     ===================================================== */
+  html[data-skin="coral"]{
+    --navy:#141B2D; --coral:#F0453A;
+    --accent:#F0453A; --g-mid:#F0453A; --g-bright:#FF6B5B; --g-deep:#141B2D; --g-soft:#FDEDEB; --blue:#2F6BFF;
+    --ink:#141B2D; --ink-2:#6E7385; --line:#ECECF1; --bg:#F6F6F8; --surface:#FFFFFF; --tabbar:#FFFFFF;
+    --pos:#16A34A; --pos-soft:#E5F6EC; --neg:#EF3B33; --neg-soft:#FDECEB; --red:#EF3B33;
+    --logo-a:#141B2D; --logo-b:#141B2D; --logo-tail:#F0453A; --sp-a:#1A2236; --sp-b:#0B0F1C;
+    --elev:0 1px 2px rgba(20,27,45,.04), 0 10px 24px -16px rgba(20,27,45,.22);
+  }
+  html[data-skin="coral"][data-theme="dark"]{
+    --navy:#FFFFFF; --accent:#FF5A4E; --g-mid:#FF5A4E; --g-soft:#2A1F2A;
+    --ink:#F2F3F7; --ink-2:#9A9FB2; --line:#232A3D; --bg:#0E1220; --surface:#161B2B; --tabbar:#161B2B;
+    --pos:#34D399; --pos-soft:#0F3326; --neg:#FF5A4E; --neg-soft:#3A1A1E; --red:#FF5A4E;
+    --logo-a:#FFFFFF; --logo-b:#FFFFFF; --logo-tail:#FF5A4E;
+    --elev:0 1px 2px rgba(0,0,0,.3), 0 12px 28px -18px rgba(0,0,0,.7);
+  }
+  html[data-skin="coral"] body{background:var(--bg)}
+  html[data-skin="coral"] .ah-wm{color:var(--navy)}
+  html[data-skin="coral"] .iconbtn.avatar{background:linear-gradient(145deg,#2A3350,#141B2D);color:#fff;border:0}
+  html[data-skin="coral"][data-theme="dark"] .iconbtn.avatar{background:linear-gradient(145deg,#FF6B5B,#E8352B)}
+  html[data-skin="coral"] .bdot{background:var(--coral)}
+
+  /* баланс картасы: қою көк, қызыл график */
+  html[data-skin="coral"] .balance,html[data-skin="coral"] #goal-list .goal:first-child{
+    background:radial-gradient(90% 120% at 100% 100%,rgba(240,69,58,.28) 0%,transparent 60%),
+      linear-gradient(140deg,#232B42 0%,#161C2E 55%,#0E1322 100%) !important;
+    box-shadow:0 22px 40px -22px rgba(14,19,34,.85) !important;border:0 !important}
+  html[data-skin="coral"][data-theme="dark"] .balance,html[data-skin="coral"][data-theme="dark"] #goal-list .goal:first-child{
+    border:1px solid #2A3248 !important}
+  html[data-skin="coral"] .spark path[stroke]{stroke:#FF5A4E}
+  html[data-skin="coral"] .spark stop{stop-color:#FF5A4E}
+  html[data-skin="coral"] .spark circle{fill:#FF5A4E}
+  html[data-skin="coral"] .bl-delta{background:rgba(22,163,74,.22);color:#5BE08F}
+  html[data-skin="coral"] .bl-delta.down{background:rgba(240,69,58,.22);color:#FF8A80}
+
+  /* негізгі әрекеттер — маржан */
+  html[data-skin="coral"] .qa-i{background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:var(--elev)}
+  html[data-skin="coral"] .qa button:first-child .qa-i{background:linear-gradient(145deg,#FF6B5B,#E8352B);color:#fff;border:0;box-shadow:0 12px 22px -10px rgba(232,53,43,.75)}
+  html[data-skin="coral"] .tabbar .fab{background:linear-gradient(145deg,#FF6B5B,#E8352B) !important;color:#fff !important;border-color:var(--bg);
+    box-shadow:0 12px 22px -10px rgba(232,53,43,.8)}
+  html[data-skin="coral"] .tabbar button.on{color:var(--ink)}
+  html[data-skin="coral"][data-theme="dark"] .tabbar button.on{color:#fff}
+  html[data-skin="coral"] .btn:not(.line):not(.ghost):not(.dashed):not(.danger),html[data-skin="coral"] .hero.flat .plus,
+  html[data-skin="coral"] .pseg button.on,html[data-skin="coral"] .chip.on,html[data-skin="coral"] .hero.flat .seg.glass button.on,
+  html[data-skin="coral"] .sel-cat,html[data-skin="coral"] .mini-btn:not(.ghost){
+    background:linear-gradient(145deg,#FF6B5B,#E8352B) !important;color:#fff !important;border-color:transparent !important;
+    box-shadow:0 10px 20px -12px rgba(232,53,43,.8) !important}
+  html[data-skin="coral"] .seg button.on{color:var(--accent)}
+  html[data-skin="coral"] .ring .rf{stroke:var(--coral)}
+  html[data-skin="coral"] #goal-list .goal:first-child .ring .rf{stroke:#FF5A4E}
+  html[data-skin="coral"] .fill{background:linear-gradient(90deg,#FF8A70,#E8352B)}
+  html[data-skin="coral"] .fill.pos{background:linear-gradient(90deg,var(--pos-light),var(--pos))}
+  html[data-skin="coral"] .acc-card .ac-logo{--q-ring:#fff}
+
+  /* ашылу экраны: қою көк, маржан толқын */
+  html[data-skin="coral"] #splash{background:
+    radial-gradient(70% 45% at 85% 105%,rgba(240,69,58,.55),transparent 70%),
+    radial-gradient(60% 40% at 0% 0%,rgba(255,255,255,.08),transparent 70%),
+    linear-gradient(170deg,#1C2338 0%,#0E1220 70%) !important}
+  html[data-skin="coral"] #splash .sp-mark{--q-ring:#fff}
+  html[data-skin="coral"] #splash .nm{color:#fff}
+  html[data-skin="coral"] #splash .tagline{color:rgba(255,255,255,.7)}
+  html[data-skin="coral"] .rep-c,html[data-skin="coral"] .trio{background:var(--bg)}
+  html[data-skin="coral"] #splash .sp-mark{width:150px;height:150px}
+  html[data-skin="coral"] #splash .nm{font-size:36px;font-weight:800;letter-spacing:-.03em}
+  html[data-skin="coral"] #splash .tagline{font-size:14px}
 </style>
 </head>
 <body>
