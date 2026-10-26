@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F8FC">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="qicon2-192.png">
-<link rel="apple-touch-icon" href="qicon2-512.png">
+<link rel="icon" href="qicon3-192.png">
+<link rel="apple-touch-icon" href="qicon3-512.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -1452,6 +1452,8 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   html[data-skin="coral"] #splash .sp-mark{width:150px;height:150px}
   html[data-skin="coral"] #splash .nm{font-size:36px;font-weight:800;letter-spacing:-.03em}
   html[data-skin="coral"] #splash .tagline{font-size:14px}
+  #splash .sp-mark,.acc-card .ac-logo{--q-edge:#141B2D}
+  html[data-theme="dark"] .qlogo{--q-edge:#0E1220}
 </style>
 </head>
 <body>
@@ -1459,9 +1461,12 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   <defs>
     <linearGradient id="qlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--logo-a)"/><stop offset="1" style="stop-color:var(--logo-b)"/></linearGradient>
     <symbol id="qmark" viewBox="0 0 256 256">
-      <circle cx="122" cy="118" r="66" fill="none" stroke-width="42" style="stroke:var(--q-ring,url(#qlg))"/>
-      <path d="M150 150 C170 140 206 150 214 176 C222 204 196 222 172 210 C154 201 146 182 150 150Z" style="fill:var(--logo-tail)"/>
-      <path d="M160 162 C176 160 196 168 202 184" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".45"/>
+      <g transform="translate(170 170) rotate(-30)">
+        <path d="M-36 -6 L36 -6 L36 40 C36 70 18 82 0 82 C-18 82 -36 70 -36 40 Z" stroke-width="7" stroke-linejoin="round" style="fill:var(--logo-tail);stroke:var(--q-edge,var(--logo-a))"/>
+        <path d="M0 18 L0 58" fill="none" stroke="rgba(130,10,25,.5)" stroke-width="6" stroke-linecap="round"/>
+        <path d="M-21 24 C-21 42 -18 54 -13 62" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="5" stroke-linecap="round"/>
+      </g>
+      <circle cx="118" cy="112" r="66" fill="none" stroke-width="46" style="stroke:var(--q-ring,url(#qlg))"/>
     </symbol>
   </defs>
 </svg>
