@@ -314,7 +314,7 @@ var BANKS = [
   ['Halyk Bank',          'bank',  /halyk|халык|халық|народный банк/i,    'H',  '#00815F', '#F1A400', 'banks/halyk.png'],
   ['Freedom SuperApp',    'bank',  /freedom|фридом|ffin/i,                'F',  '#02B140', '#FFFFFF', 'banks/freedom.png'],
   ['Jusan Bank',          'card',  /jusan|жусан|жусан/i,                  'J',  '#EDB110', '#1E3F7A'],
-  ['ForteBank',           'card',  /forte|форте/i,                        'Fo', '#A31551', '#FFFFFF'],
+  ['ForteBank',           'card',  /forte|форте/i,                        'Fo', '#00B4C5', '#FFFFFF', 'banks/forte.png'],
   ['Bereke Bank',         'bank',  /bereke|береке/i,                      'B',  '#023DFF', '#FFFFFF'],
   ['Bank CenterCredit',   'bank',  /centercredit|центркредит|\bbcc\b|бцк/i,'BCC','#00AB75', '#FFFFFF'],
   ['Otbasy Bank',         'house', /otbasy|отбасы|жилстрой/i,             'O',  '#008B8A', '#FFFFFF'],
