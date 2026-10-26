@@ -315,7 +315,7 @@ var BANKS = [
   ['Freedom SuperApp',    'bank',  /freedom|фридом|ffin/i,                'F',  '#02B140', '#FFFFFF', 'banks/freedom.png'],
   ['Jusan Bank',          'card',  /jusan|жусан|жусан/i,                  'J',  '#EDB110', '#1E3F7A'],
   ['ForteBank',           'card',  /forte|форте/i,                        'Fo', '#00B4C5', '#FFFFFF', 'banks/forte.png'],
-  ['Bereke Bank',         'bank',  /bereke|береке/i,                      'B',  '#023DFF', '#FFFFFF'],
+  ['Bereke Bank',         'bank',  /bereke|береке/i,                      'B',  '#023DFF', '#FFFFFF', 'banks/bereke.png'],
   ['Bank CenterCredit',   'bank',  /centercredit|центркредит|\bbcc\b|бцк/i,'BCC','#00AB75', '#FFFFFF'],
   ['Otbasy Bank',         'house', /otbasy|отбасы|жилстрой/i,             'O',  '#008B8A', '#FFFFFF'],
   ['Home Credit Bank',    'card',  /home ?credit|хоум ?кредит/i,          'HC', '#E2001A', '#FFFFFF'],
