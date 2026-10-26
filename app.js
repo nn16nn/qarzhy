@@ -310,14 +310,14 @@ function accIconHtml(a, cls){
 /* Банктер: ресми бренд түсі (Brandfetch), белгідегі әріп, атауын тану.
    Банктердің нақты логотиптері салынбайды — тек түсі мен бас әрпі. */
 var BANKS = [
-  ['Kaspi Bank',          'card',  /kaspi|каспи|каспий/i,                 'K',  '#F14635', '#FFFFFF'],
+  ['Kaspi Bank',          'card',  /kaspi|каспи|каспий/i,                 'K',  '#F14635', '#FFFFFF', 'banks/kaspi.png'],
   ['Halyk Bank',          'bank',  /halyk|халык|халық|народный банк/i,    'H',  '#00815F', '#F1A400', 'banks/halyk.png'],
   ['Freedom SuperApp',    'bank',  /freedom|фридом|ffin/i,                'F',  '#02B140', '#FFFFFF', 'banks/freedom.png'],
   ['Jusan Bank',          'card',  /jusan|жусан|жусан/i,                  'J',  '#EDB110', '#1E3F7A'],
   ['ForteBank',           'card',  /forte|форте/i,                        'Fo', '#A31551', '#FFFFFF'],
   ['Bereke Bank',         'bank',  /bereke|береке/i,                      'B',  '#023DFF', '#FFFFFF'],
   ['Bank CenterCredit',   'bank',  /centercredit|центркредит|\bbcc\b|бцк/i,'BCC','#00AB75', '#FFFFFF'],
-  ['Otbasy Bank',         'house', /otbasy|отбасы|жилстрой/i,             'O',  '#F04B37', '#FFFFFF', 'banks/otbasy.png'],
+  ['Otbasy Bank',         'house', /otbasy|отбасы|жилстрой/i,             'O',  '#008B8A', '#FFFFFF'],
   ['Home Credit Bank',    'card',  /home ?credit|хоум ?кредит/i,          'HC', '#E2001A', '#FFFFFF'],
   ['Qazaq Bank',          'bank',  /qazaq|назарбанк/i,                    'Q',  '#0F766E', '#FFFFFF'],
   ['Қолма-қол',           'wallet',/^қолма-қол|^наличн|^cash/i,           '₸',  '#0B9F72', '#FFFFFF']
