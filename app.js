@@ -313,13 +313,13 @@ var BANKS = [
   ['Kaspi Bank',          'card',  /kaspi|каспи|каспий/i,                 'K',  '#F14635', '#FFFFFF', 'banks/kaspi.png'],
   ['Halyk Bank',          'bank',  /halyk|халык|халық|народный банк/i,    'H',  '#00815F', '#F1A400', 'banks/halyk.png'],
   ['Freedom SuperApp',    'bank',  /freedom|фридом|ffin/i,                'F',  '#02B140', '#FFFFFF', 'banks/freedom.png'],
-  ['Jusan Bank',          'card',  /jusan|жусан|жусан/i,                  'J',  '#EDB110', '#1E3F7A'],
+  ['Jusan Bank',          'card',  /jusan|жусан|жусан/i,                  'J',  '#EDB110', '#1E3F7A', 'banks/jusan.png'],
   ['ForteBank',           'card',  /forte|форте/i,                        'Fo', '#00B4C5', '#FFFFFF', 'banks/forte.png'],
   ['Bereke Bank',         'bank',  /bereke|береке/i,                      'B',  '#023DFF', '#FFFFFF', 'banks/bereke.png'],
-  ['Bank CenterCredit',   'bank',  /centercredit|центркредит|\bbcc\b|бцк/i,'BCC','#00AB75', '#FFFFFF'],
-  ['Otbasy Bank',         'house', /otbasy|отбасы|жилстрой/i,             'O',  '#008B8A', '#FFFFFF'],
-  ['Home Credit Bank',    'card',  /home ?credit|хоум ?кредит/i,          'HC', '#E2001A', '#FFFFFF'],
-  ['Qazaq Bank',          'bank',  /qazaq|назарбанк/i,                    'Q',  '#0F766E', '#FFFFFF'],
+  ['Bank CenterCredit',   'bank',  /centercredit|центркредит|\bbcc\b|бцк/i,'BCC','#00AB75', '#FFFFFF', 'banks/bcc.png'],
+  ['Otbasy Bank',         'house', /otbasy|отбасы|жилстрой/i,             'O',  '#008B8A', '#FFFFFF', 'banks/otbasy.png'],
+  ['Home Credit Bank',    'card',  /home ?credit|хоум ?кредит/i,          'HC', '#E2001A', '#FFFFFF', 'banks/homecredit.png'],
+  ['Qazaq Bank',          'bank',  /qazaq|назарбанк/i,                    'Q',  '#0F766E', '#FFFFFF', 'banks/qazaq.png'],
   ['Қолма-қол',           'wallet',/^қолма-қол|^наличн|^cash/i,           '₸',  '#0B9F72', '#FFFFFF']
 ];
 function bankOf(name){
@@ -340,13 +340,13 @@ function brandOf(name){
 }
 function brandSm(br){
   if(!br) return '';
-  if(br[3]) return '<span class="brand sm logo"><img src="' + br[3] + '" alt="" loading="lazy"></span>';
+  if(br[3]) return '<span class="brand sm logo' + (/jusan|bcc|homecredit|otbasy/.test(br[3]) ? ' full' : '') + '"><img src="' + br[3] + '" alt="" loading="lazy"></span>';
   return '<span class="brand sm' + (br[0].length > 1 ? ' w' : '') + '" style="background:' + br[1] + ';color:' + (br[2] || '#fff') + '">' + br[0] + '</span>';
 }
 function accBadge(a, small){
   var b = brandOf(a.name);
   if(!b) return '<div class="ico'+(small?' sm':'')+'">'+accIconHtml(a)+'</div>';
-  if(b[3]) return '<div class="brand logo'+(small?' sm':'')+'"><img src="'+b[3]+'" alt=""></div>';
+  if(b[3]) return '<div class="brand logo'+(small?' sm':'')+(/jusan|bcc|homecredit|otbasy/.test(b[3]) ? ' full' : '')+'"><img src="'+b[3]+'" alt=""></div>';
   return '<div class="brand'+(small?' sm':'')+(b[0].length > 1 ? ' w' : '')+'" style="background:'+b[1]+';color:'+(b[2]||'#fff')+'">'+b[0]+'</div>';
 }
 
