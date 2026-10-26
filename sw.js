@@ -1,5 +1,5 @@
 /* Қаржы — офлайн кэш (v9) */
-const CACHE = 'qarzhy-v39';
+const CACHE = 'qarzhy-v40';
 const FILES = [
   './', './index.html', './app.js', './manifest.webmanifest',
   './qlogo-192.png', './qlogo-512.png', './qlogo-maskable.png', './banks/halyk.png', './banks/freedom.png', './banks/kaspi.png', './banks/forte.png', './banks/bereke.png', './banks/otbasy.png', './banks/jusan.png', './banks/bcc.png', './banks/homecredit.png', './banks/qazaq.png',

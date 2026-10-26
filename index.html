@@ -14,8 +14,8 @@
 <link rel="preload" href="fonts/onest-cyrillic-ext-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/onest-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <script>
-(function(){try{var d=JSON.parse(localStorage.getItem('qarzhy_v1')||'{}');if(!d.pref||d.pref.brandV!==3)d.skin='coral';var s=d.skin||'coral',t=d.theme||'auto';
-var dk=s==='neon'||t==='dark'||(t==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
+(function(){try{var d=JSON.parse(localStorage.getItem('qarzhy_v1')||'{}');if(!d.pref||d.pref.brandV!==3)d.skin='coral';var s=/^(coral|classic)$/.test(d.skin||'')?d.skin:'coral',t=d.theme||'auto';
+var dk=t==='dark'||(t==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
 var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('data-theme',dk?'dark':'light');}catch(e){}})();
 </script>
 <style>
@@ -1087,45 +1087,6 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   .sk-sw{width:100%;height:38px;border-radius:11px;display:block}
 
   /* ---------- НЕОН ---------- */
-  html[data-skin="neon"]{
-    --bg:#05040D; --surface:#0D0B1E; --line:rgba(0,229,255,.18); --ink:#F2F4FF; --ink-2:#A3A3D1;
-    --accent:#00E5FF; --g-mid:#00B8E6; --g-soft:rgba(0,229,255,.10); --blue:#B14BFF; --blue-bg:rgba(177,75,255,.14);
-    --pos:#39FF88; --pos-soft:rgba(57,255,136,.12); --neg:#FF3D7F; --neg-soft:rgba(255,61,127,.14); --red:#FF3D7F;
-    --navy:#00E5FF; --coral:#FF3DF0; --tabbar:rgba(13,11,30,.92);
-    --elev:0 0 0 1px rgba(0,229,255,.06), 0 14px 30px -18px rgba(0,229,255,.35);
-  }
-  html[data-skin="neon"] body{background:
-    radial-gradient(60% 40% at 0% 0%,rgba(177,75,255,.22),transparent 70%),
-    radial-gradient(60% 40% at 100% 30%,rgba(0,229,255,.16),transparent 70%),
-    radial-gradient(70% 40% at 50% 100%,rgba(255,61,240,.14),transparent 70%),#05040D;background-attachment:fixed}
-  html[data-skin="neon"] .ah-wm{background:linear-gradient(90deg,#00E5FF,#FF3DF0);-webkit-background-clip:text;background-clip:text;color:transparent}
-  html[data-skin="neon"] .balance{background:linear-gradient(135deg,#1A0B45 0%,#0B1640 60%,#06102E 100%) !important;
-    box-shadow:0 0 0 1px rgba(0,229,255,.55),0 0 26px rgba(0,229,255,.35),0 0 60px rgba(177,75,255,.25) !important}
-  html[data-skin="neon"] .balance .cap{text-shadow:0 0 18px rgba(0,229,255,.55)}
-  html[data-skin="neon"] .spark path[stroke]{stroke:#00E5FF;filter:drop-shadow(0 0 5px #00E5FF)}
-  html[data-skin="neon"] .spark circle{fill:#FF3DF0;filter:drop-shadow(0 0 6px #FF3DF0)}
-  html[data-skin="neon"] .bl-delta{background:rgba(57,255,136,.14);color:#39FF88}
-  html[data-skin="neon"] .qa-i{background:transparent;border:1.5px solid rgba(0,229,255,.6);color:#00E5FF;box-shadow:0 0 14px -2px rgba(0,229,255,.45)}
-  html[data-skin="neon"] .qa button:first-child .qa-i{background:#00E5FF;color:#05040D;border-color:#00E5FF;box-shadow:0 0 22px rgba(0,229,255,.7)}
-  html[data-skin="neon"] .tabbar .fab{background:linear-gradient(145deg,#00E5FF,#B14BFF) !important;color:#05040D !important;
-    border-color:#05040D;box-shadow:0 0 24px rgba(0,229,255,.6),0 0 40px rgba(177,75,255,.4)}
-  html[data-skin="neon"] .tabbar{border-color:rgba(0,229,255,.25) !important;box-shadow:0 0 30px -10px rgba(0,229,255,.4)}
-  html[data-skin="neon"] .tabbar button.on{color:#00E5FF;text-shadow:0 0 10px rgba(0,229,255,.7)}
-  html[data-skin="neon"] .card,html[data-skin="neon"] .mini,html[data-skin="neon"] .quad button{background:rgba(13,11,30,.82) !important}
-  html[data-skin="neon"] .amt.in{text-shadow:0 0 10px rgba(57,255,136,.55)}
-  html[data-skin="neon"] .amt.out{text-shadow:0 0 10px rgba(255,61,127,.5)}
-  html[data-skin="neon"] .ico.cc{box-shadow:0 0 16px -3px rgba(255,255,255,.35);filter:saturate(1.35) brightness(1.08)}
-  html[data-skin="neon"] .btn:not(.line):not(.ghost):not(.dashed):not(.danger),
-  html[data-skin="neon"] .hero.flat .plus,html[data-skin="neon"] .pseg button.on,
-  html[data-skin="neon"] .chip.on,html[data-skin="neon"] .hero.flat .seg.glass button.on{
-    background:linear-gradient(135deg,#00E5FF,#B14BFF) !important;color:#05040D !important;border-color:transparent;
-    box-shadow:0 0 20px -4px rgba(0,229,255,.7) !important}
-  html[data-skin="neon"] .iconbtn.avatar{background:linear-gradient(145deg,#FF3DF0,#B14BFF);box-shadow:0 0 16px rgba(255,61,240,.5)}
-  html[data-skin="neon"] #goal-list .goal:first-child{background:linear-gradient(135deg,#1A0B45,#06102E);box-shadow:0 0 0 1px rgba(255,61,240,.5),0 0 28px rgba(255,61,240,.3)}
-  html[data-skin="neon"] .ring .rf{stroke:#00E5FF;filter:drop-shadow(0 0 4px #00E5FF)}
-  html[data-skin="neon"] #goal-list .goal:first-child .ring .rf{stroke:#FF3DF0;filter:drop-shadow(0 0 4px #FF3DF0)}
-  html[data-skin="neon"] .fill{background:linear-gradient(90deg,#00E5FF,#B14BFF) !important;box-shadow:0 0 10px rgba(0,229,255,.6)}
-  html[data-skin="neon"] .hero.flat h1{text-shadow:0 0 18px rgba(0,229,255,.35)}
 
   /* ---------- ШЫНЫ ---------- */
   html[data-skin="glass"]{--surface:rgba(255,255,255,.62);--line:rgba(255,255,255,.75);--accent:#5868F2;--g-mid:#5868F2;--g-soft:rgba(88,104,242,.12);--tabbar:rgba(255,255,255,.6)}
@@ -1168,18 +1129,15 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
      ===================================================== */
   :root{--logo-a:#1F5BFF;--logo-b:#0B2A7A;--logo-tail:#FF6F61;--sp-a:#1F66FF;--sp-b:#0B2A7A}
   html[data-theme="dark"]{--logo-a:#5B8CFF;--logo-b:#2D5BE0;--logo-tail:#FF8A7E}
-  html[data-skin="neon"]{--logo-a:#00E5FF;--logo-b:#B14BFF;--logo-tail:#FF3DF0;--sp-a:#1A0B45;--sp-b:#05040D}
   html[data-skin="glass"]{--logo-a:#6A8BFF;--logo-b:#B36BFF;--logo-tail:#FF8FB1;--sp-a:#8A9BFF;--sp-b:#B36BFF}
   html[data-skin="sunset"]{--logo-a:#FF8A00;--logo-b:#7B3FF2;--logo-tail:#FFC247;--sp-a:#FF8A00;--sp-b:#7B3FF2}
   html[data-skin="mono"]{--logo-a:#111;--logo-b:#111;--logo-tail:#9A9A9A;--sp-a:#111;--sp-b:#000}
   html[data-skin="mono"][data-theme="dark"]{--logo-a:#F2F2F2;--logo-b:#F2F2F2;--logo-tail:#8A8A8A}
   .qlogo{width:34px;height:34px;display:block;flex:none}
-  html[data-skin="neon"] .qlogo{filter:drop-shadow(0 0 6px rgba(0,229,255,.7))}
   html[data-skin="mono"] .ah-brand img{filter:none}
   .acc-card .ac-logo{--q-ring:#fff;filter:none;opacity:1}
   #splash{background:linear-gradient(160deg,var(--sp-a),var(--sp-b)) !important}
   #splash .sp-mark{--q-ring:#fff;width:110px;height:110px;display:block;filter:drop-shadow(0 14px 26px rgba(0,0,0,.3))}
-  html[data-skin="neon"] #splash .sp-mark{--q-ring:#00E5FF;filter:drop-shadow(0 0 16px rgba(0,229,255,.8))}
   .hero.flat .balance .cap,.hero.flat .balance{color:#fff}
 
   /* =====================================================
@@ -1287,12 +1245,8 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
      v20 · жылжыту өнімділігі: фон бөлек қабатта,
      backdrop-filter тек бекітілген элементтерде
      ===================================================== */
-  html[data-skin="glass"] body,html[data-skin="neon"] body{background:transparent !important;background-attachment:scroll !important}
   html[data-skin="glass"]{background:#EEF0FF}
   html[data-skin="glass"][data-theme="dark"]{background:#0D0B24}
-  html[data-skin="neon"]{background:#05040D}
-  html[data-skin="glass"] body::before,html[data-skin="neon"] body::before{content:"";position:fixed;inset:0;z-index:-1;
-    pointer-events:none;transform:translateZ(0);will-change:transform}
   html[data-skin="glass"] body::before{background:
     radial-gradient(42% 30% at 8% 6%,#8FA6FF 0%,transparent 70%),
     radial-gradient(40% 28% at 96% 18%,#F0A3FF 0%,transparent 70%),
@@ -1305,10 +1259,6 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     radial-gradient(46% 30% at 20% 62%,#14607A 0%,transparent 70%),
     radial-gradient(48% 32% at 92% 78%,#7A3A2C 0%,transparent 70%),
     linear-gradient(180deg,#0D0B24,#140C26)}
-  html[data-skin="neon"] body::before{background:
-    radial-gradient(60% 40% at 0% 0%,rgba(177,75,255,.22),transparent 70%),
-    radial-gradient(60% 40% at 100% 30%,rgba(0,229,255,.16),transparent 70%),
-    radial-gradient(70% 40% at 50% 100%,rgba(255,61,240,.14),transparent 70%),#05040D}
 
   /* шыны: жылжитын элементтерде бұлыңғырлау жоқ (артында тек тұрақты фон тұр) */
   html[data-skin="glass"]{--surface:rgba(255,255,255,.62)}
@@ -1330,7 +1280,6 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   .swipe.drag .row{will-change:transform}
   .tabbar{transform:translateZ(0)}
   .spark path[stroke]{vector-effect:non-scaling-stroke}
-  html[data-skin="neon"] .card,html[data-skin="neon"] .mini,html[data-skin="neon"] .quad button{background:#0D0B1E !important}
 
   /* v21 · ашылатын терезелер ішінде бұлыңғырлау жоқ — жылжыту жеңіл */
   html[data-skin="glass"] .sheet,html[data-skin="glass"] .sheet *{-webkit-backdrop-filter:none !important;backdrop-filter:none !important}
@@ -1463,7 +1412,6 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   /* банк логотиптері: ақ шаршы, жұқа жиек; неон жиек — тек Неон стилінде */
   .brand.logo{background:#fff !important;box-shadow:inset 0 0 0 1px rgba(20,27,45,.08),0 3px 8px -5px rgba(0,0,0,.35) !important}
   .brand.logo img{filter:none !important}
-  html[data-skin="neon"] .brand.logo{box-shadow:0 0 0 1.5px var(--bc,#00E5FF),0 0 10px -1px var(--bc,#00E5FF),0 0 22px -6px var(--bc,#00E5FF) !important}
 
   /* ===== v39 · шот карталары, бейтарап шығын ===== */
   .cards{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
@@ -1941,7 +1889,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     <div class="card">
       <h2>Дизайн стилі</h2>
       <div class="skins" id="skin-chips"></div>
-      <p class="muted" style="margin:10px 0 0">Неон стилі әрдайым қараңғы.</p>
+      
     </div>
     <div class="card">
       <h2>Тіл</h2>

@@ -3343,17 +3343,16 @@ function isDark(){
 }
 var SKINS = [
   ['coral','Qarzhy',['#141B2D','#F0453A','#FF8A70']],
-  ['classic','Классик',['#1463FF','#0B2A7A','#FF6F61']],
-  ['neon','Неон',['#00E5FF','#B14BFF','#FF3DF0']]
+  ['classic','Классик',['#1463FF','#0B2A7A','#FF6F61']]
 ];
-function skinMode(){ var k = DB.skin || 'coral'; return /^(coral|classic|neon)$/.test(k) ? k : 'coral'; }
+function skinMode(){ var k = DB.skin || 'coral'; return /^(coral|classic)$/.test(k) ? k : 'coral'; }
 function applyTheme(){
   var sk = skinMode();
-  var dark = sk === 'neon' ? true : isDark();
+  var dark = isDark();
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   document.documentElement.setAttribute('data-skin', sk);
   var mt = document.querySelector('meta[name="theme-color"]');
-  if(mt) mt.setAttribute('content', sk === 'neon' ? '#05040D' : (dark ? (sk === 'coral' ? '#0E1220' : '#070F1F') : (sk === 'coral' ? '#F6F6F8' : '#F6F8FC')));
+  if(mt) mt.setAttribute('content', (dark ? (sk === 'coral' ? '#0E1220' : '#070F1F') : (sk === 'coral' ? '#F6F6F8' : '#F6F8FC')));
 }
 function setSkin(k){ DB.skin = k; save(); applyTheme(); render(); }
 function drawSkinChips(){
