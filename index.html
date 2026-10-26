@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F8FC">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="qicon3-192.png">
-<link rel="apple-touch-icon" href="qicon3-512.png">
+<link rel="icon" href="qlogo-192.png">
+<link rel="apple-touch-icon" href="qlogo-512.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -1454,6 +1454,10 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   html[data-skin="coral"] #splash .tagline{font-size:14px}
   #splash .sp-mark,.acc-card .ac-logo{--q-edge:#141B2D}
   html[data-theme="dark"] .qlogo{--q-edge:#0E1220}
+  .qimg{display:block;object-fit:cover;border-radius:24%;filter:none !important;opacity:1 !important}
+  .ah-brand .qimg{width:36px;height:36px;border-radius:10px}
+  #splash .sp-mark.qimg{width:140px;height:140px;border-radius:32px;box-shadow:0 18px 40px -14px rgba(0,0,0,.55)}
+  .acc-card .ac-logo.qimg{width:32px;height:32px;border-radius:9px}
 </style>
 </head>
 <body>
@@ -1472,10 +1476,10 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
 </svg>
 
 <!-- ============ БАСТЫ ============ -->
-<div id="splash"><svg class="sp-mark" viewBox="0 0 256 256" role="img" aria-label="Qarzhy"><use href="#qmark"/></svg><div class="nm">Qarzhy</div><div class="tagline">Smart Money. Better Life.</div></div>
+<div id="splash"><img class="sp-mark qimg" src="qlogo-512.png" alt="Qarzhy"><div class="nm">Qarzhy</div><div class="tagline">Smart Money. Better Life.</div></div>
 <section class="page on" id="p-home">
   <header class="apphead">
-    <div class="ah-brand"><svg class="qlogo" viewBox="0 0 256 256" width="34" height="34" aria-hidden="true"><use href="#qmark"/></svg><span class="ah-wm">Qarzhy</span></div>
+    <div class="ah-brand"><img class="qlogo qimg" src="qlogo-192.png" alt="" width="34" height="34"><span class="ah-wm">Qarzhy</span></div>
     <div class="ah-act">
       <button class="iconbtn" onclick="go('recur')" aria-label="Еске салулар"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2H4.5Z"/><path d="M10 21h4"/></svg><i class="bdot hide" id="h-bell"></i></button>
       <button class="iconbtn avatar" onclick="go('set')" aria-label="Профиль және баптау"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M5 19.5c1.1-3.2 3.8-5 7-5s5.9 1.8 7 5"/></svg></button>
@@ -1552,7 +1556,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
       <div class="ht"><h1>Менің қаржым</h1><div class="sub" id="a-count">0 шот</div></div>
     </div>
     <div class="balance acc-card">
-      <div class="bl-top"><span>Таза капитал</span><svg class="ac-logo" viewBox="0 0 256 256" width="30" height="30" aria-hidden="true"><use href="#qmark"/></svg></div>
+      <div class="bl-top"><span>Таза капитал</span><img class="ac-logo qimg" src="qlogo-192.png" alt="" width="30" height="30"></div>
       <div class="cap" id="a-net">0 ₸</div>
       <div class="ac-num">Qarzhy · <span id="a-count2">0 шот</span></div>
     </div>
