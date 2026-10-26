@@ -1483,6 +1483,40 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   html[data-skin="x-emerald"] .iconbtn.avatar,html[data-skin="x-violet"] .iconbtn.avatar,html[data-skin="x-ocean"] .iconbtn.avatar,html[data-skin="x-sunset"] .iconbtn.avatar,html[data-skin="x-rose"] .iconbtn.avatar{background:linear-gradient(145deg,var(--sk1),var(--sk2));color:#fff;border:0}
   html[data-skin="x-emerald"] #splash,html[data-skin="x-violet"] #splash,html[data-skin="x-ocean"] #splash,html[data-skin="x-sunset"] #splash,html[data-skin="x-rose"] #splash{background:radial-gradient(70% 45% at 85% 105%,color-mix(in srgb,var(--sk1) 60%,transparent),transparent 70%),linear-gradient(170deg,var(--sc1) 0%,var(--sc2) 75%) !important}
   html[data-skin="x-emerald"] #splash .nm,html[data-skin="x-violet"] #splash .nm,html[data-skin="x-ocean"] #splash .nm,html[data-skin="x-sunset"] #splash .nm,html[data-skin="x-rose"] #splash .nm{color:#fff}
+
+  /* ===== v42 · бұлыңғыр түрлі түсті фон (барлық стиль) ===== */
+  html[data-skin="coral"]{--b1:#F0453A;--b2:#7C8BFF;--b3:#FFB38A}
+  html[data-skin="classic"]{--b1:#1463FF;--b2:#B36BFF;--b3:#6EE7F9}
+  html[data-skin="x-emerald"]{--b1:#10B981;--b2:#67E8F9;--b3:#FDE68A}
+  html[data-skin="x-violet"]{--b1:#8B5CF6;--b2:#F0ABFC;--b3:#93C5FD}
+  html[data-skin="x-ocean"]{--b1:#0EA5E9;--b2:#34D399;--b3:#A5B4FC}
+  html[data-skin="x-sunset"]{--b1:#F97316;--b2:#E11D48;--b3:#FCD34D}
+  html[data-skin="x-rose"]{--b1:#EC4899;--b2:#A78BFA;--b3:#FDBA74}
+  html{background:var(--bg)}
+  body{background:transparent !important}
+  body::before{content:"";position:fixed;inset:-10%;z-index:-1;pointer-events:none;transform:translateZ(0);
+    background:
+      radial-gradient(42% 30% at 8% 4%,color-mix(in srgb,var(--b2) 70%,transparent) 0%,transparent 70%),
+      radial-gradient(40% 28% at 96% 16%,color-mix(in srgb,var(--b1) 50%,transparent) 0%,transparent 70%),
+      radial-gradient(48% 32% at 14% 60%,color-mix(in srgb,var(--b3) 65%,transparent) 0%,transparent 70%),
+      radial-gradient(50% 34% at 94% 82%,color-mix(in srgb,var(--b1) 42%,transparent) 0%,transparent 70%),
+      radial-gradient(40% 30% at 40% 104%,color-mix(in srgb,var(--b2) 40%,transparent) 0%,transparent 70%),
+      var(--bg);
+    filter:blur(28px) saturate(1.15)}
+  html[data-theme="dark"] body::before{opacity:.8}
+  /* карталар жартылай мөлдір — фон сәл көрінеді */
+  html:not([data-theme="dark"]){--surface:rgba(255,255,255,.7);--tabbar:rgba(255,255,255,.93)}
+  html[data-theme="dark"] .card,html[data-theme="dark"] .mini,html[data-theme="dark"] .quad button,
+  html[data-theme="dark"] .iconbtn:not(.avatar),html[data-theme="dark"] .qa button:not(:first-child) .qa-i{background:color-mix(in srgb,var(--surface) 82%,transparent) !important}
+  .card,.mini,.quad button,.iconbtn:not(.avatar),.qa-i,.ratebar,.tip{border-color:rgba(255,255,255,.6)}
+  html[data-theme="dark"] .card,html[data-theme="dark"] .mini{border-color:rgba(255,255,255,.07) !important}
+  .tabbar{-webkit-backdrop-filter:blur(16px) saturate(1.4) !important;backdrop-filter:blur(16px) saturate(1.4) !important}
+  html[data-theme="dark"] .tabbar{background:color-mix(in srgb,var(--surface) 94%,transparent) !important}
+  .sheet{background:var(--bg) !important}
+  html:not([data-theme="dark"]) .sheet{background:#FBFBFD !important}
+  .inp,.chip,.seg{background-color:rgba(255,255,255,.8)}
+  html[data-theme="dark"] .inp,html[data-theme="dark"] .chip{background-color:var(--surface)}
+  html[data-theme="dark"] .seg{background-color:var(--g-soft)}
 </style>
 </head>
 <body>
