@@ -2326,7 +2326,14 @@ function parseFreedomCard(lines){
     if(!(amt > 0)) continue;
     /* санатты анықтау үшін көршілес мәлімет жолдарын да аламыз */
     var ctx = detail + ' ' + fcContext(lines, i);
-    var own = /(своими счетами|own funds|өз шоттар)/i.test(ctx);
+    /* Freedom валютасы (кэшбэк токені) теңгеге/долларға айырбасталды — бұл кэшбэк кірісі */
+    var frCb = plus && /валют[ыа]\s+Freedom/i.test((lines[i-2] || '') + ' ' + (lines[i-1] || '') + ' ' + detail);
+    if(frCb){
+      out.push({ date: date, amt: amt, type: 'in', cat: 'Кэшбэк', note: 'Кэшбэк · Freedom валютасы → ' + (cur === 'KZT' ? 'теңге' : cur),
+                 cur: cur, pending: pending, fx: cur !== 'KZT' });
+      continue;
+    }
+    var own = /(своими счетами|own funds|өз шоттар)/i.test(detail + ' ' + (lines[i+1] || ''));
     var type = plus ? 'in' : 'out';
     var cat;
     if(own) cat = 'Инвестиция';
