@@ -1696,6 +1696,17 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   .acc-card .ac-logo.qmd{width:32px;height:32px}
   #splash .sp-mark.qmd{width:150px;height:150px;border-radius:34px;box-shadow:0 26px 50px -18px color-mix(in srgb,var(--g-mid) 60%,transparent)}
   html[data-skin="coral"] #splash,#splash{background:radial-gradient(60% 40% at 50% 42%,color-mix(in srgb,var(--g-mid) 24%,transparent),transparent 70%),linear-gradient(170deg,#1A2138 0%,#0B0F1C 75%) !important}
+
+  /* ===== v60 · сөзбелгі: тәжді Q + «arzhy»; түрлі түсті жылдам батырмалар ===== */
+  .ah-wm{display:inline-block;white-space:nowrap;font-size:27px !important;line-height:1.5}
+  .qw{position:relative;display:inline-block;width:1.07em;height:1.32em;vertical-align:-.163em;margin-right:-.08em}
+  .qw::before,.qw::after{content:"";position:absolute;inset:0;-webkit-mask:url(qw-q.png) center/100% 100% no-repeat;mask:url(qw-q.png) center/100% 100% no-repeat;background:currentColor}
+  .qw::after{-webkit-mask-image:url(qw-c.png);mask-image:url(qw-c.png);background:linear-gradient(135deg,color-mix(in srgb,var(--g-bright) 70%,#fff),var(--g-mid))}
+  html .qa.qa button .qa-i{color:#fff !important;border:0 !important}
+  html .qa.qa button:nth-child(1) .qa-i{background:linear-gradient(145deg,#34D399,#0E9F6E) !important;box-shadow:0 12px 22px -10px rgba(14,159,110,.75) !important}
+  html .qa.qa button:nth-child(2) .qa-i{background:linear-gradient(145deg,#FF7A6B,#E2302A) !important;box-shadow:0 12px 22px -10px rgba(226,48,42,.75) !important}
+  html .qa.qa button:nth-child(3) .qa-i{background:linear-gradient(145deg,#60A5FA,#2563EB) !important;box-shadow:0 12px 22px -10px rgba(37,99,235,.75) !important}
+  html .qa.qa button:nth-child(4) .qa-i{background:linear-gradient(145deg,#C4A1FF,#7C3AED) !important;box-shadow:0 12px 22px -10px rgba(124,58,237,.75) !important}
 </style>
 </head>
 <body>
@@ -1717,7 +1728,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
 <div id="splash"><span class="sp-mark qmd" role="img" aria-label="Qarzhy"><i class="q"></i><i class="c"></i></span><div class="nm">Qarzhy</div><div class="tagline">Smart Money. Better Life.</div></div>
 <section class="page on" id="p-home">
   <header class="apphead">
-    <div class="ah-brand"><span class="qlogo qmd" aria-hidden="true"><i class="q"></i><i class="c"></i></span><span class="ah-wm">Qarzhy</span></div>
+    <div class="ah-brand" role="img" aria-label="Qarzhy"><span class="ah-wm"><span class="qw" aria-hidden="true"></span><span aria-hidden="true">arzhy</span></span></div>
     <div class="ah-act">
       <button class="iconbtn" onclick="go('recur')" aria-label="Еске салулар"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2H4.5Z"/><path d="M10 21h4"/></svg><i class="bdot hide" id="h-bell"></i></button>
       <button class="iconbtn avatar" onclick="go('set')" aria-label="Профиль және баптау"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M5 19.5c1.1-3.2 3.8-5 7-5s5.9 1.8 7 5"/></svg></button>
@@ -2149,7 +2160,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Qarzhy · v59</div>
+        <div class="ver">Qarzhy · v60</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
