@@ -16,7 +16,7 @@ function load(){
       var d = JSON.parse(raw);
       DB.tx = d.tx||[]; DB.goals = d.goals||[]; DB.accounts = d.accounts||[]; DB.btx = d.btx||[]; DB.debts = d.debts||[];
       DB.limits = d.limits||{};
-      DB.split = d.split||null; DB.recur = d.recur||[];
+      DB.split = d.split||null; DB.recur = d.recur||[]; DB.pension = d.pension||null;
       DB.lang = d.lang||'kk'; DB.theme = d.theme||'auto'; DB.skin = d.skin||'coral'; DB.rules = d.rules||{}; DB.pref = d.pref||{};
       DB.lastBackup = d.lastBackup||null; DB.rate = d.rate||null;
       DB.updated = d.updated||null;
@@ -104,7 +104,7 @@ function applyDB(d){
   if(!d) return;
   DB.tx = d.tx || []; DB.goals = d.goals || []; DB.accounts = d.accounts || [];
   DB.btx = d.btx || []; DB.debts = d.debts || []; DB.limits = d.limits || {};
-  DB.split = d.split || null; DB.recur = d.recur || [];
+  DB.split = d.split || null; DB.recur = d.recur || []; DB.pension = d.pension || null;
   SPLIT = null; if(splitTimer){ clearTimeout(splitTimer); splitTimer = null; }
   DB.lastBackup = d.lastBackup || null; DB.lang = d.lang || 'kk';
   DB.theme = d.theme || 'auto'; DB.skin = d.skin || DB.skin || 'coral'; DB.rate = d.rate || null;
@@ -1231,6 +1231,7 @@ function render(){
   drawReport();
   drawSubs();
   drawTips();
+  drawPension();
   drawCalendar();
   drawWhatIf();
   drawYear();
@@ -1447,6 +1448,12 @@ function drawFuture(T, rate, avgOut12, cushion){
     var m = avgNet > 0 ? Math.ceil(left / avgNet) : null;
     h += '<div class="kv"><span>' + esc(g.name) + '</span><b>' + (m ? '~' + m + ' ' + tr('айда жетеді') : tr('қазіргі қарқынмен жетпейді')) + '</b></div>';
   });
+  var pp = pen(), pf = pp ? penForecast(pp) : null;
+  if(pf){
+    var pthr = penThreshold(pf.age);
+    if(pp.bal < pthr && pf.reach) h += '<div class="kv"><span>' + tr('ЕНПФ шегіне жетесіз') + '</span><b>~' + (now.getFullYear() + Math.floor(pf.reach / 12)) + ' ' + tr('ж.') + '</b></div>';
+    h += '<div class="kv"><span>' + tr('ЕНПФ: 63 жасқа (бүгінгі ақшамен)') + '</span><b>~' + money(Math.round(pf.at63 / 100000) * 100000) + '</b></div>';
+  }
   h += '<p class="muted" style="margin:10px 0 0">' + tr('Болжам соңғы 3 айдың кіріс-шығынына негізделген.') + '</p>';
   box.innerHTML = h;
 }
@@ -5883,6 +5890,110 @@ function loanPlanHtml(a){
     '<input type="range" class="wi-r" min="0" max="' + Math.max(50000, Math.round(a.pay * 2 / 5000) * 5000) + '" step="5000" value="' + x + '" oninput="loanX[\'' + a.id + '\']=+this.value;openAccView(\'' + a.id + '\')">' +
     '<div class="kv"><span>' + tr('Жабылу мерзімі') + '</span><b>' + base + ' → ' + (fast > 0 ? fast : base) + ' ' + tr('ай') + '</b></div>' +
     (x ? '<div class="kv"><span>' + tr('Үнемделетін пайыз') + '</span><b style="color:var(--pos)">' + money(Math.max(0, Math.round(paidBase - paidFast))) + '</b></div>' : '') + '</div>';
+}
+
+/* ================= ЕНПФ (зейнетақы) ================= */
+/* 2026 жылғы жеткіліктілік шектері (жас → ₸). Дереккөз: ЕНПФ, finratings.kz. Жыл сайын жаңарту керек. */
+var ENPF_YEAR = 2026;
+var ENPF_MIN = {20:6670000,21:6960000,22:7250000,23:7540000,24:7840000,25:8150000,26:8460000,27:8770000,28:9090000,29:9420000,
+  30:9750000,31:10090000,32:10430000,33:10780000,34:11130000,35:11490000,36:11850000,37:12220000,38:12600000,39:12980000,
+  40:13370000,41:13760000,42:14160000,43:14560000,44:14980000,45:15400000,46:15820000,47:16250000,48:16690000,49:17140000,
+  50:17590000,51:18050000,52:18510000,53:18980000,54:19460000,55:19950000,56:20450000,57:20950000,58:21460000,59:21970000,
+  60:22500000,61:23030000,62:23570000};
+var ENPF_OPV = 0.10, ENPF_OPVR = 0.035;
+function pen(){ return DB.pension || null; }
+function penAge(p){
+  if(!p || !p.by) return null;
+  var n = new Date(), a = n.getFullYear() - p.by;
+  if(p.bm && (n.getMonth() + 1 < p.bm)) a--;
+  return a;
+}
+function penThreshold(age){
+  if(age === null) return null;
+  if(age < 20) return ENPF_MIN[20];
+  if(age > 62) return ENPF_MIN[62];
+  return ENPF_MIN[age];
+}
+/* жалақы: қолмен жазылғаны, болмаса соңғы 3 айдағы «Жалақы» кірісінің орташасы */
+function penSalary(p){
+  if(p && p.sal) return { v: p.sal, auto: false };
+  var n = new Date(), s = 0, ms = {};
+  for(var i = 1; i <= 3; i++) ms[iso(new Date(n.getFullYear(), n.getMonth() - i, 1)).slice(0, 7)] = 1;
+  DB.tx.forEach(function(t){ if(t.type === 'in' && t.cat === 'Жалақы' && ms[t.date.slice(0, 7)]) s += t.amt; });
+  /* қолға тигені — ОПВ (10%) мен ЖТС (10%) ұсталғаннан кейінгі сома; жалпы жалақыға шамамен қайтарамыз */
+  return { v: s ? Math.round(s / 3 / 0.8) : 0, auto: true };
+}
+function penForecast(p){
+  var age = penAge(p), sal = penSalary(p).v, y = (p.yield || 10) / 100 / 12;
+  /* 63 жасқа болжам бүгінгі ақшамен: табыстылықтан инфляцияны (~8%) шегереміз */
+  var yr = Math.max(0, (p.yield || 10) - 8) / 100 / 12, balR = p.bal || 0;
+  var monthly = sal * (ENPF_OPV + (p.noOpvr ? 0 : ENPF_OPVR));
+  var bal = p.bal || 0, a = age, reach = null, m = 0;
+  if(age === null) return null;
+  var thr0 = penThreshold(age);
+  if(bal >= thr0) reach = 0;
+  while(a < 63 && m < 600){
+    bal = bal * (1 + y) + monthly; balR = balR * (1 + yr) + monthly; m++;
+    if(m % 12 === 0) a++;
+    if(reach === null && bal >= penThreshold(Math.min(62, Math.floor(age + m / 12)))) reach = m;
+  }
+  return { monthly: monthly, at63: balR, at63nom: bal, reach: reach, age: age };
+}
+function drawPension(){
+  var box = document.getElementById('pen-box'); if(!box) return;
+  var p = pen();
+  if(!p){
+    box.innerHTML = '<button class="tip" onclick="openPension()">' + svgIcon('invest') +
+      '<span><b>' + tr('ЕНПФ зейнетақысын қосыңыз') + '</b><br>' + tr('Жеткіліктілік шегі, алуға болатын сома және болжам') + '</span><i>›</i></button>';
+    return;
+  }
+  var age = penAge(p), thr = penThreshold(age), over = thr !== null ? p.bal - thr : null, f = penForecast(p), sal = penSalary(p);
+  var pct = thr ? Math.min(100, Math.round(p.bal / thr * 100)) : 0;
+  var h = '<div class="card pen" role="button" tabindex="0" onclick="openPension()">' +
+    '<div class="dl-top"><span>' + tr('Зейнетақы (ЕНПФ)') + '</span><small>' + (p.asOf ? fullDate(p.asOf) : '') + '</small></div>' +
+    '<div class="dl-v">' + money(p.bal) + '</div>' +
+    (thr ? '<div class="track" style="margin:10px 0 6px"><div class="fill' + (over >= 0 ? ' pos' : '') + '" style="width:' + pct + '%"></div></div>' +
+      '<div class="dl-foot"><span>' + tr('Шек') + ' (' + age + ' ' + tr('жас') + ', ' + ENPF_YEAR + ')</span><span>' + money(thr) + '</span></div>' : '') +
+    (over === null ? '<p class="muted" style="margin:8px 0 0">' + tr('Шекті есептеу үшін туған жылыңызды жазыңыз') + '</p>' :
+      over >= 0 ? '<div class="pen-ok">' + tr('Тұрғын үйге, емделуге алуға болады') + ': <b>' + money(over) + '</b></div>'
+                : '<div class="pen-no">' + tr('Шекке дейін жетпейді') + ': <b>' + money(-over) + '</b></div>') +
+    (f ? '<div class="kv" style="margin-top:8px"><span>' + tr('Айына түседі') + ' (ОПВ 10%' + (p.noOpvr ? '' : ' + ОПВР 3,5%') + ')</span><b>~' + money(Math.round(f.monthly)) + '</b></div>' +
+      (sal.auto && sal.v ? '<div class="muted" style="margin:-4px 0 4px;font-size:12px">' + tr('Жалақы операцияларыңыздан есептелді') + '</div>' : '') +
+      (f.reach !== null && f.reach > 0 && over < 0 ? '<div class="kv"><span>' + tr('Шекке жетесіз') + '</span><b>~' + (new Date().getFullYear() + Math.floor(f.reach / 12)) + ' ' + tr('ж.') + '</b></div>' : '') +
+      '<div class="kv"><span>' + tr('63 жасқа дейін жиналады (бүгінгі ақшамен)') + '</span><b>~' + money(Math.round(f.at63 / 100000) * 100000) + '</b></div>' : '') +
+    '<p class="muted" style="margin:8px 0 0;font-size:12px">' + tr('Таза капиталға қосылмайды.') + ' ' + tr('Табыстылық') + ' ' + (p.yield || 10) + '% ' + tr('жылына деп алынды.') + '</p>' +
+  '</div>';
+  box.innerHTML = h;
+}
+function openPension(){
+  var p = pen() || {};
+  document.getElementById('pn-bal').value = p.bal || '';
+  document.getElementById('pn-by').value = p.by || '';
+  document.getElementById('pn-sal').value = p.sal || '';
+  document.getElementById('pn-yield').value = p.yield || 10;
+  document.getElementById('pn-opvr').classList.toggle('on', !p.noOpvr);
+  document.getElementById('pn-del').classList.toggle('hide', !pen());
+  var s = penSalary(p);
+  document.getElementById('pn-sal-hint').textContent = s.auto && s.v ? tr('Бос қалдырсаңыз, операциялардан алынады') + ': ~' + money(s.v) : '';
+  openSheet('sheet-pen');
+}
+function savePension(){
+  var bal = parseFloat(document.getElementById('pn-bal').value);
+  if(!(bal >= 0)){ toast('Қалдықты жазыңыз'); return; }
+  var by = parseInt(document.getElementById('pn-by').value) || null;
+  if(by && (by < 1930 || by > new Date().getFullYear() - 14)){ toast('Туған жылды тексеріңіз'); return; }
+  var p = pen() || { hist: [] };
+  p.bal = bal; p.by = by; p.asOf = todayISO();
+  p.sal = parseFloat(document.getElementById('pn-sal').value) || null;
+  p.yield = parseFloat(document.getElementById('pn-yield').value) || 10;
+  p.noOpvr = !document.getElementById('pn-opvr').classList.contains('on');
+  (p.hist = p.hist || []).push({ d: p.asOf, v: bal });
+  DB.pension = p;
+  save(); closeSheets(); render(); toast('Сақталды');
+}
+function delPension(){
+  if(!confirm(tr('ЕНПФ деректері өшіріледі. Жалғастырасыз ба?'))) return;
+  DB.pension = null; save(); closeSheets(); render();
 }
 
 /* IndexedDB мен localStorage-тің қайсысы жаңа болса, соны аламыз:
