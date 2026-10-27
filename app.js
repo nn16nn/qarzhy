@@ -1097,11 +1097,11 @@ function render(){
   document.getElementById('h-month').textContent=MONTHS[cur.getMonth()]+' '+cur.getFullYear();
   document.getElementById('h-in').textContent=money(mIn);
   document.getElementById('h-out').textContent=money(mOut);
-  document.getElementById('h-banks').textContent=money(T.banks);
+  var hbk=document.getElementById('h-banks'); if(hbk) hbk.textContent=money(T.banks);
   var gsum=0; (DB.goals||[]).forEach(function(g){ gsum+=g.saved||0; });
   var hi=document.getElementById('h-goals');
   if(hi) hi.textContent=money(gsum);
-  document.getElementById('h-debts').textContent=money(T.debts);
+  var hdb=document.getElementById('h-debts'); if(hdb) hdb.textContent=money(T.debts);
   var hpd=document.getElementById('h-pdebt');
   if(hpd){
     if(T.lent && T.owed){
@@ -1113,7 +1113,7 @@ function render(){
     else { hpd.textContent='0 ₸'; hpd.style.color=''; }
   }
   var openDebts = (DB.debts||[]).filter(function(d){ return debtLeft(d) > 0; }).length;
-  document.getElementById('acc-count').textContent=
+  var acn=document.getElementById('acc-count'); if(acn) acn.textContent=
     accsOf('asset').length+' банк'+
     (openDebts ? ' · '+openDebts+' қарыз' : '');
   document.getElementById('h-rate').textContent=rateText();
@@ -1192,7 +1192,7 @@ function render(){
   }
 
   /* --- overview --- */
-  animNum(document.getElementById('ov-net'), T.net);
+
   var rate = mIn>0 ? Math.round((mIn-mOut)/mIn*100) : 0;
   /* соңғы 12 айдағы орташа шығын — «қауіпсіздік жастығы» үшін */
   var now12=new Date(), out12=0, mset={};
@@ -1201,30 +1201,7 @@ function render(){
   DB.tx.forEach(function(t){ if(t.type==='out' && mset[t.date.slice(0,7)]) out12+=t.amt; });
   var avgOut12 = out12/12;
   var cushion = avgOut12>0 ? (T.banks/avgOut12) : 0;
-  var ovm=document.getElementById('ov-month');
-  if(ovm) ovm.innerHTML=
-    '<div class="kv"><span>Жинақ үлесі (осы ай)</span><b style="color:'+
-      (rate>=0?'var(--pos)':'var(--neg)')+'">'+(mIn>0?rate+'%':'—')+'</b></div>'+
-    '<div class="kv"><span>Айлық орташа шығын</span><b>'+money(avgOut12)+'</b></div>'+
-    '<div class="kv"><span>Қаражат неше айға жетеді</span><b>'+
-      (avgOut12>0 ? (cushion>=12 ? '12+ ай' : (Math.round(cushion*10)/10).toString().replace('.',',')+' ай') : '—')+
-    '</b></div>';
-
-  var assets=accsOf('asset');
-  var ob=document.getElementById('ov-assets'); ob.innerHTML='';
-  if(!assets.length) ob.innerHTML='<div class="empty">Шот жоқ.</div>';
-  else {
-    ob.innerHTML='<div class="kv"><span>Банктердегі ақша</span><b style="color:var(--pos)">'+money(T.banks)+'</b></div>'+
-      (T.goals>0?'<div class="kv"><span>Мақсаттарда жиналған</span><b style="color:var(--blue)">'+money(T.goals)+'</b></div>':'')+
-      (T.invested>0?'<div class="kv"><span>Салынған инвестиция (барлық уақыт)</span><b style="color:var(--blue)">'+money(T.invested)+'</b></div>':'');
-    var wrapB=document.createElement('div'); wrapB.style.marginTop='12px';
-    assets.forEach(function(a){
-      var kz=toKZT(a);
-      var f=T.banks>0?kz/T.banks:0;
-      wrapB.appendChild(barRow(accIconHtml(a,'bar-ic')+'<span>'+esc(a.name)+'</span>', money(kz), f, false));
-    });
-    ob.appendChild(wrapB);
-  }
+  drawFuture(T, rate, avgOut12, cushion);
 
   var debts=DB.accounts.filter(function(a){return a.kind==='debt';});
   var db=document.getElementById('ov-debts'); db.innerHTML='';
@@ -1433,9 +1410,41 @@ function statList(){
 }
 function statItems(list){ return catItems(list, statKind); }
 
+function drawFuture(T, rate, avgOut12, cushion){
+  var box = document.getElementById('ov-future'); if(!box) return;
+  var now = new Date(), ym = todayISO().slice(0, 7);
+  var dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(), day = now.getDate();
+  var spent = 0, prevOut = 0, pym = iso(new Date(now.getFullYear(), now.getMonth() - 1, 1)).slice(0, 7);
+  var nets = {};
+  DB.tx.forEach(function(t){
+    if(t.type === 'tr') return;
+    var m = t.date.slice(0, 7);
+    if(t.type === 'out' && m === ym) spent += t.amt;
+    if(t.type === 'out' && m === pym) prevOut += t.amt;
+    nets[m] = (nets[m] || 0) + (t.type === 'in' ? t.amt : -t.amt);
+  });
+  var proj = day > 0 ? spent / day * dim : 0;
+  var n3 = 0, c3 = 0;
+  for(var i = 1; i <= 3; i++){ var k = iso(new Date(now.getFullYear(), now.getMonth() - i, 1)).slice(0, 7); if(nets[k] !== undefined){ n3 += nets[k]; c3++; } }
+  var avgNet = c3 ? n3 / c3 : 0;
+  var h = '';
+  h += '<div class="kv"><span>' + tr('Ай соңына дейін шығын болжамы') + '</span><b>~' + money(Math.round(proj / 1000) * 1000) + '</b></div>';
+  if(prevOut) h += '<div class="kv"><span>' + tr('Өткен айда') + '</span><b>' + money(prevOut) + '</b></div>';
+  h += '<div class="kv"><span>' + tr('Айлық орташа нәтиже (3 ай)') + '</span><b style="color:' + (avgNet >= 0 ? 'var(--pos)' : 'var(--neg)') + '">' + (avgNet >= 0 ? '+' : '−') + money(Math.abs(Math.round(avgNet))) + '</b></div>';
+  h += '<div class="kv"><span>' + tr('6 айдан кейін капитал') + '</span><b>~' + money(Math.round((T.net + avgNet * 6) / 1000) * 1000) + '</b></div>';
+  h += '<div class="kv"><span>' + tr('12 айдан кейін капитал') + '</span><b>~' + money(Math.round((T.net + avgNet * 12) / 1000) * 1000) + '</b></div>';
+  h += '<div class="kv"><span>' + tr('Жинақ үлесі (осы ай)') + '</span><b>' + (isFinite(rate) ? rate + '%' : '—') + '</b></div>';
+  h += '<div class="kv"><span>' + tr('Қаражат неше айға жетеді') + '</span><b>' + (avgOut12 > 0 ? (cushion >= 12 ? '12+ ' + tr('ай') : (Math.round(cushion * 10) / 10).toString().replace('.', ',') + ' ' + tr('ай')) : '—') + '</b></div>';
+  (DB.goals || []).forEach(function(g){
+    var left = g.target - (g.saved || 0); if(left <= 0) return;
+    var m = avgNet > 0 ? Math.ceil(left / avgNet) : null;
+    h += '<div class="kv"><span>' + esc(g.name) + '</span><b>' + (m ? '~' + m + ' ' + tr('айда жетеді') : tr('қазіргі қарқынмен жетпейді')) + '</b></div>';
+  });
+  h += '<p class="muted" style="margin:10px 0 0">' + tr('Болжам соңғы 3 айдың кіріс-шығынына негізделген.') + '</p>';
+  box.innerHTML = h;
+}
 var STAT_MODES = [
   { id: 'bubbles', name: 'Көпіршік' },
-  { id: 'donut',   name: 'Санаттар' },
   { id: 'flow',    name: 'Кіріс/Шығын' },
   { id: 'budget',  name: 'Бюджет' }
 ];
@@ -1638,9 +1647,7 @@ function renderStats(){
   else if(statMode === 'budget') drawBudget();
   else drawBubbles(items, tot);
 
-  document.getElementById('s-list-title').textContent = tr('Санаттар бойынша');
-  var totEl = document.getElementById('s-total');
-  totEl.textContent = money(tot); totEl.style.color = tot ? col : '';
+  document.getElementById('s-list-title').textContent = tr(statKind === 'in' ? 'Кіріс санаттары' : 'Шығын санаттары');
   drawCatList('s-cat-out', items, tot);
 }
 function drawCatList(elId, items, total){
@@ -5563,7 +5570,7 @@ function reportHtml(ym, closable){
       '<div class="rep-c"><span>' + tr('Шығын') + '</span><b style="color:var(--neg)">−' + money(a.outS) + '</b></div></div>' +
     '<div class="kv"><span>' + tr('Ай нәтижесі') + '</span><b style="color:' + (net >= 0 ? 'var(--pos)' : 'var(--neg)') + '">' + (net >= 0 ? '+' : '−') + money(Math.abs(net)) + '</b></div>' +
     (diff !== null ? '<div class="kv"><span>' + tr('Шығын алдыңғы аймен салыстырғанда') + '</span><b style="color:' + (diff > 0 ? 'var(--neg)' : 'var(--pos)') + '">' + (diff > 0 ? '+' : '') + diff + '%</b></div>' : '') +
-    (top ? '<div class="muted" style="font-weight:600;margin:10px 0 2px">' + tr('Ең көп жұмсалған') + '</div>' + top : '') +
+    (top && closable ? '<div class="muted" style="font-weight:600;margin:10px 0 2px">' + tr('Ең көп жұмсалған') + '</div>' + top : '') +
     (closable ? '<button class="btn ghost sm" style="margin-top:12px;width:100%" onclick="reportOpenStats()">' + tr('Толығырақ') + '</button>' : '') +
   '</div>';
 }

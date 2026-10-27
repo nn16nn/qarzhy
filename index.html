@@ -1619,21 +1619,6 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
 
     <div id="home-warn"></div>
 
-    <div class="card" onclick="go('accounts')">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-        <div class="ico" data-i="brief"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2.6"/><path d="M8.8 7V5.4a1.8 1.8 0 0 1 1.8-1.8h2.8a1.8 1.8 0 0 1 1.8 1.8V7"/><path d="M3 12.5h18"/></svg></div>
-        <div><div style="font-weight:700;font-size:16px">Менің қаржым</div>
-          <div class="muted" id="acc-count">0 шот</div></div>
-        <div style="margin-left:auto;color:var(--ink-2)">→</div>
-      </div>
-      <div class="trio" style="grid-template-columns:1fr 1fr;row-gap:14px">
-        <div><div class="l">Банктердегі ақша</div><div class="v" id="h-banks" style="color:var(--pos)">0 ₸</div></div>
-        <div><div class="l">Несие қалдығы</div><div class="v" id="h-debts" style="color:var(--red)">0 ₸</div></div>
-        <div><div class="l">Мақсатқа жиналған</div><div class="v" id="h-goals" style="color:var(--blue)">0 ₸</div></div>
-        <div><div class="l">Қарыз · маған / мен</div><div class="v" id="h-pdebt">0 ₸</div></div>
-      </div>
-    </div>
-
     <div class="quad">
       <button onclick="go('ops')"><span class="qi" data-i="receipt"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.2h12v17.6l-3-1.8-3 1.8-3-1.8-3 1.8V3.2Z"/><path d="M9.2 8.2h5.6"/><path d="M9.2 12h5.6"/></svg></span> Операциялар</button>
       <button onclick="go('goals')"><span class="qi" data-i="flag"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V3.8"/><path d="M6 4.4h11.5l-2.2 3.8 2.2 3.8H6"/></svg></span> Мақсаттар</button>
@@ -1722,6 +1707,10 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     <div class="modestrip" id="s-modes"></div>
     <div id="s-report"></div>
 
+    <div class="seg" id="s-kind">
+      <button class="on danger" data-k="out" onclick="setStatKind('out')">Шығын</button>
+      <button data-k="in" onclick="setStatKind('in')">Кіріс</button>
+    </div>
     <div class="card stage">
       <div class="stage-head">
         <div>
@@ -1733,28 +1722,13 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
       <div id="s-stage"></div>
     </div>
 
-    <div class="seg" id="s-kind">
-      <button class="on danger" data-k="out" onclick="setStatKind('out')">Шығын</button>
-      <button data-k="in" onclick="setStatKind('in')">Кіріс</button>
-    </div>
 
     <div class="card" id="s-card-out">
-      <div class="kv tot-row"><span id="s-list-title">Барлығы</span><b id="s-total">0 ₸</b></div>
-      <div class="cat-sep"></div>
+      <h2 id="s-list-title">Санаттар</h2>
       <div id="s-cat-out"></div>
     </div>
 
-    <div class="ornament"></div>
-
-    <div class="card">
-      <h2>Қаржылық жағдай</h2>
-      <div class="cap-in">
-        <div class="cap-label">Таза капитал</div>
-        <div class="cap-v" id="ov-net">0 ₸</div>
-      </div>
-      <div id="ov-month"></div>
-    </div>
-    <div class="card"><h2>Активтер құрылымы</h2><div id="ov-assets"></div></div>
+    <div class="card" id="ov-future-card"><h2>Болашақ</h2><div id="ov-future"></div></div>
     <div class="card hide" id="ov-cb-card"><h2>Кэшбэк</h2><div id="ov-cb"></div></div>
     <div class="card" id="ov-debt-card"><h2>Несие жүктемесі</h2><div id="ov-debts"></div></div>
     <div class="row2" style="gap:10px;margin-bottom:12px">
@@ -2040,7 +2014,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Qarzhy · v52</div>
+        <div class="ver">Qarzhy · v53</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
