@@ -729,6 +729,7 @@ function openAcc(kind, editId){
   document.getElementById('ac-bal').value = a?a.bal:'';
   document.getElementById('ac-rate').value = a&&a.rate?a.rate:'';
   document.getElementById('ac-pay').value = a&&a.pay?a.pay:'';
+  var apd=document.getElementById('ac-payday'); if(apd) apd.value = a&&a.payDay?a.payDay:'';
   document.getElementById('ac-loan-box').classList.toggle('hide', kind!=='debt');
   document.getElementById('ac-bal-box').classList.remove('hide');
   document.getElementById('ac-bank-box').classList.toggle('hide', kind!=='asset');
@@ -792,6 +793,7 @@ function saveAcc(){
   if(accKind==='debt'){
     a.rate=parseFloat(document.getElementById('ac-rate').value)||0;
     a.pay=parseFloat(document.getElementById('ac-pay').value)||0;
+    a.payDay=Math.min(31,Math.max(0,parseInt((document.getElementById('ac-payday')||{}).value)||0))||null;
   }
   if(accKind==='asset') a.cur=accCur;
   if(accEdit){
@@ -799,7 +801,7 @@ function saveAcc(){
     if(old){
       old.name=a.name; old.icon=a.icon;
       old.bal=a.bal; old.cur=a.cur;
-      if(accKind==='debt'){ old.rate=a.rate; old.pay=a.pay; }
+      if(accKind==='debt'){ old.rate=a.rate; old.pay=a.pay; old.payDay=a.payDay; }
     }
     accEdit=null;
     save(); closeSheets(); render(); toast('Сақталды'); return;
@@ -823,6 +825,7 @@ function openAccView(id){
       var m=monthsLeft(a.bal,a.rate||0,a.pay);
       h+='<div class="kv"><span>Қалған мерзім</span><b>'+(m>0?m+' ай':'есептелмеді')+'</b></div>';
     }
+    h+=loanPlanHtml(a);
   }
   var cnt=DB.tx.filter(function(t){return t.acc===id||t.loan===id;}).length;
   h+='<div class="kv"><span>Операция</span><b>'+cnt+'</b></div>';
@@ -1227,6 +1230,10 @@ function render(){
   drawDaily();
   drawReport();
   drawSubs();
+  drawTips();
+  drawCalendar();
+  drawWhatIf();
+  drawYear();
   calcDep();
   calcTax();
   drawWarnings();
@@ -5712,6 +5719,170 @@ function scanReceipt(input){
   }).catch(function(){
     if(st) st.textContent = tr('Чекті оқу мүмкін болмады. Интернетті тексеріп, қайта көріңіз.');
   });
+}
+
+/* ================= ТӨЛЕМ КҮНТІЗБЕСІ ================= */
+var calMon = 0;
+function calEvents(y, m){
+  var ev = {}, ym = y + '-' + String(m + 1).padStart(2, '0'), dim = new Date(y, m + 1, 0).getDate();
+  function add(d, e){ d = Math.min(dim, Math.max(1, d)); (ev[d] = ev[d] || []).push(e); }
+  (DB.recur || []).forEach(function(r){
+    add(r.day, { kind: 'recur', name: r.name, amt: r.amt, done: r.paid === ym, id: r.id });
+  });
+  DB.accounts.forEach(function(a){
+    if(a.kind !== 'debt' || !(a.pay > 0) || !(a.bal > 0)) return;
+    add(a.payDay || 1, { kind: 'loan', name: a.name, amt: a.pay, done: false, id: a.id, guess: !a.payDay });
+  });
+  (DB.debts || []).forEach(function(d){
+    var left = debtLeft(d);
+    if(left <= 0 || !d.due || d.due.slice(0, 7) !== ym) return;
+    add(+d.due.slice(8), { kind: d.dir === 'out' ? 'lent' : 'owe', name: d.who, amt: left, done: false, id: d.id });
+  });
+  return ev;
+}
+function drawCalendar(){
+  var box = document.getElementById('cal-box'); if(!box) return;
+  var now = new Date(), base = new Date(now.getFullYear(), now.getMonth() + calMon, 1);
+  var y = base.getFullYear(), m = base.getMonth(), dim = new Date(y, m + 1, 0).getDate();
+  var ev = calEvents(y, m), first = (base.getDay() + 6) % 7;
+  var today = (calMon === 0) ? now.getDate() : -1;
+  var tOut = 0, tIn = 0;
+  Object.keys(ev).forEach(function(d){ ev[d].forEach(function(e){ if(e.kind === 'lent') tIn += e.amt; else tOut += e.amt; }); });
+  var h = '<div class="cal-nav"><button class="mn" onclick="calMon--;drawCalendar()" aria-label="Алдыңғы ай">‹</button><b>' + MONTHS[m] + ' ' + y +
+    '</b><button class="mn" onclick="calMon++;drawCalendar()" aria-label="Келесі ай">›</button></div>' +
+    '<div class="cal-sum"><span>' + tr('Төленетіні') + ' <b style="color:var(--neg)">' + money(tOut) + '</b></span>' +
+    (tIn ? '<span>' + tr('Қайтарылатыны') + ' <b style="color:var(--pos)">' + money(tIn) + '</b></span>' : '') + '</div>' +
+    '<div class="cal-grid">' + ['Дс','Сс','Ср','Бс','Жм','Сб','Жс'].map(function(d){ return '<i>' + d + '</i>'; }).join('');
+  for(var i = 0; i < first; i++) h += '<span></span>';
+  for(var d = 1; d <= dim; d++){
+    var e = ev[d] || [], dots = '';
+    e.slice(0, 3).forEach(function(x){ dots += '<em class="cd ' + x.kind + (x.done ? ' done' : '') + '"></em>'; });
+    h += '<button class="cal-d' + (d === today ? ' today' : '') + (e.length ? ' has' : '') + '" onclick="calPick(' + d + ')">' + d + '<div class="cdots">' + dots + '</div></button>';
+  }
+  h += '</div><div id="cal-list"></div>';
+  box.innerHTML = h;
+  box._ev = ev; box._ym = [y, m];
+  calPick(today > 0 ? today : 0);
+}
+function calPick(day){
+  var box = document.getElementById('cal-box'), list = document.getElementById('cal-list'); if(!box || !list) return;
+  var ev = box._ev || {}, days = day ? [day] : Object.keys(ev).map(Number).sort(function(a, b){ return a - b; });
+  if(day && !ev[day]) days = Object.keys(ev).map(Number).filter(function(d){ return d >= day; }).sort(function(a, b){ return a - b; });
+  var L = { recur: 'Тұрақты төлем', loan: 'Несие төлемі', lent: 'Маған қайтарады', owe: 'Мен қайтарамын' };
+  var h = '';
+  days.forEach(function(d){
+    (ev[d] || []).forEach(function(e){
+      h += '<div class="cal-row' + (e.done ? ' done' : '') + '"><em class="cd ' + e.kind + '"></em><div style="flex:1;min-width:0"><div class="name">' + esc(e.name) + '</div>' +
+        '<div class="sub2">' + d + ' ' + MONTHS[box._ym[1]].toLowerCase() + ' · ' + tr(L[e.kind]) + (e.guess ? ' · ' + tr('күні белгісіз') : '') + (e.done ? ' · ' + tr('төленді') : '') + '</div></div>' +
+        '<b style="color:' + (e.kind === 'lent' ? 'var(--pos)' : 'var(--ink)') + '">' + (e.kind === 'lent' ? '+' : '−') + money(e.amt) + '</b></div>';
+    });
+  });
+  list.innerHTML = h || '<div class="empty">' + tr('Бұл күннен кейін төлем жоқ.') + '</div>';
+}
+
+/* ================= НЕ БОЛСА? ================= */
+var WI = { cut: 0, save: 0 };
+function drawWhatIf(){
+  var box = document.getElementById('wi-box'); if(!box) return;
+  var now = new Date(), nets = {}, outs = {};
+  DB.tx.forEach(function(t){ if(t.type === 'tr') return; var m = t.date.slice(0, 7);
+    nets[m] = (nets[m] || 0) + (t.type === 'in' ? t.amt : -t.amt); if(t.type === 'out') outs[m] = (outs[m] || 0) + t.amt; });
+  var n3 = 0, o3 = 0, c = 0;
+  for(var i = 1; i <= 3; i++){ var k = iso(new Date(now.getFullYear(), now.getMonth() - i, 1)).slice(0, 7); if(nets[k] !== undefined){ n3 += nets[k]; o3 += outs[k] || 0; c++; } }
+  var avgNet = c ? n3 / c : 0, avgOut = c ? o3 / c : 0;
+  var extra = avgOut * WI.cut / 100 + WI.save, newNet = avgNet + extra, T = totals();
+  var h = '<label class="f">' + tr('Шығынды азайту') + ': <b>' + WI.cut + '%</b> <span class="muted">(~' + money(Math.round(avgOut * WI.cut / 100)) + ' / ' + tr('ай') + ')</span></label>' +
+    '<input type="range" min="0" max="50" step="5" value="' + WI.cut + '" oninput="WI.cut=+this.value;drawWhatIf()" class="wi-r">' +
+    '<label class="f">' + tr('Қосымша жинау') + ': <b>' + money(WI.save) + '</b> / ' + tr('ай') + '</label>' +
+    '<input type="range" min="0" max="300000" step="10000" value="' + WI.save + '" oninput="WI.save=+this.value;drawWhatIf()" class="wi-r">' +
+    '<div class="kv"><span>' + tr('Айлық нәтиже') + '</span><b>' + money(Math.round(avgNet)) + ' → <span style="color:' + (newNet >= 0 ? 'var(--pos)' : 'var(--neg)') + '">' + money(Math.round(newNet)) + '</span></b></div>' +
+    '<div class="kv"><span>' + tr('12 айдан кейін капитал') + '</span><b>~' + money(Math.round((T.net + newNet * 12) / 1000) * 1000) + '</b></div>' +
+    '<div class="kv"><span>' + tr('Жылына қосымша') + '</span><b style="color:var(--pos)">+' + money(Math.round(extra * 12)) + '</b></div>';
+  (DB.goals || []).forEach(function(g){
+    var left = g.target - (g.saved || 0); if(left <= 0) return;
+    var a = avgNet > 0 ? Math.ceil(left / avgNet) : null, b = newNet > 0 ? Math.ceil(left / newNet) : null;
+    h += '<div class="kv"><span>' + esc(g.name) + '</span><b>' + (a ? a : '∞') + ' → ' + (b ? b + ' ' + tr('ай') : '∞') + '</b></div>';
+  });
+  box.innerHTML = h;
+}
+
+/* ================= АҚЫЛДЫ ЕСКЕРТУЛЕР ================= */
+function smartTips(){
+  var now = new Date(), ym = todayISO().slice(0, 7), day = now.getDate();
+  var cur = {}, prev = {}, merch = {};
+  var p1 = iso(new Date(now.getFullYear(), now.getMonth() - 1, 1)).slice(0, 7);
+  var s3 = iso(new Date(now.getFullYear(), now.getMonth() - 3, 1)).slice(0, 7);
+  DB.tx.forEach(function(t){
+    if(t.type !== 'out') return; var m = t.date.slice(0, 7);
+    if(m === ym) cur[t.cat] = (cur[t.cat] || 0) + t.amt;
+    if(m === p1 && +t.date.slice(8) <= day) prev[t.cat] = (prev[t.cat] || 0) + t.amt;
+    if(m >= s3 && m < ym){ var k = merchKey(t.note); if(k) merch[k] = (merch[k] || { s: 0, n: t.note }), merch[k].s += t.amt; }
+  });
+  var tips = [];
+  Object.keys(cur).forEach(function(c){
+    if(c === 'Аударымдар' || c === 'Басқа' || c === 'Инвестиция') return;
+    var a = cur[c], b = prev[c] || 0;
+    if(a > 15000 && b > 0 && a >= b * 1.5) tips.push({ t: tr(c) + ': ' + tr('өткен айдың осы күнімен салыстырғанда') + ' ' + (Math.round(a / b * 10) / 10).toString().replace('.', ',') + ' ' + tr('есе көп'), v: a - b, bad: 1 });
+    else if(b > 15000 && a <= b * 0.6) tips.push({ t: tr(c) + ': ' + tr('өткен аймен салыстырғанда') + ' ' + Math.round((1 - a / b) * 100) + '% ' + tr('аз — жарайсыз'), v: b - a, bad: 0 });
+  });
+  Object.keys(merch).forEach(function(k){
+    var avg = merch[k].s / 3;
+    if(avg > 20000 && /bet|olimp|казино|casino|steam|игр/i.test(merch[k].n)) tips.push({ t: merch[k].n.replace(/^[^·]*·\s*/, '').slice(0, 26) + ': ' + tr('айына орташа') + ' ' + money(Math.round(avg)), v: avg, bad: 1 });
+  });
+  return tips.sort(function(a, b){ return b.v - a.v; }).slice(0, 3);
+}
+function drawTips(){
+  var box = document.getElementById('home-tips'); if(!box) return;
+  var t = smartTips();
+  box.innerHTML = t.length ? '<div class="card tips"><h2>' + tr('Байқағандарым') + '</h2>' + t.map(function(x){
+    return '<div class="tip-r"><em class="' + (x.bad ? 'bad' : 'good') + '">' + (x.bad ? '!' : '✓') + '</em><span>' + esc(x.t) + '</span></div>';
+  }).join('') + '</div>' : '';
+}
+
+/* ================= ЖЫЛДЫҚ ЕСЕП ================= */
+var yrSel = null;
+function drawYear(){
+  var box = document.getElementById('yr-box'); if(!box) return;
+  var years = {}; DB.tx.forEach(function(t){ years[t.date.slice(0, 4)] = 1; });
+  var ys = Object.keys(years).sort(); if(!ys.length){ box.innerHTML = '<div class="empty">' + tr('Дерек жоқ') + '</div>'; return; }
+  if(!yrSel || !years[yrSel]) yrSel = ys[ys.length - 1];
+  var inS = 0, outS = 0, cats = {}, months = {}, merch = {}, big = null;
+  DB.tx.forEach(function(t){
+    if(t.date.slice(0, 4) !== yrSel || t.type === 'tr') return;
+    var m = t.date.slice(5, 7);
+    months[m] = months[m] || { i: 0, o: 0 };
+    if(t.type === 'in'){ inS += t.amt; months[m].i += t.amt; }
+    else { outS += t.amt; months[m].o += t.amt; cats[t.cat] = (cats[t.cat] || 0) + t.amt;
+      if(t.cat !== 'Аударымдар' && t.cat !== 'Инвестиция'){ var k = merchKey(t.note); if(k){ merch[k] = merch[k] || { s: 0, n: t.note }; merch[k].s += t.amt; } }
+      if(!big || t.amt > big.amt) big = t; }
+  });
+  var ms = Object.keys(months), best = null, worst = null;
+  ms.forEach(function(m){ var n = months[m].i - months[m].o; if(!best || n > best.n) best = { m: m, n: n }; if(!worst || n < worst.n) worst = { m: m, n: n }; });
+  var topC = Object.keys(cats).sort(function(a, b){ return cats[b] - cats[a]; })[0];
+  var topM = Object.keys(merch).sort(function(a, b){ return merch[b].s - merch[a].s; })[0];
+  var h = '<div class="chips scroll" style="margin:0 0 10px">' + ys.map(function(y){ return '<button class="chip' + (y === yrSel ? ' on' : '') + '" onclick="yrSel=\'' + y + '\';drawYear()">' + y + '</button>'; }).join('') + '</div>' +
+    '<div class="two" style="margin:0 0 10px"><div class="rep-c"><span>' + tr('Кіріс') + '</span><b style="color:var(--pos)">+' + money(inS) + '</b></div>' +
+    '<div class="rep-c"><span>' + tr('Шығын') + '</span><b style="color:var(--neg)">−' + money(outS) + '</b></div></div>' +
+    '<div class="kv"><span>' + tr('Жыл нәтижесі') + '</span><b style="color:' + (inS - outS >= 0 ? 'var(--pos)' : 'var(--neg)') + '">' + (inS - outS >= 0 ? '+' : '−') + money(Math.abs(inS - outS)) + '</b></div>' +
+    (best ? '<div class="kv"><span>' + tr('Ең үнемді ай') + '</span><b>' + MONTHS[+best.m - 1] + '</b></div>' : '') +
+    (worst && ms.length > 1 ? '<div class="kv"><span>' + tr('Ең шығынды ай') + '</span><b>' + MONTHS[+worst.m - 1] + '</b></div>' : '') +
+    (topC ? '<div class="kv"><span>' + tr('Ең көп санат') + '</span><b>' + esc(tr(topC)) + ' · ' + money(cats[topC]) + '</b></div>' : '') +
+    (topM ? '<div class="kv"><span>' + tr('Ең жиі дүкен') + '</span><b>' + esc(merch[topM].n.replace(/^[^·]*·\s*/, '').slice(0, 22)) + ' · ' + money(merch[topM].s) + '</b></div>' : '') +
+    (big ? '<div class="kv"><span>' + tr('Ең ірі шығын') + '</span><b>' + money(big.amt) + '</b></div>' : '');
+  box.innerHTML = h;
+}
+
+/* ================= НЕСИЕ ӨТЕУ ЖОСПАРЫ ================= */
+var loanX = {};
+function loanPlanHtml(a){
+  if(!(a.pay > 0) || !(a.bal > 0)) return '';
+  var x = loanX[a.id] || 0, base = monthsLeft(a.bal, a.rate || 0, a.pay), fast = monthsLeft(a.bal, a.rate || 0, a.pay + x);
+  if(base <= 0) return '';
+  var paidBase = base * a.pay, paidFast = fast > 0 ? fast * (a.pay + x) : paidBase;
+  return '<div class="lp"><label class="f" style="margin-top:10px">' + tr('Айына қосымша төлесем') + ': <b>' + money(x) + '</b></label>' +
+    '<input type="range" class="wi-r" min="0" max="' + Math.max(50000, Math.round(a.pay * 2 / 5000) * 5000) + '" step="5000" value="' + x + '" oninput="loanX[\'' + a.id + '\']=+this.value;openAccView(\'' + a.id + '\')">' +
+    '<div class="kv"><span>' + tr('Жабылу мерзімі') + '</span><b>' + base + ' → ' + (fast > 0 ? fast : base) + ' ' + tr('ай') + '</b></div>' +
+    (x ? '<div class="kv"><span>' + tr('Үнемделетін пайыз') + '</span><b style="color:var(--pos)">' + money(Math.max(0, Math.round(paidBase - paidFast))) + '</b></div>' : '') + '</div>';
 }
 
 /* IndexedDB мен localStorage-тің қайсысы жаңа болса, соны аламыз:

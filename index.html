@@ -1556,6 +1556,29 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   @media (prefers-reduced-motion: reduce){body::before,body::after{animation:none !important}}
   /* қозғалатын қабаттарда filter жоқ — тек transform, GPU-да жеңіл */
   body::before,body::after{filter:none !important;contain:strict;backface-visibility:hidden}
+
+  /* ===== v54 · күнтізбе, не болса, жылдық есеп, ескертулер ===== */
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;margin:-4px 0 8px}
+  .cal-nav .mn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:18px}
+  .cal-sum{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--ink-2);margin-bottom:10px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+  .cal-grid i{font-style:normal;font-size:11px;color:var(--ink-2);font-weight:600;padding:2px 0}
+  .cal-d{background:none;border:0;border-radius:12px;padding:6px 0 4px;font-size:14px;font-weight:600;color:var(--ink);min-height:44px;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .cal-d.has{background:var(--g-soft)}
+  .cal-d.today{outline:2px solid var(--accent);outline-offset:-2px}
+  .cdots{display:flex;gap:2px;height:6px}
+  .cd{display:inline-block;width:6px;height:6px;border-radius:50%;flex:none}
+  .cd.recur{background:var(--accent)} .cd.loan{background:#7C3AED} .cd.owe{background:#F59E0B} .cd.lent{background:var(--pos)}
+  .cd.done{opacity:.35}
+  #cal-list{margin-top:10px}
+  .cal-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+  .cal-row .cd{width:10px;height:10px}
+  .cal-row.done{opacity:.55}
+  .wi-r{width:100%;accent-color:var(--accent);margin:0 0 14px;height:28px}
+  .tips .tip-r{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line);font-size:13.5px;line-height:1.45}
+  .tips .tip-r:first-of-type{border-top:0}
+  .tips em{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:12px;flex:none;color:#fff}
+  .tips em.bad{background:var(--neg)} .tips em.good{background:var(--pos)}
 </style>
 </head>
 <body>
@@ -1611,6 +1634,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
 
     <div id="home-report"></div>
     <div id="home-daily"></div>
+    <div id="home-tips"></div>
 
     <div class="card">
       <h2>Соңғы операциялар <small class="act" onclick="go('ops')">Барлығы ›</small></h2>
@@ -1626,7 +1650,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
       <button onclick="go('debts')"><span class="qi" data-i="swap"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h13"/><path d="M13.6 5 17 8.5 13.6 12"/><path d="M20 15.5H7"/><path d="M10.4 12 7 15.5 10.4 19"/></svg></span> Қарыздар</button>
     </div>
     <div class="quad" style="margin-top:-2px">
-      <button style="grid-column:1/-1" onclick="go('recur')"><span class="qi" data-i="clock"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 6.8V12l3.6 2.2"/></svg></span> Қайталанатын төлемдер</button>
+      <button style="grid-column:1/-1" onclick="go('recur')"><span class="qi" data-i="clock"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 6.8V12l3.6 2.2"/></svg></span> Төлемдер күнтізбесі</button>
     </div>
     <div class="ratebar" onclick="fetchRate(true)">
       <span class="qi" data-i="coin" style="display:inline-flex"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4v9.2"/><path d="M14.6 9.6c-.6-.8-1.6-1.2-2.6-1.2-1.5 0-2.7.8-2.7 2s1.2 1.7 2.7 2 2.7.8 2.7 2-1.2 2-2.7 2c-1 0-2-.4-2.6-1.2"/></svg></span><span id="h-rate">Курс жүктелуде…</span>
@@ -1729,6 +1753,8 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     </div>
 
     <div class="card" id="ov-future-card"><h2>Болашақ</h2><div id="ov-future"></div></div>
+    <div class="card"><h2>Не болса?</h2><div id="wi-box"></div></div>
+    <div class="card"><h2>Жылдық есеп</h2><div id="yr-box"></div></div>
     <div class="card hide" id="ov-cb-card"><h2>Кэшбэк</h2><div id="ov-cb"></div></div>
     <div class="card" id="ov-debt-card"><h2>Несие жүктемесі</h2><div id="ov-debts"></div></div>
     <div class="row2" style="gap:10px;margin-bottom:12px">
@@ -2014,7 +2040,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Qarzhy · v53</div>
+        <div class="ver">Qarzhy · v54</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
@@ -2039,6 +2065,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     </div>
   </div>
   <div class="wrap">
+    <div class="card"><h2>Төлем күнтізбесі</h2><div id="cal-box"></div></div>
     <div id="rc-found"></div>
     <div class="card">
       <div id="rc-list"></div>
@@ -2254,6 +2281,8 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     <input class="inp" id="ac-rate" type="number" inputmode="decimal" placeholder="0">
     <label class="f">Ай сайынғы төлем, ₸</label>
     <input class="inp" id="ac-pay" type="number" inputmode="decimal" placeholder="0">
+    <label class="f">Төлем күні (айдың қай күні)</label>
+    <input class="inp" id="ac-payday" type="number" inputmode="numeric" min="1" max="31" placeholder="мысалы 15">
   </div>
   <button class="btn" onclick="saveAcc()">Сақтау</button>
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
