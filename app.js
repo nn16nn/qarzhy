@@ -1864,13 +1864,13 @@ function startBankImport(){
 /* --- санат кілт сөздері --- */
 var OUT_KEYS = [
   [/(супермаркет|магазин|magnum|small|галмарт|продукт|азық|дүкен|market|food|тамақ|кафе|ресторан|доставка|kfc|burger|pizza|coffee|кофе|chocofood|wolt|glovo)/i, 'Тамақ'],
-  [/(такси|taxi|bolt|яндекс|indriver|автобус|метро|онай|onay|азс|заправ|бензин|petrol|helios|көлік|парков|каршер)/i, 'Көлік'],
+  [/(такси|taxi|bolt|яндекс|yandex|uber|indriver|автобус|метро|онай|onay|азс|заправ|бензин|petrol|helios|көлік|парков|каршер)/i, 'Көлік'],
   [/(коммунал|квартплат|аренда|жкх|тұрғын|электр|энерго|газ|водоканал|теплосеть|мусор|кск|опс)/i, 'Тұрғын үй'],
   [/(мобиль|интернет|beeline|activ|kcell|tele2|altel|izi|байланыс|связь|транстелеком|казахтелеком)/i, 'Байланыс'],
   [/(аптек|apteka|медиц|клиник|дәрі|денсаул|health|стоматол|анализ|invivo|olymp)/i, 'Денсаулық'],
   [/(кредит|несие|қарыз|займ|погашен|рассрочк|ипотек|микрозайм|loan)/i, 'Несие төлемі'],
   [/(одежд|киім|zara|waikiki|обувь|sport|adidas|nike|бутик|h&m)/i, 'Киім'],
-  [/(кино|театр|игр|steam|netflix|spotify|youtube|ойын|развлеч|концерт|боулинг|фитнес|бассейн)/i, 'Ойын-сауық'],
+  [/(кино|театр|игр|steam|netflix|spotify|youtube|olimpbet|1xbet|fonbet|melbet|parimatch|bet\b|ойын|развлеч|концерт|боулинг|фитнес|бассейн)/i, 'Ойын-сауық'],
   [/(школ|курс|оқу|білім|univer|educat|книг|кітап|детский сад|репетитор)/i, 'Білім'],
   [/(подарок|сыйлық|gift|цвет|букет)/i, 'Сыйлық']
 ];
@@ -1980,7 +1980,8 @@ function onImportFile(el){
       DB.tx.forEach(function(t){ haveK[t.date + '|' + Math.round(t.amt) + '|' + t.type] = 1; });
       rows.forEach(function(r){ r.dup = !!haveK[r.date + '|' + Math.round(r.amt) + '|' + r.type]; r.on = !r.dup; });
       DB.accounts.forEach(function(a){ if(a.kind === 'asset' && /kaspi|каспи/i.test(a.name)) IMP.acc = a.id; });
-      IMP.fc = { title: 'Kaspi Gold үзіндісі', bal: kpi.bal, from: kpi.from, to: kpi.to, replace: false, setBal: kpi.bal !== null };
+      IMP.fc = { title: 'Kaspi Gold үзіндісі', bal: kpi.bal, from: kpi.from, to: kpi.to, replace: true, setBal: kpi.bal !== null };
+      rows.forEach(function(r){ r.dup = false; r.on = true; });
     } else {
       rows = extractRows(lines);
     }
@@ -5573,48 +5574,63 @@ function closeReport(ym){ if(!DB.pref) DB.pref = {}; DB.pref.repSeen = ym; save(
 function reportOpenStats(){ go('stat'); statPer = 'month'; statMon = -1; applyStatMon(); render(); }
 
 /* ================= 5. KASPI GOLD ҮЗІНДІСІ ================= */
-var KASPI_ROW = /^(\d{2})\.(\d{2})\.(\d{2,4})\s+([+\-−–])\s?([\d\s ]+,\d{2})\s?₸\s+(Покупки|Покупка|Пополнения|Пополнение|Переводы|Перевод|Снятия|Снятие|Разное|Сатып алу|Толықтыру|Аударымдар|Аударым|Ақша алу|Шешу|Әртүрлі|Басқа)\s*(.*)$/i;
+/* Kaspi Gold үзіндісі (қазақша және орысша):
+   «24.10.26 - 2 500,00 ₸ Аударым Мерей Ш.» — күн, таңба, сома, операция түрі, толығырақ */
+var KASPI_ROW = /^(\d{2})\.(\d{2})\.(\d{2,4})\s+([+\-−–])\s?([\d\s ]+,\d{2})\s?₸\s+(.*)$/;
+var KASPI_OPS = [
+  ['Зат сатып алу','buy'],['Покупки','buy'],['Покупка','buy'],
+  ['Толықтыру','in'],['Пополнения','in'],['Пополнение','in'],
+  ['Өз шотыңызға','own'],['Өз шоттарыңызға','own'],['На свои счета','own'],['Өз шоттарыңыздан','ownin'],
+  ['Кредит сомасын','loanin'],['Кредиттер сомасын','loanin'],
+  ['Аударым','tr'],['Переводы','tr'],['Перевод','tr'],
+  ['Ақша алу','cash'],['Снятия','cash'],['Снятие','cash'],
+  ['Əртүрлі','misc'],['Әртүрлі','misc'],['Разное','misc']
+];
 function isKaspi(lines){
-  var head = lines.slice(0, 40).join(' ');
+  var head = lines.slice(0, 60).join(' ');
   if(!/kaspi|каспи/i.test(head)) return false;
   var n = 0;
   for(var i = 0; i < lines.length && n < 3; i++) if(KASPI_ROW.test(lines[i])) n++;
   return n >= 3;
 }
+function kDate(d, m, y){ return (y.length === 2 ? '20' + y : y) + '-' + m + '-' + d; }
 function kaspiInfo(lines){
-  var info = { bal: null, from: null, to: null };
-  var head = lines.slice(0, 60);
-  head.forEach(function(l){
-    var p = l.match(/с\s*(\d{2})\.(\d{2})\.(\d{2,4})\s*по\s*(\d{2})\.(\d{2})\.(\d{2,4})/i) ||
-            l.match(/(\d{2})\.(\d{2})\.(\d{2,4})\s*[-–]\s*(\d{2})\.(\d{2})\.(\d{2,4})/);
-    if(p && !info.from){
-      var y1 = p[3].length === 2 ? '20' + p[3] : p[3], y2 = p[6].length === 2 ? '20' + p[6] : p[6];
-      info.from = y1 + '-' + p[2] + '-' + p[1]; info.to = y2 + '-' + p[5] + '-' + p[4];
+  var info = { bal: null, from: null, to: null, start: null };
+  lines.slice(0, 80).forEach(function(l){
+    var p = l.match(/(\d{2})\.(\d{2})\.(\d{2,4})\s*ж?\.?\s*бастап\s*(\d{2})\.(\d{2})\.(\d{2,4})/i) ||
+            l.match(/с\s*(\d{2})\.(\d{2})\.(\d{2,4})\s*по\s*(\d{2})\.(\d{2})\.(\d{2,4})/i);
+    if(p && !info.from){ info.from = kDate(p[1], p[2], p[3]); info.to = kDate(p[4], p[5], p[6]); }
+    var q = l.match(/(\d{2})\.(\d{2})\.(\d{2,4})\s*ж?\.?\s*(?:қолжетімді|доступно)[^+\-−\d]*([+\-−]?)\s?([\d\s ]+,\d{2})/i) ||
+            l.match(/(?:Доступно на|Қолжетімді)\s*(\d{2})\.(\d{2})\.(\d{2,4})\s*([+\-−]?)\s?([\d\s ]+,\d{2})/i);
+    if(q){
+      var v = (q[4] && q[4] !== '+' ? -1 : 1) * toNum(q[5]), d = kDate(q[1], q[2], q[3]);
+      if(!info._d || d > info._d){ info._d = d; info.bal = v; }
+      if(!info._s || d < info._s){ info._s = d; info.start = v; }
     }
   });
-  /* «Доступно на 31.10.24 +12 345,67 ₸» — соңғысы кезең соңындағы қалдық */
-  var last = null;
-  head.forEach(function(l){
-    var m = l.match(/(Доступно на|Қолжетімді)\s*\d{2}\.\d{2}\.\d{2,4}\s*([+\-−]?)\s?([\d\s ]+,\d{2})/i);
-    if(m) last = (m[2] && m[2] !== '+' ? -1 : 1) * toNum(m[3]);
-  });
-  info.bal = last;
   return info;
 }
 function parseKaspi(lines){
   var out = [];
   lines.forEach(function(l){
     var m = l.match(KASPI_ROW); if(!m) return;
-    var y = m[3].length === 2 ? '20' + m[3] : m[3];
-    var date = y + '-' + m[2] + '-' + m[1];
+    var date = kDate(m[1], m[2], m[3]);
     var plus = m[4] === '+';
     var amt = toNum(m[5]); if(!(amt > 0)) return;
-    var op = m[6], detail = (m[7] || '').trim();
+    var rest = (m[7] || m[6] || '').trim(), op = '', kind = '';
+    for(var i = 0; i < KASPI_OPS.length; i++){
+      if(rest.indexOf(KASPI_OPS[i][0]) === 0){ op = KASPI_OPS[i][0]; kind = KASPI_OPS[i][1]; break; }
+    }
+    var detail = op ? rest.slice(op.length).trim() : rest;
     var type = plus ? 'in' : 'out', cat;
-    if(/перевод|аударым/i.test(op)) cat = type === 'out' ? 'Аударымдар' : guessCat('in', detail);
-    else if(/сняти|ақша алу|шешу/i.test(op)) cat = 'Басқа';
+    if(kind === 'own') cat = /несие|кредит/i.test(detail) ? 'Несие төлемі' : 'Инвестиция';
+    else if(kind === 'loanin') cat = 'Несие алу';
+    else if(kind === 'cash') cat = 'Басқа';
+    else if(kind === 'misc') cat = 'Басқа';
+    else if(/freedom|брокер|депозит/i.test(detail)) cat = 'Инвестиция';
+    else if(kind === 'tr' && type === 'out') cat = 'Аударымдар';
     else cat = guessCat(type, detail);
-    out.push({ date: date, amt: amt, type: type, cat: cat, note: (op + ' · ' + detail).slice(0, 70) });
+    out.push({ date: date, amt: amt, type: type, cat: cat, note: ((op ? op + ' · ' : '') + detail).slice(0, 70) });
   });
   return out.sort(function(a, b){ return a.date < b.date ? 1 : -1; });
 }
