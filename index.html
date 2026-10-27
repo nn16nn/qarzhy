@@ -1583,6 +1583,105 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   .pen-ok{margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--pos-soft);color:var(--pos);font-size:13.5px}
   .pen-no{margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--g-soft);color:var(--ink-2);font-size:13.5px}
   .pen-ok b,.pen-no b{color:var(--ink)}
+
+  /* ===== ЗЕЙНЕТАҚЫ (ЕНПФ) БЕТІ ===== */
+  .pn-entry{display:flex;align-items:center;gap:12px;width:100%;border:0;text-align:left;font:inherit;color:var(--ink);cursor:pointer;
+    background:var(--surface);border-radius:20px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--elev,0 2px 14px var(--shadow))}
+  .pn-entry .pn-ei{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;flex:none;color:#fff;
+    background:linear-gradient(145deg,#34C3A8,#138A78)}
+  .pn-entry .pn-ei .svi{width:21px;height:21px}
+  .pn-entry .pn-et{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .pn-entry b{font-size:15px;font-weight:750}
+  .pn-entry small{font-size:12.8px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+  .pn-entry i{font-style:normal;color:var(--ink-2);font-size:22px}
+  .pn-head{padding-bottom:4px}
+  .pn-head h1{font-size:24px}
+  .pn-head .plus .svi{width:22px;height:22px}
+  .pn-hero{margin-top:14px;border-radius:26px;padding:20px 18px 16px;color:#fff;position:relative;overflow:hidden;
+    background:radial-gradient(80% 90% at 100% 0%,rgba(52,211,153,.24),transparent 62%),linear-gradient(150deg,#1D2740 0%,#141A2C 60%,#0C1120 100%);
+    box-shadow:0 24px 44px -24px rgba(12,17,32,.9)}
+  html[data-theme="dark"] .pn-hero{border:1px solid rgba(255,255,255,.08)}
+  .pn-k{font-size:13px;color:rgba(255,255,255,.66);display:flex;justify-content:space-between;gap:8px}
+  .pn-k span{font-variant-numeric:tabular-nums}
+  .pn-total{font-size:36px;font-weight:800;letter-spacing:-.04em;margin:6px 0 14px;font-variant-numeric:tabular-nums;line-height:1.05}
+  .pn-sub{margin:0;color:rgba(255,255,255,.7);font-size:13.5px;line-height:1.55}
+  .pn-split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pn-split div{display:flex;flex-direction:column;gap:3px}
+  .pn-split small{font-size:12px;color:rgba(255,255,255,.6)}
+  .pn-split b{font-size:16px;font-weight:750;font-variant-numeric:tabular-nums}
+  .pn-split .up b{color:#5EEAB8}
+  .pn-grow{display:block;width:100%;height:auto;margin:14px 0 2px}
+  .pn-grow .ln{fill:none;stroke:rgba(255,255,255,.78);stroke-width:1.6;stroke-linejoin:round}
+  .pn-grow .ar{fill:rgba(255,255,255,.07)}
+  .pn-grow .gain{stroke:#5EEAB8;stroke-width:3;stroke-linecap:round}
+  .pn-grow .dot{fill:#5EEAB8;stroke:#141A2C;stroke-width:2}
+  .pn-gl{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.5);margin-bottom:12px}
+  .pn-seg{display:flex;gap:3px;height:8px;border-radius:9px;overflow:hidden}
+  .pn-seg i{display:block;height:100%;border-radius:2px}
+  .k-nb{background:var(--g-mid)} .k-uip{background:#8B7CF6} .k-opvr{background:#2DB5A3}
+  .pn-seg .k-nb{background:#FF8A7E} html:not([data-skin="coral"]) .pn-seg .k-nb{background:#9FB0FF}
+  .pn-dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none;margin-right:8px;vertical-align:middle}
+  .pn-flow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .pn-tile{background:var(--surface);border-radius:20px;padding:14px;box-shadow:var(--elev,0 2px 14px var(--shadow));display:flex;flex-direction:column;gap:4px}
+  .pn-tile small{font-size:12.5px;color:var(--ink-2);font-weight:600}
+  .pn-tile b{font-size:19px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .pn-tile.up b{color:var(--pos)}
+  .pn-tile em{font-style:normal;font-size:11.5px;color:var(--ink-2)}
+  .pn-bars,.pn-yl{display:block;width:100%;height:auto;margin:2px 0 8px}
+  .pn-bars .b1{fill:var(--g-mid)} .pn-bars .b2{fill:#2DB5A3}
+  .pn-bars .lb,.pn-yl .lb{font-size:9.5px;fill:var(--ink-2);text-anchor:middle;font-family:inherit}
+  .pn-bars .avg{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:.45}
+  .pn-yl .yb{fill:var(--pos)} .pn-yl .yb.lo{fill:#F59E0B} .pn-yl .ib{fill:var(--ink-2);opacity:.35}
+  .pn-leg{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--ink-2);margin-bottom:6px}
+  .pn-leg span{display:inline-flex;align-items:center}
+  .pn-leg .pn-dot{width:8px;height:8px;margin-right:6px}
+  .pn-avg{display:inline-block;width:14px;border-top:1.5px dashed var(--ink);opacity:.5;margin-right:6px}
+  .pn-sq{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px}
+  .pn-sq.y{background:var(--pos)} .pn-sq.i{background:var(--ink-2);opacity:.35} .pn-sq.lo{background:#F59E0B}
+  .kv b.pos,.pn-acc b.pos,.pn-row b.pos{color:var(--pos)} .kv b.neg{color:var(--neg)}
+  .pn-fcg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+  .pn-fcg div{background:var(--g-soft);border-radius:16px;padding:12px 10px;display:flex;flex-direction:column;gap:3px;min-width:0}
+  .pn-fcg small{font-size:11.5px;color:var(--ink-2);font-weight:600}
+  .pn-fcg b{font-size:15px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .pn-fcg em{font-style:normal;font-size:11.5px;color:var(--pos);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pn-fc p.muted,.pn-thr p.muted{font-size:12px;margin:8px 0 0}
+  .pn-thr{display:grid;grid-template-columns:auto 1fr;column-gap:14px;align-items:center}
+  .pn-thr h2,.pn-thr p{grid-column:1/-1}
+  .pn-ring{position:relative;width:104px;height:104px}
+  .pn-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .pn-ring .rt{fill:none;stroke:var(--g-soft);stroke-width:10}
+  .pn-ring .rf{fill:none;stroke:#2DB5A3;stroke-width:10;stroke-linecap:round}
+  .pn-ring div{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .pn-ring b{font-size:21px;font-weight:800;letter-spacing:-.03em}
+  .pn-ring small{font-size:11px;color:var(--ink-2)}
+  .pn-thr-t .kv{padding:6px 0;font-size:13px}
+  .pn-acc{padding:12px 0;border-top:1px solid var(--line)}
+  .pn-acc:first-of-type{border-top:0;padding-top:2px}
+  .pn-acc-h{display:flex;align-items:center;gap:0;font-size:14px}
+  .pn-acc-h span{flex:1;min-width:0;font-weight:650;display:flex;flex-direction:column}
+  .pn-acc-h small{font-size:11.5px;color:var(--ink-2);font-weight:500}
+  .pn-acc-h b{font-weight:800;font-variant-numeric:tabular-nums}
+  .pn-acc-g{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;padding-left:17px}
+  .pn-acc-g div{display:flex;flex-direction:column;gap:2px}
+  .pn-acc-g small{font-size:11px;color:var(--ink-2)}
+  .pn-acc-g b{font-size:13.5px;font-weight:750;font-variant-numeric:tabular-nums}
+  .pn-emp{padding:10px 0;border-top:1px solid var(--line)}
+  .pn-emp:first-of-type{border-top:0;padding-top:0}
+  .pn-emp > div:first-child{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;margin-bottom:6px}
+  .pn-emp span{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pn-emp b{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .pn-emp .track{height:6px}
+  .pn-emp .fill{background:#2DB5A3}
+  .pn-emp small{display:block;font-size:11.5px;color:var(--ink-2);margin-top:5px}
+  .pn-row{display:flex;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:13.5px}
+  .pn-row:first-of-type{border-top:0}
+  .pn-row span{flex:1;display:flex;flex-direction:column;font-weight:600}
+  .pn-row small{font-size:11.5px;color:var(--ink-2);font-weight:500}
+  .pn-row b{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .pn-how ol{margin:0 0 14px;padding-left:20px;color:var(--ink-2);font-size:13.5px;line-height:1.7}
+  label.btn.pn-up{display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;margin-bottom:10px}
+  label.btn.pn-up .svi{width:20px;height:20px}
+  .pn-note{font-size:12px !important;text-align:center;margin:10px 6px 0}
 </style>
 </head>
 <body>
@@ -1654,7 +1753,8 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
       <button onclick="go('debts')"><span class="qi" data-i="swap"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h13"/><path d="M13.6 5 17 8.5 13.6 12"/><path d="M20 15.5H7"/><path d="M10.4 12 7 15.5 10.4 19"/></svg></span> Қарыздар</button>
     </div>
     <div class="quad" style="margin-top:-2px">
-      <button style="grid-column:1/-1" onclick="go('recur')"><span class="qi" data-i="clock"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 6.8V12l3.6 2.2"/></svg></span> Төлемдер күнтізбесі</button>
+      <button onclick="go('recur')"><span class="qi" data-i="clock"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 6.8V12l3.6 2.2"/></svg></span> Күнтізбе</button>
+      <button onclick="go('pension')"><span class="qi" data-i="invest"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.4h16"/><path d="M7.4 16.4V12"/><path d="M11.8 16.4V7.4"/><path d="M16.2 16.4v-6.4"/><path d="M6.2 8.6 12 3.8l5.8 4.8"/></svg></span> Зейнетақы</button>
     </div>
     <div class="ratebar" onclick="fetchRate(true)">
       <span class="qi" data-i="coin" style="display:inline-flex"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4v9.2"/><path d="M14.6 9.6c-.6-.8-1.6-1.2-2.6-1.2-1.5 0-2.7.8-2.7 2s1.2 1.7 2.7 2 2.7.8 2.7 2-1.2 2-2.7 2c-1 0-2-.4-2.6-1.2"/></svg></span><span id="h-rate">Курс жүктелуде…</span>
@@ -1758,7 +1858,6 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     </div>
 
     <div class="card" id="ov-future-card"><h2>Болашақ</h2><div id="ov-future"></div></div>
-    <div class="card"><h2>Не болса?</h2><div id="wi-box"></div></div>
     <div class="card"><h2>Жылдық есеп</h2><div id="yr-box"></div></div>
     <div class="card hide" id="ov-cb-card"><h2>Кэшбэк</h2><div id="ov-cb"></div></div>
     <div class="card" id="ov-debt-card"><h2>Несие жүктемесі</h2><div id="ov-debts"></div></div>
@@ -2003,10 +2102,6 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
       <button class="btn line" onclick="document.getElementById('imp').click()">Деректі ашу</button>
     </div>
     <div class="card">
-      <h2>Жад</h2>
-      <div id="sto-box"></div>
-    </div>
-    <div class="card">
       <h2>Тақырып</h2>
       <div class="chips" id="theme-chips" style="margin-bottom:0"></div>
     </div>
@@ -2033,11 +2128,6 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
       <button class="btn sm ghost" onclick="saveRateManual()">Сақтау</button>
     </div>
     <div class="card">
-      <h2>Банк үзіндісі</h2>
-      <p class="muted" style="margin:0 0 12px">PDF немесе Excel файлдан операцияларды автоматты қосу.</p>
-      <button class="btn line" onclick="startBankImport()">Файл жүктеу</button>
-    </div>
-    <div class="card">
       <h2>Барлығын өшіру</h2>
       <p class="muted" style="margin:0 0 12px">Шоттар, операциялар және мақсаттар қайтарылмайды.</p>
       <button class="btn danger" onclick="wipe()">Барлық деректі өшіру</button>
@@ -2045,7 +2135,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Qarzhy · v55</div>
+        <div class="ver">Qarzhy · v56</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
@@ -2054,6 +2144,19 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
 </section>
 
 <!-- ============ ТҰРАҚТЫ ОПЕРАЦИЯЛАР ============ -->
+
+<!-- ============ ЗЕЙНЕТАҚЫ (ЕНПФ) ============ -->
+<section class="page" id="p-pension">
+  <div class="hero flat pn-head">
+    <div class="hero-top">
+      <button class="back" onclick="go(pnBack||'home')" aria-label="Артқа">←</button>
+      <div style="flex:1"><h1>Зейнетақы</h1><div class="sub">ЕНПФ · жарна, табыс, болжам</div></div>
+      <button class="plus" onclick="openPension()" aria-label="Баптау"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg></button>
+    </div>
+    <div class="pn-hero" id="pn-hero"></div>
+  </div>
+  <div class="wrap" id="pn-body"></div>
+</section>
 
 <!-- ============ ҚАЙТАЛАНАТЫН ТӨЛЕМДЕР ============ -->
 <section class="page" id="p-recur">
@@ -2229,17 +2332,17 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
 <div class="sheet" id="sheet-pen">
   <div class="grab"></div>
   <h3>Зейнетақы (ЕНПФ)</h3>
-  <p class="muted" style="margin:-6px 0 12px">Қалдықты ЕНПФ қосымшасынан не enpf.kz-тен қараңыз.</p>
-  <label class="f">Жинақ қалдығы, ₸</label>
-  <input class="inp big" id="pn-bal" type="number" inputmode="decimal" placeholder="0">
+  <p class="muted" style="margin:-6px 0 12px">Үзіндіні жүктесеңіз, қалдық пен жарналар өзі толады.</p>
+  <div id="pn-bal-row"><label class="f">Жинақ қалдығы, ₸</label>
+  <input class="inp big" id="pn-bal" type="number" inputmode="decimal" placeholder="0"></div>
   <label class="f">Туған жылы (шекті есептеу үшін)</label>
   <input class="inp" id="pn-by" type="number" inputmode="numeric" placeholder="мысалы 1997">
   <label class="f">Айлық жалақы (ұсталғанға дейін), ₸</label>
   <input class="inp" id="pn-sal" type="number" inputmode="decimal" placeholder="Міндетті емес">
   <div class="muted" id="pn-sal-hint" style="margin:-6px 0 12px 3px"></div>
-  <label class="f">Жылдық табыстылық, %</label>
+  <label class="f">Болжамға табыстылық, % жылына</label>
   <input class="inp" id="pn-yield" type="number" inputmode="decimal" placeholder="10">
-  <div class="toggle" onclick="document.getElementById('pn-opvr').classList.toggle('on')"><div style="flex:1;font-size:14px">Жұмыс беруші ОПВР төлейді (3,5%)</div><div class="sw on" id="pn-opvr"><i></i></div></div>
+  <div class="toggle" id="pn-opvr-row" onclick="document.getElementById('pn-opvr').classList.toggle('on')"><div style="flex:1;font-size:14px">Жұмыс беруші ОПВР төлейді (3,5%)</div><div class="sw on" id="pn-opvr"><i></i></div></div>
   <button class="btn" onclick="savePension()">Сақтау</button>
   <button class="btn danger hide" id="pn-del" onclick="delPension()">Өшіру</button>
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
