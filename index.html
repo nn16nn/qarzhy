@@ -1496,11 +1496,11 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   body{background:transparent !important}
   body::before{content:"";position:fixed;inset:-10%;z-index:-1;pointer-events:none;transform:translateZ(0);
     background:
-      radial-gradient(42% 30% at 8% 4%,color-mix(in srgb,var(--b2) 70%,transparent) 0%,transparent 70%),
-      radial-gradient(40% 28% at 96% 16%,color-mix(in srgb,var(--b1) 50%,transparent) 0%,transparent 70%),
-      radial-gradient(48% 32% at 14% 60%,color-mix(in srgb,var(--b3) 65%,transparent) 0%,transparent 70%),
-      radial-gradient(50% 34% at 94% 82%,color-mix(in srgb,var(--b1) 42%,transparent) 0%,transparent 70%),
-      radial-gradient(40% 30% at 40% 104%,color-mix(in srgb,var(--b2) 40%,transparent) 0%,transparent 70%),
+      radial-gradient(26% 20% at 30% 28%,color-mix(in srgb,var(--b2) 70%,transparent) 0%,transparent 100%),
+      radial-gradient(24% 18% at 68% 34%,color-mix(in srgb,var(--b1) 50%,transparent) 0%,transparent 100%),
+      radial-gradient(28% 20% at 34% 56%,color-mix(in srgb,var(--b3) 65%,transparent) 0%,transparent 100%),
+      radial-gradient(30% 22% at 66% 68%,color-mix(in srgb,var(--b1) 42%,transparent) 0%,transparent 100%),
+      radial-gradient(24% 20% at 48% 74%,color-mix(in srgb,var(--b2) 40%,transparent) 0%,transparent 100%),
       var(--bg);
     filter:blur(28px) saturate(1.15)}
   html[data-theme="dark"] body::before{opacity:.8}
@@ -1536,6 +1536,26 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   #splash .sp-mark.qimg.qm{width:200px;height:200px}
   .acc-card .ac-logo.qimg.qm{width:44px;height:44px;margin:-6px -4px -6px 0}
   .ah-brand .qimg.qm,.acc-card .ac-logo.qimg.qm{box-shadow:none !important;border-radius:0 !important;background:none !important}
+
+  /* ===== v49 · бұлыңғыр фон баяу қозғалады (тек transform — жеңіл) ===== */
+  body::before{inset:-45% !important;will-change:transform;animation:mistA 18s ease-in-out infinite alternate}
+  body::after{content:"";position:fixed;inset:-45%;z-index:-1;pointer-events:none;will-change:transform;
+    background:
+      radial-gradient(20% 15% at 60% 44%,color-mix(in srgb,var(--b3) 45%,transparent) 0%,transparent 100%),
+      radial-gradient(18% 14% at 40% 62%,color-mix(in srgb,var(--b1) 35%,transparent) 0%,transparent 100%);
+    filter:blur(30px);animation:mistB 23s ease-in-out infinite alternate}
+  html[data-theme="dark"] body::after{opacity:.6}
+  @keyframes mistA{
+    0%{transform:translate3d(0,0,0) rotate(0deg) scale(1)}
+    50%{transform:translate3d(12%,8%,0) rotate(14deg) scale(1.12)}
+    100%{transform:translate3d(-10%,12%,0) rotate(-12deg) scale(1.06)}}
+  @keyframes mistB{
+    0%{transform:translate3d(0,0,0) scale(1)}
+    50%{transform:translate3d(-14%,-10%,0) scale(1.18)}
+    100%{transform:translate3d(12%,-14%,0) scale(.94)}}
+  @media (prefers-reduced-motion: reduce){body::before,body::after{animation:none !important}}
+  /* қозғалатын қабаттарда filter жоқ — тек transform, GPU-да жеңіл */
+  body::before,body::after{filter:none !important;contain:strict;backface-visibility:hidden}
 </style>
 </head>
 <body>
