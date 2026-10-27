@@ -1,8 +1,8 @@
 /* Қаржы — офлайн кэш (v9) */
-const CACHE = 'qarzhy-v45';
+const CACHE = 'qarzhy-v46';
 const FILES = [
   './', './index.html', './app.js', './manifest.webmanifest',
-  './qlogo4-192.png', './qlogo4-512.png', './qlogo4-maskable.png', './qmark2.png', './banks/halyk.png', './banks/freedom.png', './banks/kaspi.png', './banks/forte.png', './banks/bereke.png', './banks/otbasy.png', './banks/jusan.png', './banks/bcc.png', './banks/homecredit.png', './banks/qazaq.png',
+  './qlogo5-192.png', './qlogo5-512.png', './qlogo5-maskable.png', './qmark3.png', './banks/halyk.png', './banks/freedom.png', './banks/kaspi.png', './banks/forte.png', './banks/bereke.png', './banks/otbasy.png', './banks/jusan.png', './banks/bcc.png', './banks/homecredit.png', './banks/qazaq.png',
   './fonts/onest-cyrillic-ext-wght-normal.woff2', './fonts/onest-cyrillic-wght-normal.woff2',
   './fonts/onest-latin-wght-normal.woff2', './fonts/onest-latin-ext-wght-normal.woff2'
 ];
