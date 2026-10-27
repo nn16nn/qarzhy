@@ -1,8 +1,8 @@
 /* Қаржы — офлайн кэш (v9) */
-const CACHE = 'qarzhy-v60';
+const CACHE = 'qarzhy-v61';
 const FILES = [
   './', './index.html', './app.js', './manifest.webmanifest',
-  './qlogo8-192.png', './qlogo8-512.png', './qlogo8-maskable.png', './qm-q.png', './qm-c.png', './qw-q.png', './qw-c.png', './qlogo8-apple.png', './banks/halyk.png', './banks/freedom.png', './banks/kaspi.png', './banks/forte.png', './banks/bereke.png', './banks/otbasy.png', './banks/jusan.png', './banks/bcc.png', './banks/homecredit.png', './banks/qazaq.png',
+  './qlogo8-192.png', './qlogo8-512.png', './qlogo8-maskable.png', './qm-q.png', './qm-c.png', './qw-q.png', './qw-c.png', './fonts/cormorant-700.woff2', './qlogo8-apple.png', './banks/halyk.png', './banks/freedom.png', './banks/kaspi.png', './banks/forte.png', './banks/bereke.png', './banks/otbasy.png', './banks/jusan.png', './banks/bcc.png', './banks/homecredit.png', './banks/qazaq.png',
   './fonts/onest-cyrillic-ext-wght-normal.woff2', './fonts/onest-cyrillic-wght-normal.woff2',
   './fonts/onest-latin-wght-normal.woff2', './fonts/onest-latin-ext-wght-normal.woff2'
 ];

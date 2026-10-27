@@ -19,6 +19,7 @@ var dk=t==='dark'||(t==='auto'&&window.matchMedia&&matchMedia('(prefers-color-sc
 var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('data-theme',dk?'dark':'light');}catch(e){}})();
 </script>
 <style>
+  @font-face{font-family:'Cormorant';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/cormorant-700.woff2) format('woff2')}
   @font-face{font-family:'Onest';font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/onest-cyrillic-ext-wght-normal.woff2) format('woff2');unicode-range:U+0460-052F,U+1C80-1C8A,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F}
   @font-face{font-family:'Onest';font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/onest-cyrillic-wght-normal.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
   @font-face{font-family:'Onest';font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/onest-latin-ext-wght-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
@@ -1707,6 +1708,16 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   html .qa.qa button:nth-child(2) .qa-i{background:linear-gradient(145deg,#FF7A6B,#E2302A) !important;box-shadow:0 12px 22px -10px rgba(226,48,42,.75) !important}
   html .qa.qa button:nth-child(3) .qa-i{background:linear-gradient(145deg,#60A5FA,#2563EB) !important;box-shadow:0 12px 22px -10px rgba(37,99,235,.75) !important}
   html .qa.qa button:nth-child(4) .qa-i{background:linear-gradient(145deg,#C4A1FF,#7C3AED) !important;box-shadow:0 12px 22px -10px rgba(124,58,237,.75) !important}
+
+  /* ===== v61 · сөзбелгі логотиптегі шрифтпен (Cormorant Garamond), бұлыңғыр фонда ===== */
+  .ah-brand .ah-wm{font-family:'Cormorant',Georgia,serif !important;font-weight:700;font-size:34px !important;letter-spacing:-.01em !important;line-height:1.3;
+    padding:9px 16px 5px 12px;border-radius:18px;
+    background:color-mix(in srgb,var(--surface) 42%,transparent);
+    -webkit-backdrop-filter:blur(16px) saturate(1.5);backdrop-filter:blur(16px) saturate(1.5);
+    border:1px solid color-mix(in srgb,#fff 55%,transparent);
+    box-shadow:0 10px 24px -16px rgba(20,27,45,.45),inset 0 1px 0 rgba(255,255,255,.5)}
+  html[data-theme="dark"] .ah-brand .ah-wm{background:color-mix(in srgb,var(--surface) 45%,transparent);border-color:rgba(255,255,255,.12);box-shadow:0 10px 24px -16px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.08)}
+  .ah-wm .qw{width:.98em;height:1.21em;vertical-align:-.16em;margin-right:-.03em}
 </style>
 </head>
 <body>
@@ -2160,7 +2171,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Qarzhy · v60</div>
+        <div class="ver">Qarzhy · v61</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
