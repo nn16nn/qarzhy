@@ -1,5 +1,5 @@
 /* Қаржы — офлайн кэш (v9) */
-const CACHE = 'qarzhy-v62';
+const CACHE = 'qarzhy-v63';
 const FILES = [
   './', './index.html', './app.js', './manifest.webmanifest',
   './qlogo8-192.png', './qlogo8-512.png', './qlogo8-maskable.png', './qm-q.png', './qm-c.png', './qw-q.png', './qw-c.png', './fonts/cormorant-700.woff2', './qlogo8-apple.png', './banks/halyk.png', './banks/freedom.png', './banks/kaspi.png', './banks/forte.png', './banks/bereke.png', './banks/otbasy.png', './banks/jusan.png', './banks/bcc.png', './banks/homecredit.png', './banks/qazaq.png',
@@ -58,7 +58,7 @@ self.addEventListener('fetch', function (e) {
       });
       return res;
     }).catch(function () {
-      return caches.match(isPage ? './index.html' : e.request);
+      return caches.match(isPage ? './index.html' : e.request, { ignoreSearch: !isPage });
     })
   );
 });
