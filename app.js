@@ -1234,6 +1234,7 @@ function render(){
   drawSubs();
   drawTips();
   drawPension();
+  drawInstall();
   drawCalendar();
   drawWhatIf();
   drawYear();
@@ -5345,6 +5346,34 @@ function initHistory(){
 }
 
 /* ================= START ================= */
+/* ---- қосымшаны орнату ---- */
+var instEvt = null;
+window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); instEvt = e; drawInstall(); });
+window.addEventListener('appinstalled', function(){ instEvt = null; toast('Qarzhy орнатылды'); drawInstall(); });
+function isStandalone(){
+  try { return window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true; }
+  catch(e){ return false; }
+}
+function drawInstall(){
+  var mark = '<span class="qmd" aria-hidden="true"><i class="q"></i><i class="c"></i></span>';
+  var hb = document.getElementById('home-inst'), sb = document.getElementById('set-inst');
+  if(isStandalone()){ if(hb) hb.innerHTML = ''; if(sb) sb.innerHTML = ''; return; }
+  var card = '<div class="inst">' + mark + '<div><b>' + tr('Qarzhy-ді телефонға орнату') + '</b><small>' +
+    tr(instEvt ? 'Басты экранда белгіше болады, интернетсіз де ашылады' : 'Орнату жолын көрсетемін') + '</small></div>' +
+    '<button onclick="doInstall()">' + tr('Орнату') + '</button></div>';
+  if(sb) sb.innerHTML = card;
+  if(hb) hb.innerHTML = instEvt ? card : '';
+}
+function doInstall(){
+  if(!instEvt){ openSheet('sheet-inst'); return; }
+  var ev = instEvt; instEvt = null;
+  ev.prompt();
+  (ev.userChoice || Promise.resolve({})).then(function(r){
+    if(r && r.outcome === 'dismissed') instEvt = null;
+    drawInstall();
+  });
+}
+
 if('serviceWorker' in navigator){
   window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
 }

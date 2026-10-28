@@ -1718,6 +1718,13 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     box-shadow:0 10px 24px -16px rgba(20,27,45,.45),inset 0 1px 0 rgba(255,255,255,.5)}
   html[data-theme="dark"] .ah-brand .ah-wm{background:color-mix(in srgb,var(--surface) 45%,transparent);border-color:rgba(255,255,255,.12);box-shadow:0 10px 24px -16px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.08)}
   .ah-wm .qw{width:.98em;height:1.21em;vertical-align:-.16em;margin-right:-.03em}
+
+  /* ===== v64 · қосымшаны орнату батырмасы ===== */
+  .inst{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:20px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--elev,0 2px 14px var(--shadow))}
+  .inst .qmd{width:44px;height:44px;border-radius:12px}
+  .inst div{flex:1;min-width:0}.inst b{display:block;font-size:15px}.inst small{display:block;color:var(--ink-2);font-size:12.5px;line-height:1.45;margin-top:2px}
+  .inst button{border:0;border-radius:14px;padding:11px 16px;font:inherit;font-weight:700;color:#fff;background:linear-gradient(145deg,var(--g-bright),var(--g-mid));flex:none}
+  .inst-help{margin:0;padding-left:20px;color:var(--ink-2);font-size:13.5px;line-height:1.7}
 </style>
 </head>
 <body>
@@ -1771,6 +1778,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
       <div class="mini" role="button" tabindex="0" onclick="go('stat');setStatKind('out')"><div class="t"><span class="dot out"><svg class="svi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7-7 7 7"/></svg></span>Шығын</div><div class="v" id="h-out">0 ₸</div></div>
     </div>
 
+    <div id="home-inst"></div>
     <div id="home-report"></div>
     <div id="home-daily"></div>
     <div id="home-tips"></div>
@@ -2126,6 +2134,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     </div>
   </div>
   <div class="wrap">
+    <div id="set-inst"></div>
     <div class="card">
       <h2>Дерек көшірмесі</h2>
       <p class="muted" style="margin:0 0 12px" id="bk-info">Дерек тек осы телефонда сақталады.</p>
@@ -2171,7 +2180,7 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
     <div class="card">
       <h2>Қосымша туралы</h2>
       <div class="about">
-        <div class="ver">Qarzhy · v63</div>
+        <div class="ver">Qarzhy · v64</div>
         <p style="margin:0">Интернетсіз жұмыс істейді. Барлық дерек осы құрылғыда ғана сақталады —
         ешқандай серверге жіберілмейді, жарнама мен бақылау жүйелері жоқ.</p>
       </div>
@@ -2363,6 +2372,21 @@ var r=document.documentElement;r.setAttribute('data-skin',s);r.setAttribute('dat
   <button class="btn ghost" onclick="closeSheets()">Болдырмау</button>
 </div>
 
+
+<!-- Sheet: орнату нұсқаулығы -->
+<div class="sheet" id="sheet-inst">
+  <div class="grab"></div>
+  <h3>Қосымшаны орнату</h3>
+  <p class="muted" style="margin:-6px 0 10px">Браузер орнату терезесін өзі ұсынбаса, қолмен орнатыңыз:</p>
+  <ol class="inst-help">
+    <li><b>Chrome</b>: оң жақ жоғарыдағы ⋮ → «Установить приложение» (немесе «Добавить на главный экран»).</li>
+    <li>Мәзірде ол жоқ болса: бетті жаңартып, 10 секунд күтіңіз — Chrome бетті тексеріп болғанда шығады.</li>
+    <li><b>Xiaomi, Redmi, POCO, Huawei, Honor</b>: Баптау → Қолданбалар → Chrome → Рұқсаттар → «Ярлыки на рабочем столе» (Home screen shortcuts) қосыңыз. Онсыз Chrome белгіше қоя алмайды.</li>
+    <li>Бұрын орнатылған Qarzhy қалып қойса — оны алдымен өшіріп, телефонды қайта қосыңыз.</li>
+    <li><b>iPhone</b>: Safari → «Бөлісу» ⬆ → «На экран Домой».</li>
+  </ol>
+  <button class="btn ghost" onclick="closeSheets()" style="margin-top:14px">Жабу</button>
+</div>
 
 <!-- Sheet: ЕНПФ -->
 <div class="sheet" id="sheet-pen">
