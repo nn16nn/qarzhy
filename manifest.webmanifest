@@ -6,7 +6,7 @@
   "dir": "ltr",
   "start_url": "./index.html",
   "scope": "./",
-  "id": "/qarzhy/?app=q2",
+  "id": "/qarzhy/",
   "display": "standalone",
   "display_override": [
     "standalone",
