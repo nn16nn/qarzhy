@@ -5,7 +5,7 @@
 var CI = {
   loan: { amt: 2000000, rate: 24, months: 24, type: 'ann', extra: 0 },
   dep:  { amt: 1000000, rate: 14, months: 12, top: 0, cap: true },
-  inv:  { amt: 500000, month: 50000, rate: 12, years: 10, re: true, cur: '₸', goal: 0 },
+  inv:  { amt: 500000, month: 50000, rate: 12, years: 10, re: true, cur: '', goal: 0 },
   tax:  { income: 3000000, rate: 4, months: 6, mzp: 85000, declared: 85000 }
 };
 var CALCS = [
@@ -13,13 +13,13 @@ var CALCS = [
   ['dep', 'bank', 'Депозит', 'Капитализация · толықтыру'],
   ['inv', 'invest', 'Инвестиция', 'Күрделі пайыз · мақсатқа жету'],
   ['split', 'split', 'Жалақы бөлу', 'Айлықты пайызбен бөлу'],
-  ['tax', 'percent', 'ЖК салығы', 'Оңайлатылған декларация · 910']
+  ['tax', 'percent', 'ЖК салығы', 'Оңайлатылған декларация · 910', 'KZT']
 ];
 PAGES.calc = function(){
   var c = CALCS.filter(function(x){ return x[0] === sub; })[0];
   if(!c){
     var h = topBar(t('Есептегіш'), t('Қаржылық есептеулер'));
-    h += '<div class="list">' + CALCS.map(function(x){ return linkRow(x[1], t(x[2]), t(x[3]), "go('calc','" + x[0] + "')"); }).join('') + '</div>';
+    h += '<div class="list">' + CALCS.filter(function(x){ return !x[4] || x[4] === BASE(); }).map(function(x){ return linkRow(x[1], t(x[2]), t(x[3]), "go('calc','" + x[0] + "')"); }).join('') + '</div>';
     return h;
   }
   setTimeout(function(){ calcRun(c[0]); }, 0);
@@ -35,17 +35,17 @@ function cSeg(k, f, opts){
   }).join('') + '</div>';
 }
 var CALC_FORM = {
-  loan: function(){ return cSeg('loan', 'type', [['ann', 'Аннуитет'], ['diff', 'Дифференциал']]) + cIn('loan', 'amt', 'Несие сомасы', '₸') +
-    '<div class="two">' + cIn('loan', 'rate', 'Жылдық мөлшерлеме', '%') + cIn('loan', 'months', 'Мерзімі', t('ай'), 'numeric') + '</div>' + cIn('loan', 'extra', 'Айына қосымша төлем (ерте өтеу)', '₸'); },
-  dep: function(){ return cIn('dep', 'amt', 'Салым сомасы', '₸') + '<div class="two">' + cIn('dep', 'rate', 'Жылдық мөлшерлеме', '%') + cIn('dep', 'months', 'Мерзімі', t('ай'), 'numeric') + '</div>' +
-    cIn('dep', 'top', 'Ай сайын толықтыру', '₸') + cSeg('dep', 'cap', [[true, 'Капитализациямен'], [false, 'Капитализациясыз']]); },
-  inv: function(){ return cSeg('inv', 'cur', [['₸', '₸ Теңге'], ['$', '$ Доллар']]) + '<div class="two">' + cIn('inv', 'amt', 'Бастапқы сома') + cIn('inv', 'month', 'Ай сайын салу') + '</div>' +
+  loan: function(){ return cSeg('loan', 'type', [['ann', 'Аннуитет'], ['diff', 'Дифференциал']]) + cIn('loan', 'amt', 'Несие сомасы', S()) +
+    '<div class="two">' + cIn('loan', 'rate', 'Жылдық мөлшерлеме', '%') + cIn('loan', 'months', 'Мерзімі', t('ай'), 'numeric') + '</div>' + cIn('loan', 'extra', 'Айына қосымша төлем (ерте өтеу)', S()); },
+  dep: function(){ return cIn('dep', 'amt', 'Салым сомасы', S()) + '<div class="two">' + cIn('dep', 'rate', 'Жылдық мөлшерлеме', '%') + cIn('dep', 'months', 'Мерзімі', t('ай'), 'numeric') + '</div>' +
+    cIn('dep', 'top', 'Ай сайын толықтыру', S()) + cSeg('dep', 'cap', [[true, 'Капитализациямен'], [false, 'Капитализациясыз']]); },
+  inv: function(){ if(!CI.inv.cur) CI.inv.cur = S(); return (BASE() === 'USD' ? '' : cSeg('inv', 'cur', [[S(), S() + ' ' + BASE()], ['$', '$ USD']])) + '<div class="two">' + cIn('inv', 'amt', 'Бастапқы сома') + cIn('inv', 'month', 'Ай сайын салу') + '</div>' +
     '<div class="two">' + cIn('inv', 'rate', 'Жылдық табыс', '%') + cIn('inv', 'years', 'Мерзімі', t('жыл'), 'numeric') + '</div>' + cIn('inv', 'goal', 'Мақсатты сома (міндетті емес)') +
     cSeg('inv', 're', [[true, 'Реинвестиция'], [false, 'Табысты алу']]); },
   tax: function(){ return cIn('tax', 'income', 'Кезеңдегі табыс', '₸') + '<div class="two">' + cIn('tax', 'rate', 'Салық мөлшерлемесі', '%') + cIn('tax', 'months', 'Ай саны', '', 'numeric') + '</div>' +
     '<div class="two">' + cIn('tax', 'declared', 'Өзіңізге айлық табыс', '₸') + cIn('tax', 'mzp', 'ЕТЖ (МЗП)', '₸') + '</div>' +
     '<p class="muted" style="font-size:12.5px;margin:10px 2px 0">' + t('2026 ж. базалық мөлшерлеме — 4%, маслихат оны өзгерте алады. Өз өңіріңіздің мөлшерлемесін тексеріңіз.') + '</p>'; },
-  split: function(){ splitInit(); return '<label class="f" style="margin-top:0"><span>' + t('Айлық сомасы') + ', ₸</span><input class="in" inputmode="decimal" value="' + (SPL.sum || '') + '" placeholder="0" oninput="SPL.sum=num(this.value);splitSave();calcRun(\'split\')"></label>'; }
+  split: function(){ splitInit(); return '<label class="f" style="margin-top:0"><span>' + t('Айлық сомасы') + ', ' + S() + '</span><input class="in" inputmode="decimal" value="' + (SPL.sum || '') + '" placeholder="0" oninput="SPL.sum=num(this.value);splitSave();calcRun(\'split\')"></label>'; }
 };
 function calcRun(k){
   var box = $('calc-out'); if(!box) return;

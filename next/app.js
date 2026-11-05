@@ -1,7 +1,7 @@
 /* Qarzhy 2 — қосымша логикасы
    Дерек құрылымы ескі нұсқамен бірдей (qarzhy_v1 · IndexedDB «qarzhy»), сондықтан деректер өзгеріссіз көшеді. */
 'use strict';
-var VERSION = '2.1.0';
+var VERSION = '2.2.0';
 
 /* ================= ТІЛ ================= */
 var LANG = 'kk';
@@ -29,7 +29,8 @@ function normalize(d){
   if(!d.pref) d.pref = {};
   if(!d.lang) d.lang = detectLang();
   if(!d.theme) d.theme = 'auto';
-  if(!d.accounts.length) d.accounts = [{ id:'a1', name:({ kk:'Қолма-қол', ru:'Наличные', en:'Cash' })[d.lang] || 'Қолма-қол', kind:'asset', icon:'wallet', bal:0, cur:'KZT' }];
+  if(!d.pref.base) d.pref.base = (d.tx.length || d.accounts.length) ? 'KZT' : guessBase(d.lang);
+  if(!d.accounts.length) d.accounts = [{ id:'a1', name:({ kk:'Қолма-қол', ru:'Наличные', en:'Cash' })[d.lang] || 'Қолма-қол', kind:'asset', icon:'wallet', bal:0, cur:d.pref.base }];
   return d;
 }
 function detectLang(){
@@ -113,15 +114,15 @@ function nf(n, dec){
   var p = s.split('.');
   return p[0].replace(/\B(?=(\d{3})+(?!\d))/g, '\u2009') + (p[1] ? ',' + p[1] : '');
 }
-function money(n, sym, dec){ return (n < 0 ? '−' : '') + nf(n, dec) + '\u00A0' + (sym || '₸'); }
+function money(n, sym, dec){ return (n < 0 ? '−' : '') + nf(n, dec) + '\u00A0' + (sym || S()); }
 function moneyShort(n, sym){
-  var a = Math.abs(n), sg = n < 0 ? '−' : '', s = sym || '₸';
+  var a = Math.abs(n), sg = n < 0 ? '−' : '', s = sym || S();
   function d(v){ return (v >= 100 ? Math.round(v) : v >= 10 ? Math.round(v * 10) / 10 : Math.round(v * 100) / 100).toString().replace('.', ','); }
   if(a >= 1e9) return sg + d(a / 1e9) + '\u00A0' + t('млрд') + '\u00A0' + s;
   if(a >= 1e6) return sg + d(a / 1e6) + '\u00A0' + t('млн') + '\u00A0' + s;
   return money(n, s);
 }
-function signed(n, type){ return (type === 'in' ? '+' : type === 'out' ? '−' : '') + nf(n) + '\u00A0₸'; }
+function signed(n, type){ return (type === 'in' ? '+' : type === 'out' ? '−' : '') + nf(n) + '\u00A0' + S(); }
 function num(v){ var x = parseFloat(String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.')); return isFinite(x) ? x : 0; }
 function val(id){ var e = $(id); return e ? num(e.value) : 0; }
 function buzz(){ try{ navigator.vibrate && navigator.vibrate(8); }catch(e){} }
@@ -143,10 +144,35 @@ function ask(msg, fn, okLabel){
 }
 
 /* ================= ВАЛЮТА ================= */
-function rateV(){ return (DB.rate && DB.rate.v > 0) ? DB.rate.v : 0; }
-function curSym(a){ return a && a.cur === 'USD' ? '$' : '₸'; }
-function toAcc(a, kzt){ return (a && a.cur === 'USD' && rateV() > 0) ? kzt / rateV() : kzt; }
-function toKZT(a){ if(!a) return 0; return (a.cur === 'USD' && rateV() > 0) ? a.bal * rateV() : a.bal; }
+var CURS = {
+  KZT:['₸','Теңге'], RUB:['₽','Рубль'], USD:['$','Доллар'], EUR:['€','Евро'], KGS:['сом','Сом'], UZS:['сўм','Сўм'],
+  TRY:['₺','Лира'], GBP:['£','Фунт'], CNY:['¥','Юань'], AED:['AED','Дирхам'], INR:['₹','Рупия'], UAH:['₴','Гривна'],
+  GEL:['₾','Лари'], AZN:['₼','Манат'], BYN:['Br','Бел. рубль'], TJS:['SM','Сомони'], KRW:['₩','Вона'], JPY:['¥','Иена']
+};
+function BASE(){ return (DB.pref && DB.pref.base && CURS[DB.pref.base]) ? DB.pref.base : 'KZT'; }
+function symOf(code){ return (CURS[code] || [code])[0]; }
+function S(){ return symOf(BASE()); }
+function guessBase(lang){
+  var loc = ((navigator.languages && navigator.languages[0]) || navigator.language || '').toUpperCase(), reg = (loc.split(/[-_]/)[1] || '');
+  var m = { KZ:'KZT', RU:'RUB', KG:'KGS', UZ:'UZS', US:'USD', GB:'GBP', TR:'TRY', UA:'UAH', BY:'BYN', AZ:'AZN', GE:'GEL', IN:'INR', AE:'AED', CN:'CNY', TJ:'TJS', KR:'KRW', JP:'JPY',
+            DE:'EUR', FR:'EUR', IT:'EUR', ES:'EUR', NL:'EUR', AT:'EUR', BE:'EUR', FI:'EUR', IE:'EUR', PT:'EUR', GR:'EUR', SK:'EUR', SI:'EUR', LT:'EUR', LV:'EUR', EE:'EUR' };
+  if(m[reg]) return m[reg];
+  return lang === 'kk' ? 'KZT' : lang === 'ru' ? 'KZT' : 'USD';
+}
+function fxRate(code){
+  var b = BASE(); code = code || b;
+  if(code === b) return 1;
+  if(DB.fx && DB.fx.base === b && DB.fx.r && DB.fx.r[code] > 0) return DB.fx.r[code];
+  if(code === 'USD' && b === 'KZT' && DB.rate && DB.rate.v > 0) return DB.rate.v;
+  return 0;
+}
+function rateV(){ return fxRate('USD'); }
+function curSym(a){ return symOf((a && a.cur) || BASE()); }
+function foreign(a){ return !!(a && a.cur && a.cur !== BASE()); }
+function toAcc(a, v){ var r = foreign(a) ? fxRate(a.cur) : 1; return r > 0 ? v / r : v; }
+function toBase(a){ if(!a) return 0; var r = foreign(a) ? fxRate(a.cur) : 1; return r > 0 ? a.bal * r : a.bal; }
+var toKZT = toBase;
+function fxLine(code){ var r = fxRate(code); return r ? '1 ' + symOf(code) + ' = ' + nf(r, r < 100) + ' ' + S() : '—'; }
 var RATE_URLS = ['https://open.er-api.com/v6/latest/USD', 'https://api.exchangerate-api.com/v4/latest/USD'];
 var rateBusy = false;
 function fetchRate(manual){
@@ -155,8 +181,12 @@ function fetchRate(manual){
   (function next(){
     if(i >= RATE_URLS.length){ rateBusy = false; if(manual) toast('Курс алынбады — интернетті тексеріңіз'); return; }
     fetch(RATE_URLS[i++]).then(function(r){ return r.json(); }).then(function(d){
-      var v = d && d.rates && d.rates.KZT; if(!v) throw 0;
-      DB.rate = { v: v, at: new Date().toISOString(), src: 'auto' };
+      var rs = d && d.rates, b = BASE(); if(!rs || !rs[b]) throw 0;
+      var map = {}; for(var c in CURS) if(rs[c]) map[c] = rs[b] / rs[c];
+      var keepManual = DB.fx && DB.fx.src === 'manual' && DB.fx.base === b ? DB.fx.r : null;
+      if(keepManual && !manual) for(var k in keepManual) map[k] = keepManual[k];
+      DB.fx = { base: b, at: new Date().toISOString(), src: keepManual && !manual ? 'manual' : 'auto', r: map };
+      if(rs.KZT) DB.rate = { v: rs.KZT, at: DB.fx.at, src: 'auto' };
       save(); rateBusy = false; render(); if(manual) toast('Курс жаңартылды');
     }).catch(next);
   })();
@@ -248,7 +278,7 @@ var BANKS = [
   ['Otbasy Bank', /otbasy|отбасы|жилстрой/i, 'O', '#00A3A3', '#fff', 'banks/otbasy.png'],
   ['Home Credit Bank', /home ?credit|хоум ?кредит/i, 'HC', '#E31E3A', '#fff', 'banks/homecredit.png'],
   ['Qazaq Bank', /qazaq|назарбанк/i, 'Q', '#2F6FB8', '#fff', 'banks/qazaq.png'],
-  ['Қолма-қол', /^қолма-қол|^наличн|^cash/i, '₸', '#141412', '#D2F45C', null]
+  ['Қолма-қол', /^қолма-қол|^наличн|^cash/i, '●', '#141412', '#D2F45C', null]
 ];
 function bankOf(name){
   if(!name) return null;
@@ -433,9 +463,10 @@ function welcomeCard(){
       return '<button class="row" onclick="' + x[3] + '"><span class="ci" style="background:' + (i === 0 ? 'var(--lime);color:#141412' : 'var(--sf2)') + '">' + ic(x[0]) + '</span><span class="mid"><b>' + t(x[1]) + '</b><span>' + t(x[2]) + '</span></span>' + ic('right') + '</button>';
     }).join('') + '</div>' +
     '<div class="chips" style="margin-top:14px;justify-content:center">' + [['kk', 'Қазақша'], ['ru', 'Русский'], ['en', 'English']].map(function(x){
-      return '<button class="chip ' + (LANG === x[0] ? 'on' : '') + '" onclick="setLang(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('') + '</div>';
+      return '<button class="chip ' + (LANG === x[0] ? 'on' : '') + '" onclick="setLang(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('') + '</div>' +
+    '<label class="f" style="max-width:260px;margin:14px auto 0"><span style="text-align:center">' + t('Негізгі валюта') + '</span><select class="in" style="background-color:var(--sf)" onchange="setBase(this.value,this)">' + curOptions(BASE()) + '</select></label>';
 }
-function heroNum(v){ return (v < 0 ? '−' : '') + nf(v) + '<small>₸</small>'; }
+function heroNum(v){ return (v < 0 ? '−' : '') + nf(v) + '<small>' + S() + '</small>'; }
 function animateHero(){
   var e = $('hero-net'); if(!e) return;
   var target = +e.dataset.v, from = +(e.dataset.from || window._heroLast || 0);
@@ -460,7 +491,7 @@ function txRow(x){
   if(x.type === 'tr'){
     var to = acc(x.to);
     title = t('Аударым'); subt = (a ? esc(a.name) : '—') + ' → ' + (to ? esc(to.name) : '—');
-    amt = nf(x.amt) + '\u00A0₸';
+    amt = nf(x.amt) + '\u00A0' + S();
   } else {
     title = x.note ? esc(x.note) : esc(t(x.cat));
     subt = (x.note ? esc(t(x.cat)) + ' · ' : '') + (a ? esc(a.name) : t('Шотсыз'));
@@ -494,11 +525,11 @@ function miniStat(label, v){
 }
 function accRow(a){
   var sym = curSym(a), extra = '';
-  if(a.cur === 'USD' && rateV()) extra = '<small>≈ ' + moneyShort(toKZT(a)) + '</small>';
+  if(foreign(a) && fxRate(a.cur)) extra = '<small>≈ ' + moneyShort(toBase(a)) + '</small>';
   if(a.kind === 'debt' && a.pay) extra = '<small>' + t('айына') + ' ' + moneyShort(a.pay) + '</small>';
   return '<button class="row" onclick="viewAcc(\'' + a.id + '\')">' + accBadge(a) +
-    '<span class="mid"><b>' + esc(a.name) + '</b><span>' + (a.kind === 'debt' ? (a.rate ? a.rate + '% · ' : '') + t('Несие') : (a.cur === 'USD' ? 'USD' : 'KZT')) + '</span></span>' +
-    '<span class="amt num ' + (a.kind === 'debt' ? 'neg' : '') + '">' + money(a.kind === 'debt' ? -a.bal : a.bal, sym, a.cur === 'USD') + extra + '</span></button>';
+    '<span class="mid"><b>' + esc(a.name) + '</b><span>' + (a.kind === 'debt' ? (a.rate ? a.rate + '% · ' : '') + t('Несие') : (a.cur || BASE())) + '</span></span>' +
+    '<span class="amt num ' + (a.kind === 'debt' ? 'neg' : '') + '">' + money(a.kind === 'debt' ? -a.bal : a.bal, sym, foreign(a)) + extra + '</span></button>';
 }
 function linkRow(icn, title, subt, act){
   return '<button class="row" onclick="' + act + '"><span class="ci" style="background:var(--sf2)">' + ic(icn) + '</span><span class="mid"><b>' + title + '</b><span class="num">' + subt + '</span></span>' + ic('right') + '</button>';
@@ -547,7 +578,7 @@ function drawOpsList(){
   var h = '';
   order.forEach(function(d){
     var sum = 0; groups[d].forEach(function(x){ if(x.type === 'in') sum += x.amt; else if(x.type === 'out') sum -= x.amt; });
-    h += '<div class="day"><span>' + dayTitle(d) + '</span><span class="num">' + (sum ? (sum > 0 ? '+' : '−') + nf(sum) + ' ₸' : '') + '</span></div><div class="list">' +
+    h += '<div class="day"><span>' + dayTitle(d) + '</span><span class="num">' + (sum ? (sum > 0 ? '+' : '−') + nf(sum) + ' ' + S() : '') + '</span></div><div class="list">' +
       groups[d].map(function(x){ return '<div class="swipe"><div class="under"><span class="l">' + t('Түзету') + '</span><span class="r">' + t('Өшіру') + '</span></div>' + txRow(x) + '</div>'; }).join('') + '</div>';
   });
   if(list.length > opsLimit) h += '<button class="btn line" onclick="opsLimit+=200;drawOpsList()">' + t('Тағы көрсету') + ' (' + (list.length - opsLimit) + ')</button>';
@@ -594,7 +625,7 @@ function drawTxSheet(){
   var types = [['out', 'Шығын'], ['in', 'Кіріс'], ['tr', 'Аударым']];
   var h = sheetHead(F.id ? t('Өзгерту') : t('Жаңа операция'));
   h += '<div class="seg">' + types.map(function(x){ return '<button class="' + (F.type === x[0] ? 'on' : '') + '" onclick="txType(\'' + x[0] + '\')">' + t(x[1]) + '</button>'; }).join('') + '</div>';
-  h += '<div class="amtbox"><input id="f-amt" inputmode="decimal" placeholder="0" value="' + (F.amt || '') + '" oninput="F.amt=this.value;fitAmt(this)" style="width:' + amtW(F.amt) + '"><span>₸</span></div>';
+  h += '<div class="amtbox"><input id="f-amt" inputmode="decimal" placeholder="0" value="' + (F.amt || '') + '" oninput="F.amt=this.value;fitAmt(this)" style="width:' + amtW(F.amt) + '"><span>' + S() + '</span></div>';
   if(F.type !== 'tr'){
     var list = CATS[F.type].slice();
     if(F.cat && list.indexOf(F.cat) < 0) list.push(F.cat);
@@ -701,8 +732,8 @@ function kv(k, v){ return '<div class="kv"><span>' + k + '</span><b class="num">
 var AF = null;
 function openAcc(kind, id){
   var a = id ? acc(id) : null;
-  AF = a ? { id: a.id, kind: a.kind, name: a.name, bal: a.bal, cur: a.cur || 'KZT', rate: a.rate || '', pay: a.pay || '', payDay: a.payDay || '', icon: a.icon }
-         : { id: null, kind: kind || 'asset', name: '', bal: '', cur: 'KZT', rate: '', pay: '', payDay: '', icon: kind === 'debt' ? 'card' : 'wallet' };
+  AF = a ? { id: a.id, kind: a.kind, name: a.name, bal: a.bal, cur: a.cur || BASE(), rate: a.rate || '', pay: a.pay || '', payDay: a.payDay || '', icon: a.icon }
+         : { id: null, kind: kind || 'asset', name: '', bal: '', cur: BASE(), rate: '', pay: '', payDay: '', icon: kind === 'debt' ? 'card' : 'wallet' };
   drawAccSheet();
 }
 function drawAccSheet(){
@@ -716,9 +747,7 @@ function drawAccSheet(){
   h += '<label class="f"><span>' + t('Атауы') + '</span><input class="in" value="' + esc(AF.name) + '" oninput="AF.name=this.value" placeholder="' + (isLoan ? t('Мысалы, Kaspi Red') : 'Kaspi Gold') + '"></label>';
   h += '<label class="f"><span>' + (isLoan ? t('Несие қалдығы') : t('Қазіргі қалдық')) + '</span><input class="in" inputmode="decimal" value="' + (AF.bal === '' ? '' : AF.bal) + '" oninput="AF.bal=this.value" placeholder="0"></label>';
   if(!isLoan){
-    h += '<div class="f"><span>' + t('Валюта') + '</span><div class="seg">' + ['KZT', 'USD'].map(function(c){
-      return '<button class="' + (AF.cur === c ? 'on' : '') + '" onclick="AF.cur=\'' + c + '\';drawAccSheet()">' + (c === 'KZT' ? '₸ KZT' : '$ USD') + '</button>';
-    }).join('') + '</div></div>';
+    h += '<label class="f"><span>' + t('Валюта') + '</span><select class="in" onchange="AF.cur=this.value">' + curOptions(AF.cur) + '</select></label>';
   } else {
     h += '<div class="two"><label class="f"><span>' + t('Мөлшерлеме, %') + '</span><input class="in" inputmode="decimal" value="' + AF.rate + '" oninput="AF.rate=this.value"></label>' +
       '<label class="f"><span>' + t('Айлық төлем') + '</span><input class="in" inputmode="decimal" value="' + AF.pay + '" oninput="AF.pay=this.value"></label></div>' +
@@ -727,6 +756,10 @@ function drawAccSheet(){
   h += '<button class="btn" onclick="saveAcc()">' + ic('check') + t('Сақтау') + '</button>';
   if(AF.id) h += '<button class="btn red" onclick="delAcc(\'' + AF.id + '\')">' + ic('trash') + t('Шотты өшіру') + '</button>';
   openSheet(h);
+}
+function curOptions(sel){
+  var b = BASE(), list = [b].concat(Object.keys(CURS).filter(function(c){ return c !== b; }));
+  return list.map(function(c){ return '<option value="' + c + '"' + (sel === c ? ' selected' : '') + '>' + symOf(c) + ' · ' + c + ' — ' + t(CURS[c][1]) + '</option>'; }).join('');
 }
 function saveAcc(){
   var name = (AF.name || '').trim();
@@ -755,8 +788,8 @@ function viewAcc(id){
   var a = acc(id); if(!a) return;
   var sym = curSym(a), h = sheetHead(esc(a.name));
   h += '<div style="display:flex;align-items:center;gap:14px;margin:6px 0 12px">' + accBadge(a) +
-    '<b class="num" style="font-size:30px;letter-spacing:-.03em">' + money(a.kind === 'debt' ? -a.bal : a.bal, sym, a.cur === 'USD') + '</b></div>';
-  if(a.cur === 'USD') h += kv(t('Теңгемен'), money(toKZT(a))) + kv(t('Курс'), rateV() ? rateV().toFixed(2).replace('.', ',') + ' ₸' : '—');
+    '<b class="num" style="font-size:30px;letter-spacing:-.03em">' + money(a.kind === 'debt' ? -a.bal : a.bal, sym, foreign(a)) + '</b></div>';
+  if(foreign(a)) h += kv(t('Негізгі валютада'), fxRate(a.cur) ? money(toBase(a)) : '—') + kv(t('Курс'), fxLine(a.cur));
   if(a.kind === 'debt'){
     h += kv(t('Мөлшерлеме'), (a.rate || 0) + '%') + kv(t('Айлық төлем'), money(a.pay || 0));
     if(a.payDay) h += kv(t('Төлем күні'), a.payDay);
@@ -829,7 +862,7 @@ function viewGoal(id){
     '<div class="prog" style="height:8px"><i style="width:' + pct.toFixed(1) + '%"></i></div>' +
     kv(t('Мақсат'), money(g.target)) + kv(t('Қалды'), money(p.left)) + (g.due ? kv(t('Мерзімі'), fullDate(g.due)) + kv(t('Айына салу керек'), money(p.need)) : '');
   h += '<div class="card" style="background:var(--sf2);box-shadow:none"><b style="font-size:14px">' + t('Салым қосу') + '</b>' +
-    '<input class="in" id="gv-amt" inputmode="decimal" placeholder="0 ₸" style="margin-top:10px;background:var(--sf)">' +
+    '<input class="in" id="gv-amt" inputmode="decimal" placeholder="0 ' + S() + '" style="margin-top:10px;background:var(--sf)">' +
     '<select class="in" id="gv-acc" style="margin-top:8px;background-color:var(--sf)"><option value="">' + t('Шотсыз — тек белгілеу') + '</option>' +
     assets().map(function(a){ return '<option value="' + a.id + '"' + (gvAcc === a.id ? ' selected' : '') + '>' + esc(a.name) + ' · ' + moneyShort(a.bal, curSym(a)) + '</option>'; }).join('') + '</select>' +
     '<button class="btn lime" onclick="addToGoal(\'' + id + '\')">' + ic('plus') + t('Қосу') + '</button></div>';
@@ -887,7 +920,7 @@ function drawDebtSheet(){
   h += '<div class="seg">' + [['out', 'Мен бердім'], ['in', 'Мен алдым']].map(function(x){
     return '<button class="' + (DF.dir === x[0] ? 'on' : '') + '" onclick="DF.dir=\'' + x[0] + '\';drawDebtSheet()">' + t(x[1]) + '</button>'; }).join('') + '</div>';
   h += '<label class="f"><span>' + (DF.dir === 'out' ? t('Кімге') : t('Кімнен')) + '</span><input class="in" value="' + esc(DF.who) + '" oninput="DF.who=this.value" placeholder="' + t('Аты') + '"></label>' +
-    '<label class="f"><span>' + t('Сома') + '</span><input class="in" inputmode="decimal" value="' + DF.amt + '" oninput="DF.amt=this.value" placeholder="0 ₸"></label>' +
+    '<label class="f"><span>' + t('Сома') + '</span><input class="in" inputmode="decimal" value="' + DF.amt + '" oninput="DF.amt=this.value" placeholder="0 ' + S() + '"></label>' +
     '<label class="f"><span>' + t('Шот') + '</span><select class="in" onchange="DF.acc=this.value"><option value="">' + t('Шотсыз — тек белгілеу') + '</option>' +
     assets().map(function(a){ return '<option value="' + a.id + '"' + (DF.acc === a.id ? ' selected' : '') + '>' + esc(a.name) + '</option>'; }).join('') + '</select></label>' +
     '<div class="two"><label class="f"><span>' + t('Күні') + '</span><input class="in" type="date" value="' + DF.date + '" onchange="DF.date=this.value"></label>' +
@@ -912,7 +945,7 @@ function viewDebt(id){
     (d.due ? kv(t('Қайтару мерзімі'), fullDate(d.due)) : '') + (a ? kv(t('Шот'), esc(a.name)) : '') + (d.note ? kv(t('Түсініктеме'), esc(d.note)) : '');
   if(l > 0){
     h += '<div class="card" style="background:var(--sf2);box-shadow:none"><b style="font-size:14px">' + (d.dir === 'out' ? t('Маған қайтарған сома') : t('Мен қайтарған сома')) + '</b>' +
-      '<input class="in" id="dv-amt" inputmode="decimal" placeholder="' + nf(l) + ' ₸" style="margin-top:10px;background:var(--sf)">' +
+      '<input class="in" id="dv-amt" inputmode="decimal"  placeholder="' + nf(l) + ' ' + S() + '" style="margin-top:10px;background:var(--sf)">' +
       '<select class="in" id="dv-acc" style="margin-top:8px;background-color:var(--sf)"><option value="">' + t('Шотсыз — тек белгілеу') + '</option>' +
       assets().map(function(x){ return '<option value="' + x.id + '"' + (d.acc === x.id ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select>' +
       '<div class="btns"><button class="btn line" onclick="$(\'dv-amt\').value=' + l + '">' + t('Толық') + '</button><button class="btn lime" onclick="payDebt(\'' + id + '\')">' + ic('check') + t('Жазу') + '</button></div></div>';
@@ -1066,7 +1099,7 @@ function donutSvg(items, total, label){
 }
 function openLimit(){
   var h = sheetHead(t('Айлық шығын жоспары')) + '<p class="muted" style="margin:0 0 6px;font-size:14px">' + t('Айына қанша жұмсауды жоспарлайсыз? Басты бетте «Бүгін жұмсауға болады» көрсетіледі. 0 — өшіру.') + '</p>' +
-    '<input class="in" id="lim" inputmode="decimal" value="' + (DB.pref.monthLimit || '') + '" placeholder="0 ₸">' +
+    '<input class="in" id="lim" inputmode="decimal" value="' + (DB.pref.monthLimit || '') + '" placeholder="0 ' + S() + '">' +
     '<button class="btn" onclick="DB.pref.monthLimit=val(\'lim\')||0;done(\'Сақталды\')">' + ic('check') + t('Сақтау') + '</button>';
   openSheet(h);
 }
@@ -1088,11 +1121,17 @@ PAGES.more = function(){
       return '<button class="' + (DB.theme === x[0] ? 'on' : '') + '" onclick="setTheme(\'' + x[0] + '\')">' + t(x[1]) + '</button>'; }).join('') + '</div></div>' +
     '<div class="f"><span>' + t('Тіл') + '</span><div class="seg">' + [['kk', 'Қазақша'], ['ru', 'Русский'], ['en', 'English']].map(function(x){
       return '<button class="' + (LANG === x[0] ? 'on' : '') + '" onclick="setLang(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('') + '</div></div></div>';
-  h += '<div class="sec">' + t('Доллар курсы') + '</div><div class="card" style="margin-top:0">' +
-    kv('1 $', rateV() ? rateV().toFixed(2).replace('.', ',') + ' ₸' : '—') +
-    kv(t('Жаңартылды'), DB.rate && DB.rate.at ? fullDate(DB.rate.at.slice(0, 10)) + (DB.rate.src === 'manual' ? ' · ' + t('қолмен') : '') : '—') +
+  h += '<div class="sec">' + t('Еске салу') + '</div><div class="card" style="margin-top:0">' +
+    '<button class="toggle" style="width:100%;text-align:left;padding-top:0" onclick="toggleNotify()"><span style="font-size:14.5px;font-weight:550">' + t('Хабарлама жіберу') +
+    '<br><span class="muted" style="font-size:12.5px;font-weight:400">' + t('Төлем, несие, қарыз мерзімі және кешкі «шығынды жаздыңыз ба?»') + '</span></span><i class="sw ' + (notifyOn() ? 'on' : '') + '"></i></button>' +
+    (notifyOn() ? '<div class="muted" style="font-size:12.5px;margin-top:2px">' + notifyStatus() + '</div><button class="btn line sm" style="margin-top:10px" onclick="testNotify()">' + ic('bell') + t('Тексеріп көру') + '</button>' : '') + '</div>';
+  var fc = {}; DB.accounts.forEach(function(a){ if(foreign(a)) fc[a.cur] = 1; }); if(BASE() !== 'USD') fc.USD = 1;
+  h += '<div class="sec">' + t('Валюта') + '</div><div class="card" style="margin-top:0">' +
+    '<label class="f" style="margin-top:0"><span>' + t('Негізгі валюта') + '</span><select class="in" onchange="setBase(this.value,this)">' + curOptions(BASE()) + '</select></label>' +
+    Object.keys(fc).map(function(c){ return kv(c, fxLine(c)); }).join('') +
+    kv(t('Жаңартылды'), DB.fx && DB.fx.at ? fullDate(DB.fx.at.slice(0, 10)) + (DB.fx.src === 'manual' ? ' · ' + t('қолмен') : '') : (DB.rate && DB.rate.at ? fullDate(DB.rate.at.slice(0, 10)) : '—')) +
     '<div class="btns" style="margin-top:12px"><button class="btn line sm" style="flex:1" onclick="fetchRate(true)">' + ic('repeat') + t('Жаңарту') + '</button>' +
-    '<button class="btn line sm" style="flex:1" onclick="openRate()">' + ic('edit') + t('Қолмен') + '</button></div></div>';
+    (Object.keys(fc).length ? '<button class="btn line sm" style="flex:1" onclick="openRate()">' + ic('edit') + t('Қолмен') + '</button>' : '') + '</div></div>';
   h += '<div class="sec">' + t('Қосымша') + '</div><div class="list">' +
     linkRow('info', 'Qarzhy ' + VERSION, t('Офлайн жұмыс істейді · сервер жоқ · жарнама жоқ'), 'void 0') +
     linkRow('lock', t('Құпиялылық саясаты'), t('Қандай дерек қайда сақталады'), "location.href='privacy.html#'+LANG") +
@@ -1107,8 +1146,31 @@ function applyTheme(){
 }
 function setLang(l){ DB.lang = l; save(); flush().then(function(){ location.reload(); }); }
 function openRate(){
-  openSheet(sheetHead(t('Курсты қолмен жазу')) + '<input class="in" id="rate-in" inputmode="decimal" value="' + (rateV() ? rateV().toFixed(2) : '') + '" placeholder="1 $ = ? ₸">' +
-    '<button class="btn" onclick="var v=val(\'rate-in\');if(v>0){DB.rate={v:v,at:new Date().toISOString(),src:\'manual\'};done(\'Курс сақталды\')}">' + ic('check') + t('Сақтау') + '</button>');
+  var fc = {}; DB.accounts.forEach(function(a){ if(foreign(a)) fc[a.cur] = 1; }); if(BASE() !== 'USD') fc.USD = 1;
+  openSheet(sheetHead(t('Курсты қолмен жазу')) + Object.keys(fc).map(function(c){
+    var r = fxRate(c);
+    return '<label class="f"><span>1 ' + symOf(c) + ' (' + c + ') = ? ' + S() + '</span><input class="in" data-c="' + c + '" inputmode="decimal" value="' + (r ? +r.toFixed(4) : '') + '"></label>';
+  }).join('') + '<button class="btn" onclick="saveManualRates()">' + ic('check') + t('Сақтау') + '</button>');
+}
+function saveManualRates(){
+  var b = BASE(), r = (DB.fx && DB.fx.base === b && DB.fx.r) ? DB.fx.r : {};
+  if(b === 'KZT' && !r.USD && DB.rate && DB.rate.v) r.USD = DB.rate.v;
+  document.querySelectorAll('#sheet input[data-c]').forEach(function(e){ var v = num(e.value); if(v > 0) r[e.dataset.c] = v; });
+  DB.fx = { base: b, at: new Date().toISOString(), src: 'manual', r: r };
+  if(b === 'KZT' && r.USD) DB.rate = { v: r.USD, at: DB.fx.at, src: 'manual' };
+  done('Курс сақталды');
+}
+function setBase(code, el){
+  if(code === BASE()) return;
+  var apply = function(){
+    var old = BASE();
+    DB.pref.base = code;
+    DB.accounts.forEach(function(a){ if(!a.cur || a.cur === old) a.cur = code; });
+    DB.fx = null; save(); render(); fetchRate(false); toast('Сақталды');
+  };
+  if(!DB.tx.length && !DB.accounts.some(function(a){ return a.bal; })) return apply();
+  if(el) el.value = BASE();
+  ask('Негізгі валюта ауысады. Бұрынғы сомалар қайта есептелмейді — тек белгісі өзгереді. Жалғастырасыз ба?', apply, 'Ауыстыру');
 }
 function exportData(){
   var blob = new Blob([JSON.stringify(DB, null, 1)], { type: 'application/json' }), name = 'qarzhy-' + todayISO() + '.json';
@@ -1151,10 +1213,50 @@ function restoreSnap(day){
 function wipeAll(){
   ask('Барлық операция, шот, мақсат және қарыз өшіріледі. Қайтару мүмкін емес. Жалғастырасыз ба?', function(){
     setTimeout(function(){ ask('Сенімдісіз бе? Алдымен «Деректі сақтау» жасаған жөн.', function(){
-      var keep = { lang: DB.lang, theme: DB.theme, rate: DB.rate };
+      var keep = { lang: DB.lang, theme: DB.theme, rate: DB.rate, fx: DB.fx, pref: { base: BASE() } };
       DB = normalize(keep); save(); render(); toast('Барлығы өшірілді');
     }, 'Өшіру'); }, 150);
   }, 'Өшіру');
+}
+
+/* ---------- ЕСКЕ САЛУ ---------- */
+var notifyMode = '';
+function notifyOn(){ return !!(DB.pref.notify && 'Notification' in window && Notification.permission === 'granted'); }
+function notifyStatus(){
+  return notifyMode === 'bg' ? t('Қосымша жабық тұрса да тексеріледі (күніне 1–2 рет, уақытын Android өзі таңдайды).')
+       : t('Бұл телефонда фондық тексеру қолжетімсіз — хабарлама қосымшаны ашқанда шығады.');
+}
+function toggleNotify(){
+  if(DB.pref.notify){ DB.pref.notify = false; save(); unregisterSync(); render(); return; }
+  if(!('Notification' in window)){ toast('Бұл браузер хабарламаны қолдамайды'); return; }
+  Notification.requestPermission().then(function(p){
+    if(p !== 'granted'){ toast('Хабарламаға рұқсат берілмеді — телефон баптауынан қосыңыз'); return; }
+    DB.pref.notify = true; save(); flush();
+    registerSync().then(function(){ render(); toast('Еске салу қосылды'); });
+  });
+}
+function registerSync(){
+  if(!('serviceWorker' in navigator)) return Promise.resolve();
+  return navigator.serviceWorker.ready.then(function(reg){
+    if(!reg.periodicSync){ notifyMode = 'open'; return; }
+    return navigator.permissions.query({ name: 'periodic-background-sync' }).then(function(st){
+      if(st.state !== 'granted'){ notifyMode = 'open'; return; }
+      return reg.periodicSync.register('qarzhy-remind', { minInterval: 6 * 3600e3 }).then(function(){ notifyMode = 'bg'; });
+    });
+  }).catch(function(){ notifyMode = 'open'; });
+}
+function unregisterSync(){
+  if('serviceWorker' in navigator) navigator.serviceWorker.ready.then(function(reg){ if(reg.periodicSync) reg.periodicSync.unregister('qarzhy-remind'); }).catch(function(){});
+}
+function testNotify(){
+  if(!notifyOn()) return;
+  navigator.serviceWorker.ready.then(function(reg){
+    reg.showNotification('Qarzhy', { body: t('Хабарлама жұмыс істейді ✓'), icon: 'icon-192.png', badge: 'icon-192.png', tag: 'qarzhy-test' });
+  }).catch(function(){ toast('Хабарлама жіберілмеді'); });
+}
+function checkRemindersNow(){
+  if(!notifyOn() || !navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+  flush().then(function(){ navigator.serviceWorker.controller.postMessage({ type: 'remind' }); });
 }
 
 /* ---------- EXCEL ---------- */
@@ -1192,9 +1294,10 @@ function boot(){
     show();
     handleShortcut();
     setTimeout(function(){ $('splash').classList.add('out'); setTimeout(function(){ $('splash').remove(); }, 400); }, 250);
-    var stale = !DB.rate || !DB.rate.at || (Date.now() - new Date(DB.rate.at)) > 6 * 3600e3;
-    if(stale && (!DB.rate || DB.rate.src !== 'manual')) fetchRate(false);
+    var fxAt = (DB.fx && DB.fx.base === BASE() && DB.fx.at) || null;
+    if(!fxAt || (Date.now() - new Date(fxAt)) > 6 * 3600e3) fetchRate(false);
     autoSnap();
+    if(DB.pref.notify) registerSync().then(function(){ setTimeout(checkRemindersNow, 2500); });
     try{ navigator.storage && navigator.storage.persist && navigator.storage.persist(); }catch(e){}
   });
   $('veil').onclick = function(){ closeSheet(); };
