@@ -1,7 +1,7 @@
 /* Qarzhy 2 — офлайн кэш */
-const CACHE = 'qarzhy2-v1';
+const CACHE = 'qarzhy2-v2';
 const FILES = ['./', './index.html', './app.js', './tools.js', './parse.js', './i18n.js', './manifest.webmanifest',
-  './icon-192.png', './icon-512.png', './icon-maskable.png', './icon-apple.png', './fonts/cormorant-700.woff2',
+  './icon-192.png', './icon-512.png', './icon-maskable.png', './icon-apple.png', './privacy.html', './fonts/cormorant-700.woff2',
   './fonts/onest-cyrillic-ext-wght-normal.woff2', './fonts/onest-cyrillic-wght-normal.woff2',
   './fonts/onest-latin-wght-normal.woff2', './fonts/onest-latin-ext-wght-normal.woff2', './banks/bcc.png','./banks/bereke.png','./banks/forte.png','./banks/freedom.png','./banks/halyk.png','./banks/homecredit.png','./banks/jusan.png','./banks/kaspi.png','./banks/otbasy.png','./banks/qazaq.png'];
 const CDN = ['cdn.jsdelivr.net', 'cdnjs.cloudflare.com'];

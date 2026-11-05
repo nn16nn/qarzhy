@@ -1,7 +1,7 @@
 /* Qarzhy 2 — қосымша логикасы
    Дерек құрылымы ескі нұсқамен бірдей (qarzhy_v1 · IndexedDB «qarzhy»), сондықтан деректер өзгеріссіз көшеді. */
 'use strict';
-var VERSION = '2.0.0';
+var VERSION = '2.1.0';
 
 /* ================= ТІЛ ================= */
 var LANG = 'kk';
@@ -27,10 +27,14 @@ function normalize(d){
   if(!d.limits || typeof d.limits !== 'object') d.limits = {};
   if(!d.rules) d.rules = {};
   if(!d.pref) d.pref = {};
-  if(!d.lang) d.lang = 'kk';
+  if(!d.lang) d.lang = detectLang();
   if(!d.theme) d.theme = 'auto';
-  if(!d.accounts.length) d.accounts = [{ id:'a1', name:'Қолма-қол', kind:'asset', icon:'wallet', bal:0, cur:'KZT' }];
+  if(!d.accounts.length) d.accounts = [{ id:'a1', name:({ kk:'Қолма-қол', ru:'Наличные', en:'Cash' })[d.lang] || 'Қолма-қол', kind:'asset', icon:'wallet', bal:0, cur:'KZT' }];
   return d;
+}
+function detectLang(){
+  var l = ((navigator.languages && navigator.languages[0]) || navigator.language || 'kk').toLowerCase();
+  return /^kk/.test(l) ? 'kk' : /^(ru|be|uk|ky|uz|tg)/.test(l) ? 'ru' : /^en/.test(l) ? 'en' : 'kk';
 }
 function lsRead(){ try{ var r = localStorage.getItem(LS_KEY); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
 
@@ -385,6 +389,7 @@ PAGES.home = function(){
       '<button class="cell" onclick="statsKind=\'in\';go(\'stats\')"><span><i class="dot" style="background:var(--pos)"></i>' + t('Кіріс') + '</span><b class="num">' + moneyShort(M.in) + '</b></button>' +
       '<button class="cell" onclick="statsKind=\'out\';go(\'stats\')"><span><i class="dot" style="background:var(--neg)"></i>' + t('Шығын') + '</span><b class="num">' + moneyShort(M.out) + '</b></button>' +
     '</div></div>';
+  if(isFresh()) return h + welcomeCard();
   h += '<div class="quick">' +
     '<button onclick="openTx(\'out\')"><span class="q">' + ic('out') + '</span>' + t('Шығын') + '</button>' +
     '<button onclick="openTx(\'in\')"><span class="q">' + ic('in') + '</span>' + t('Кіріс') + '</button>' +
@@ -415,6 +420,21 @@ PAGES.home = function(){
     : '<div class="card empty">' + ic('receipt') + t('Әзірге операция жоқ.') + '<br>' + t('Ортадағы + түймесімен бірінші шығынды қосыңыз.') + '</div>';
   return h;
 };
+function isFresh(){
+  return !DB.tx.length && !DB.goals.length && !DB.debts.length && DB.accounts.length <= 1 && !(DB.accounts[0] && DB.accounts[0].bal);
+}
+function welcomeCard(){
+  var steps = [['bank', 'Банк шотын қосыңыз', 'Kaspi, Halyk, Freedom… қазіргі қалдығымен', "openAcc('asset')"],
+               ['upload', 'Немесе үзінді жүктеңіз', 'Банк PDF/Excel үзіндісінен операциялар өзі түседі', "go('import')"],
+               ['out', 'Бірінші шығынды жазыңыз', 'Ортадағы + түймесі — 3 секунд', "openTx('out')"]];
+  return '<div class="card" style="padding:20px"><b style="font-size:20px;letter-spacing:-.02em;display:block">' + t('Qarzhy-ге қош келдіңіз') + '</b>' +
+    '<p class="muted" style="margin:6px 0 4px;font-size:14px">' + t('Ақшаңыз қайда кететінін көріңіз. Деректер тек осы телефонда сақталады — тіркелу де, сервер де жоқ.') + '</p></div>' +
+    '<div class="list" style="margin-top:12px">' + steps.map(function(x, i){
+      return '<button class="row" onclick="' + x[3] + '"><span class="ci" style="background:' + (i === 0 ? 'var(--lime);color:#141412' : 'var(--sf2)') + '">' + ic(x[0]) + '</span><span class="mid"><b>' + t(x[1]) + '</b><span>' + t(x[2]) + '</span></span>' + ic('right') + '</button>';
+    }).join('') + '</div>' +
+    '<div class="chips" style="margin-top:14px;justify-content:center">' + [['kk', 'Қазақша'], ['ru', 'Русский'], ['en', 'English']].map(function(x){
+      return '<button class="chip ' + (LANG === x[0] ? 'on' : '') + '" onclick="setLang(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('') + '</div>';
+}
 function heroNum(v){ return (v < 0 ? '−' : '') + nf(v) + '<small>₸</small>'; }
 function animateHero(){
   var e = $('hero-net'); if(!e) return;
@@ -1075,6 +1095,7 @@ PAGES.more = function(){
     '<button class="btn line sm" style="flex:1" onclick="openRate()">' + ic('edit') + t('Қолмен') + '</button></div></div>';
   h += '<div class="sec">' + t('Қосымша') + '</div><div class="list">' +
     linkRow('info', 'Qarzhy ' + VERSION, t('Офлайн жұмыс істейді · сервер жоқ · жарнама жоқ'), 'void 0') +
+    linkRow('lock', t('Құпиялылық саясаты'), t('Қандай дерек қайда сақталады'), "location.href='privacy.html#'+LANG") +
     linkRow('trash', '<span class="neg">' + t('Барлық деректі өшіру') + '</span>', t('Қайтару мүмкін емес'), 'wipeAll()') + '</div>';
   return h;
 };

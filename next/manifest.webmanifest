@@ -11,13 +11,86 @@
   "background_color": "#141412",
   "theme_color": "#EFECE4",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Шығын қосу", "short_name": "Шығын", "url": "./index.html?add=out", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
-    { "name": "Кіріс қосу", "short_name": "Кіріс", "url": "./index.html?add=in", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
-    { "name": "Аударым қосу", "short_name": "Аударым", "url": "./index.html?add=tr", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
+    {
+      "name": "Шығын қосу",
+      "short_name": "Шығын",
+      "url": "./index.html?add=out",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Кіріс қосу",
+      "short_name": "Кіріс",
+      "url": "./index.html?add=in",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Аударым қосу",
+      "short_name": "Аударым",
+      "url": "./index.html?add=tr",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "finance",
+    "productivity"
+  ],
+  "dir": "ltr",
+  "screenshots": [
+    {
+      "src": "screens/home.jpg",
+      "sizes": "540x960",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Home"
+    },
+    {
+      "src": "screens/stats.jpg",
+      "sizes": "540x960",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Stats"
+    },
+    {
+      "src": "screens/tx.jpg",
+      "sizes": "540x960",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "New transaction"
+    }
   ]
 }
