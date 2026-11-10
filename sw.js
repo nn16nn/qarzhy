@@ -1,5 +1,5 @@
 /* Qarzhy 2 — офлайн кэш */
-const CACHE = 'qarzhy2-v8';
+const CACHE = 'qarzhy2-v9';
 const FILES = ['./', './index.html', './app.js', './tools.js', './parse.js', './i18n.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable.png', './icon-apple.png', './privacy.html', './fonts/cormorant-700.woff2',
   './fonts/onest-cyrillic-ext-wght-normal.woff2', './fonts/onest-cyrillic-wght-normal.woff2',

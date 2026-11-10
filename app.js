@@ -1,7 +1,7 @@
 /* Qarzhy 2 — қосымша логикасы
    Дерек құрылымы ескі нұсқамен бірдей (qarzhy_v1 · IndexedDB «qarzhy»), сондықтан деректер өзгеріссіз көшеді. */
 'use strict';
-var VERSION = '2.4.1';
+var VERSION = '2.4.2';
 
 /* ================= ТІЛ ================= */
 var LANG = 'kk';
@@ -570,9 +570,7 @@ function txRow(x){
 PAGES.accounts = function(){
   var T = totals();
   var h = tabBar(t('Менің қаржым'), t('Таза капитал') + ' · <b class="num" style="color:var(--ink)">' + money(T.net) + '</b>');
-  h += '<div class="grid2" style="margin-top:4px">' +
-    miniStat(t('Банктерде'), T.banks) + miniStat(t('Несиелер'), -T.loans) +
-    miniStat(t('Маған қарыз'), T.lent) + miniStat(t('Менің қарызым'), -T.owed) + '</div>';
+  if(T.lent || T.owed) h += '<div class="grid2" style="margin-top:4px">' + (T.lent ? miniStat(t('Маған қарыз'), T.lent) : '') + (T.owed ? miniStat(t('Менің қарызым'), -T.owed) : '') + '</div>';
   var bs = assets();
   h += '<div class="sec">' + t('Банк шоттары') + '<button class="more" onclick="openAcc(\'asset\')">' + ic('plus') + t('Қосу') + '</button></div>';
   h += bs.length ? '<div class="list">' + bs.map(accRow).join('') + '</div>' : '<div class="card empty">' + t('Банк шоты жоқ.') + '</div>';
@@ -581,10 +579,11 @@ PAGES.accounts = function(){
   h += ls.length ? '<div class="list">' + ls.map(accRow).join('') + '</div>' : '<div class="card empty">' + t('Несие жоқ — тамаша.') + '</div>';
   h += '<div class="sec">' + t('Басқа') + '</div><div class="list">' +
     linkRow('target', t('Мақсаттар'), DB.goals.length + ' · ' + money(T.goals), "go('goals')") +
-    linkRow('people', t('Қарыздар'), t('Берген') + ' ' + moneyShort(T.lent) + ' · ' + t('Алған') + ' ' + moneyShort(T.owed), "go('debts')") +
+    linkRow('people', t('Қарыздар'), activeDebts() + ' ' + t('ашық') + (debtTotals().late ? ' · <span class="neg">' + debtTotals().late + ' ' + t('мерзімі өткен') + '</span>' : ''), "go('debts')") +
     linkRow('repeat', t('Тұрақты төлемдер'), DB.recur.length + ' ' + t('төлем'), "go('recur')") + '</div>';
   return h;
 };
+function activeDebts(){ return DB.debts.filter(function(d){ return debtLeft(d) > 0; }).length; }
 function miniStat(label, v){
   return '<div class="tile" style="min-height:0;gap:2px;box-shadow:var(--sh)"><span>' + label + '</span><b class="num" style="font-size:17px;letter-spacing:-.02em;' + (v < 0 ? 'color:var(--neg)' : '') + '">' + moneyShort(v) + '</b></div>';
 }
@@ -914,7 +913,7 @@ function goalPace(g){
 }
 PAGES.goals = function(){
   var s = 0, tg = 0; DB.goals.forEach(function(g){ s += g.saved || 0; tg += g.target || 0; });
-  var h = topBar(t('Мақсаттар'), DB.goals.length ? money(s) + ' / ' + moneyShort(tg) : '', '<button class="ibtn" onclick="openGoal()">' + ic('plus') + '</button>');
+  var h = topBar(t('Мақсаттар'), DB.goals.length > 1 ? t('Барлығы') + ' ' + moneyShort(s) + ' / ' + moneyShort(tg) : '', '<button class="ibtn" onclick="openGoal()">' + ic('plus') + '</button>');
   if(!DB.goals.length) return h + '<div class="card empty">' + ic('target') + t('Мақсат әлі жоқ.') + '<br>' + t('Жинайтын сомаңызды белгілеп қойыңыз.') + '<button class="btn" onclick="openGoal()">' + t('Мақсат қосу') + '</button></div>';
   DB.goals.forEach(function(g){
     var pct = g.target ? Math.min(100, (g.saved || 0) / g.target * 100) : 0, p = goalPace(g);
@@ -1141,7 +1140,6 @@ PAGES.stats = function(){
   var key = ym(statsMon), M = monthSum(key);
   var h = tabBar(t('Нәтиже'), '', '<button class="ibtn" onclick="exportOpsXlsx()" aria-label="Excel">' + ic('download') + '</button>');
   h += '<div class="monnav"><button onclick="shiftStat(-1)">' + ic('left') + '</button><b>' + monName(statsMon.getMonth()) + ' ' + statsMon.getFullYear() + '</b><button onclick="shiftStat(1)">' + ic('right') + '</button></div>';
-  h += '<div class="grid2">' + miniStat(t('Кіріс'), M.in) + miniStat(t('Шығын'), -M.out) + '</div>';
   h += '<div class="card"><div class="seg">' + [['out', 'Шығын'], ['in', 'Кіріс']].map(function(x){
     return '<button class="' + (statsKind === x[0] ? 'on' : '') + '" onclick="statsKind=\'' + x[0] + '\';render()">' + t(x[1]) + '</button>'; }).join('') + '</div>';
   var items = catTotals(key, statsKind), total = 0; items.forEach(function(x){ total += x.v; });
@@ -1171,6 +1169,7 @@ PAGES.stats = function(){
     '<div><span>' + t('Айлық орташа шығын') + '</span><b class="num">' + moneyShort(avg) + '</b></div>' +
     '<div><span>' + t('Жинақ үлесі') + '</span><b class="num ' + (rate < 0 ? 'neg' : 'pos') + '">' + Math.round(rate) + '%</b></div>' +
     '<div><span>' + t('Қаражат жетеді') + '</span><b class="num">' + (runway ? runway.toFixed(1).replace('.', ',') + ' ' + t('ай') : '—') + '</b></div></div>' +
+    kv(t('Ай қалдығы') + ' (' + t('кіріс') + ' − ' + t('шығын') + ')', '<span class="' + (M.in - M.out < 0 ? 'neg' : 'pos') + '">' + (M.in - M.out > 0 ? '+' : '') + money(M.in - M.out) + '</span>') +
     kv(t('Айлық шығын жоспары'), DB.pref.monthLimit ? money(DB.pref.monthLimit) + ' <button class="tag" onclick="openLimit()">' + t('өзгерту') + '</button>' : '<button class="tag" onclick="openLimit()">' + t('қою') + '</button>') + '</div>';
   return h;
 };
