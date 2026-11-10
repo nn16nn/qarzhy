@@ -526,3 +526,94 @@ document.addEventListener('DOMContentLoaded', function(){
     setTimeout(wait, 150);
   })();
 });
+
+/* =========================================================
+   14. KASPI «БЕРЕШЕК ТУРАЛЫ АНЫҚТАМА» — несиелерді жаңарту
+   ========================================================= */
+function isKaspiDebt(lines){
+  var h = lines.slice(0, 40).join(' ');
+  return /kaspi/i.test(lines.join(' ').slice(0, 4000)) && /(Берешек туралы|о задолженности|задолженност)/i.test(h) &&
+    lines.some(function(l){ return /^(Борыш қалдығы|Остаток (основного )?долга)/i.test(l); });
+}
+function parseKaspiDebt(lines){
+  var out = [], cur = null, asOf = null;
+  var MON = { 'қаңтар':1,'ақпан':2,'наурыз':3,'сәуір':4,'мамыр':5,'маусым':6,'шілде':7,'тамыз':8,'қыркүйек':9,'қазан':10,'қараша':11,'желтоқсан':12,
+              'января':1,'февраля':2,'марта':3,'апреля':4,'мая':5,'июня':6,'июля':7,'августа':8,'сентября':9,'октября':10,'ноября':11,'декабря':12 };
+  function amt(l){ var m = l.match(/([\d\s ]+,\d{2})\s*₸/); return m ? toNum(m[1]) : null; }
+  lines.forEach(function(l){
+    if(!asOf){ var a = l.match(/^(\d{1,2})\s+([А-Яа-яӘәҒғҚқҢңӨөҰұҮүҺһІі]+)\s+(\d{4})$/); if(a && MON[a[2].toLowerCase()]) asOf = a[3] + '-' + String(MON[a[2].toLowerCase()]).padStart(2, '0') + '-' + a[1].padStart(2, '0'); }
+    if(/^(Договор|Шарт)\s*№/i.test(l)){ cur = { date: null, kind: '', bal: null, over: 0 }; out.push(cur); return; }
+    if(!cur) return;
+    var d = l.match(/^(\d{2})\.(\d{2})\.(\d{4})\s+(.+)$/);
+    if(d && !cur.date){
+      cur.date = d[3] + '-' + d[2] + '-' + d[1];
+      cur.kind = d[4].replace(/\s+\d{2}\.\d{2}\.\d{4}.*$/, '').trim();
+      return;
+    }
+    if(/^(Мерзімі өткізілген|Просроченн)/i.test(l)){ var o = amt(l); if(o !== null) cur.over = o; return; }
+    if(/^(Борыш қалдығы|Остаток (основного )?долга)/i.test(l) && cur.bal === null){ cur.bal = amt(l); }
+  });
+  out = out.filter(function(c){ return c.date && c.bal !== null; });
+  out.forEach(function(c){
+    c.card = /(Төлем картасы|Платежная карта|карт)/i.test(c.kind);
+    c.label = (/(сатып алу|покупк)/i.test(c.kind) ? t('Бөліп төлеу') : c.card ? 'Kaspi Red' : t('Несие')) + ' · ' + fullDate(c.date);
+    c.key = 'kaspi:' + c.date + ':' + (c.card ? 'card' : 'loan');
+  });
+  return { asOf: asOf, rows: out };
+}
+var DEBTIMP = null;
+function planKaspiDebt(R){
+  var loans = accsOf('debt'), used = {};
+  var plan = R.rows.map(function(c){
+    var a = loans.filter(function(x){ return x.kc === c.key; })[0];
+    if(!a && c.bal > 0) a = loans.filter(function(x){ return !x.kc && !used[x.id] && Math.abs((x.bal || 0) - c.bal) <= Math.max(1, c.bal * 0.005); })[0];
+    if(a) used[a.id] = 1;
+    return { c: c, acc: a ? a.id : null };
+  });
+  /* қалғандарын ең жақын қалдығы бар несиемен жұптау (парақта өзгертуге болады) */
+  plan.forEach(function(p){
+    if(p.acc || !(p.c.bal > 0)) return;
+    var best = null;
+    loans.forEach(function(x){ if(x.kc || used[x.id]) return; if(!best || Math.abs(x.bal - p.c.bal) < Math.abs(best.bal - p.c.bal)) best = x; });
+    if(best){ p.acc = best.id; used[best.id] = 1; }
+  });
+  return plan;
+}
+function debtAct(p){ var a = acc(p.acc); return a ? (Math.abs(a.bal - p.c.bal) < 0.5 ? 'same' : 'upd') : (p.c.bal > 0 ? 'new' : 'skip'); }
+function debtPick(i, v){ DEBTIMP.plan.forEach(function(p, k){ if(k !== i && p.acc === v && v) p.acc = null; }); DEBTIMP.plan[i].acc = v || null; drawKaspiDebt(); }
+function showKaspiDebt(lines){
+  var R = parseKaspiDebt(lines);
+  if(!R.rows.length){ toast('Анықтамадан несие табылмады'); return; }
+  DEBTIMP = { R: R, plan: planKaspiDebt(R) };
+  drawKaspiDebt();
+}
+function drawKaspiDebt(){
+  var R = DEBTIMP.R, loans = accsOf('debt');
+  var h = sheetHead(t('Kaspi несиелері')) + '<p class="muted" style="margin:0 0 6px;font-size:13.5px">' + t('Берешек туралы анықтама') + (R.asOf ? ' · ' + fullDate(R.asOf) : '') + '</p>';
+  h += DEBTIMP.plan.map(function(p, i){
+    var a = acc(p.acc), act = debtAct(p), tag = { same: t('өзгеріссіз'), upd: t('жаңартылады'), 'new': t('жаңа несие'), skip: t('жабылған') }[act];
+    var row = '<div class="row wrap" style="padding:10px 0 4px;background:none"><span class="ci" style="background:#B9750F1F;color:#B9750F">' + ic('card') + '</span><span class="mid"><b>' + esc(p.c.label) + '</b><span>' +
+      esc(p.c.kind) + (p.c.over > 0 ? ' · <span class="neg">' + t('мерзімі өткен') + ' ' + money(p.c.over) + '</span>' : '') + '</span></span>' +
+      '<span class="amt num">' + money(p.c.bal) + '<small>' + (a && act === 'upd' ? t('бұрын') + ' ' + moneyShort(a.bal) : tag) + '</small></span></div>';
+    if(p.c.bal > 0) row += '<select class="in" style="margin:0 0 6px;padding:10px 36px 10px 12px;font-size:14px" onchange="debtPick(' + i + ',this.value)"><option value="">' + t('Жаңа несие ретінде қосу') + '</option>' +
+      loans.map(function(x){ return '<option value="' + x.id + '"' + (p.acc === x.id ? ' selected' : '') + '>→ ' + esc(x.name) + ' (' + moneyShort(x.bal) + ')</option>'; }).join('') + '</select>';
+    return row;
+  }).join('');
+  h += '<button class="btn lime" onclick="applyKaspiDebt()">' + ic('check') + t('Несиелерді жаңарту') + '</button>';
+  openSheet(h);
+}
+function applyKaspiDebt(){
+  if(!DEBTIMP) return;
+  var upd = 0, add = 0;
+  DEBTIMP.plan.forEach(function(p){
+    var c = p.c, a = acc(p.acc);
+    if(a){ if(Math.abs(a.bal - c.bal) >= 0.5) upd++; a.bal = c.bal; a.kc = c.key; a.syncAt = DEBTIMP.R.asOf || todayISO(); if(c.bal <= 0) a.pay = a.pay || 0; }
+    else if(c.bal > 0){
+      DB.accounts.push({ id: newId(), kind: 'debt', icon: 'card', name: c.label, bal: c.bal, rate: 0, pay: 0, payDay: null, kc: c.key, syncAt: DEBTIMP.R.asOf || todayISO() });
+      add++;
+    }
+  });
+  DEBTIMP = null;
+  done(t('Несиелер жаңартылды') + (upd ? ' · ' + upd : '') + (add ? ' · +' + add : ''));
+  go('accounts', '', true);
+}

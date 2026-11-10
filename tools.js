@@ -220,6 +220,7 @@ function onImportFile(f){
     if(/(ЕНПФ|БЖЗҚ|enpf|Бірыңғай жинақтаушы зейнетақы|Единый накопительный пенсионный)/i.test(head)){
       IMPV.status = ''; if(typeof isENPF === 'function' && isENPF(lines) && importENPF(lines)){ toast('ЕНПФ үзіндісі жүктелді'); go('pension', '', true); } else { IMPV.status = t('ЕНПФ үзіндісі танылмады'); render(); } return;
     }
+    if(typeof isKaspiDebt === 'function' && isKaspiDebt(lines)){ IMPV.status = ''; render(); showKaspiDebt(lines); return; }
     var b = bankOf(head); IMP.bank = b ? [b[0]] : null;
     var rows;
     if(isFreedomCard(lines)){
