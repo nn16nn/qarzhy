@@ -258,8 +258,9 @@ html.dark #toast button{color:#2a4a00}
 :root{--spring:cubic-bezier(.34,1.56,.64,1);--ease:cubic-bezier(.2,.8,.2,1)}
 /* док: жылжитын лайм пилюля */
 .dock{overflow:visible}
-.dock .pill{position:absolute;top:9px;width:52px;height:30px;border-radius:12px;background:var(--lime);transition:left .42s var(--spring),opacity .2s;pointer-events:none;z-index:0}
-.dock button{position:relative;z-index:1}
+.dock .pill{position:absolute;top:13px;width:52px;height:40px;border-radius:14px;background:var(--lime);transition:left .42s var(--spring),opacity .2s;pointer-events:none;z-index:0}
+.dock button{position:relative;z-index:1;height:100%;justify-content:center}
+.dock button svg.i{width:23px;height:23px}
 .dock button.on{opacity:1}
 .dock button.on svg.i{color:#141412!important}
 .dock button.on.pop svg.i{animation:icPop .45s var(--spring)}

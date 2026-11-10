@@ -1,7 +1,7 @@
 /* Qarzhy 2 — қосымша логикасы
    Дерек құрылымы ескі нұсқамен бірдей (qarzhy_v1 · IndexedDB «qarzhy»), сондықтан деректер өзгеріссіз көшеді. */
 'use strict';
-var VERSION = '2.3.0';
+var VERSION = '2.3.1';
 
 /* ================= ТІЛ ================= */
 var LANG = 'kk';
@@ -369,7 +369,7 @@ function drawDock(){
   var changed = tab !== lastTab;
   $('dock').innerHTML = '<i class="pill"></i>' + items.map(function(x){
     if(!x) return '<button class="add" onclick="openTx(\'out\')" aria-label="' + t('Қосу') + '">' + ic('plus') + '</button>';
-    return '<button data-tab="' + x[0] + '" class="' + (tab === x[0] ? 'on' + (changed ? ' pop' : '') : '') + '" onclick="go(\'' + x[0] + '\')">' + ic(x[1]) + '<span>' + t(x[2]) + '</span></button>';
+    return '<button data-tab="' + x[0] + '" class="' + (tab === x[0] ? 'on' + (changed ? ' pop' : '') : '') + '" onclick="go(\'' + x[0] + '\')" aria-label="' + t(x[2]) + '">' + ic(x[1]) + '</button>';
   }).join('');
   movePill(tab);
   lastTab = tab;
