@@ -1,7 +1,7 @@
 /* Qarzhy 2 — қосымша логикасы
    Дерек құрылымы ескі нұсқамен бірдей (qarzhy_v1 · IndexedDB «qarzhy»), сондықтан деректер өзгеріссіз көшеді. */
 'use strict';
-var VERSION = '2.4.0';
+var VERSION = '2.4.1';
 
 /* ================= ТІЛ ================= */
 var LANG = 'kk';
@@ -1403,6 +1403,16 @@ function boot(){
   $('file-import').onchange = function(){ var f = this.files[0]; this.value = ''; if(f) onImportFile(f); };
   document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'hidden') flush(); });
   window.addEventListener('pagehide', flush);
-  if('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function(){});
+  if('serviceWorker' in navigator && location.protocol === 'https:'){
+    var hadCtl = !!navigator.serviceWorker.controller, reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function(){
+      if(!hadCtl || reloaded) return; reloaded = true;
+      flush().then(function(){ location.reload(); });
+    });
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function(reg){
+      reg.update();
+      document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible') reg.update(); });
+    }).catch(function(){});
+  }
 }
 document.addEventListener('DOMContentLoaded', boot);

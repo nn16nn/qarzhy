@@ -1,5 +1,5 @@
 /* Qarzhy 2 — офлайн кэш */
-const CACHE = 'qarzhy2-v7';
+const CACHE = 'qarzhy2-v8';
 const FILES = ['./', './index.html', './app.js', './tools.js', './parse.js', './i18n.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable.png', './icon-apple.png', './privacy.html', './fonts/cormorant-700.woff2',
   './fonts/onest-cyrillic-ext-wght-normal.woff2', './fonts/onest-cyrillic-wght-normal.woff2',
@@ -22,7 +22,7 @@ self.addEventListener('fetch', e => {
   }
   /* өз файлдарымыз: алдымен желі — жаңа нұсқа бірден көрінеді; желі болмаса кэш */
   const page = e.request.mode === 'navigate';
-  e.respondWith(fetch(e.request).then(res => {
+  e.respondWith(fetch(e.request, { cache: 'no-cache' }).then(res => {
     if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(page ? './index.html' : e.request, copy)); }
     return res;
   }).catch(() => caches.match(page ? './index.html' : e.request, { ignoreSearch: true })));
