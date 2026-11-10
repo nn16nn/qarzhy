@@ -1,7 +1,7 @@
 /* Qarzhy 2 — қосымша логикасы
    Дерек құрылымы ескі нұсқамен бірдей (qarzhy_v1 · IndexedDB «qarzhy»), сондықтан деректер өзгеріссіз көшеді. */
 'use strict';
-var VERSION = '2.5.7';
+var VERSION = '2.5.8';
 
 /* ================= ТІЛ ================= */
 var LANG = 'kk';
@@ -566,7 +566,7 @@ function txRow(x){
 /* ---------- ШОТТАР ---------- */
 PAGES.accounts = function(){
   var T = totals();
-  var h = tabBar(t('Менің қаржым'), t('Таза капитал') + ' · <b class="num" style="color:var(--ink)">' + money(T.net) + '</b>');
+  var h = tabBar(t('Менің қаржым'));
   if(T.lent || T.owed) h += '<div class="grid2" style="margin-top:4px">' + (T.lent ? miniStat(t('Маған қарыз'), T.lent) : '') + (T.owed ? miniStat(t('Менің қарызым'), -T.owed) : '') + '</div>';
   var bs = assets();
   h += '<div class="sec">' + t('Банк шоттары') + '<button class="more" onclick="openAcc(\'asset\')">' + ic('plus') + t('Қосу') + '</button></div>';
