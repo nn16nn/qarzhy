@@ -480,14 +480,14 @@ PAGES.pension = function(){
   h += '<div class="hero"><div class="lab">' + t('Жалпы жинақ') + '<span class="pill" style="margin-left:auto">' + fullDate(p.asOf) + '</span></div><div class="big num">' + nf(p.bal) + '<small>₸</small></div>' +
     '<div class="hrow"><div class="cell"><span>' + t('12 айдағы жарна') + '</span><b class="num">' + moneyShort(c12) + '</b></div><div class="cell"><span>' + t('Инвест. табыс') + '</span><b class="num">' + (inc ? '+' : '') + moneyShort(inc) + '</b></div></div></div>';
   h += '<div class="sec">' + t('Шоттар') + '</div><div class="list">' + (p.accs || []).map(function(a){
-    return '<div class="row"><span class="ci" style="background:var(--sf2)">' + ic(a.k === 'opvr' ? 'building' : 'lock') + '</span><span class="mid"><b>' + esc(a.name) + '</b><span>' +
+    return '<div class="row wrap"><span class="ci" style="background:var(--sf2)">' + ic(a.k === 'opvr' ? 'building' : 'lock') + '</span><span class="mid"><b>' + esc(a.name) + '</b><span>' +
       (a.y !== null && a.y !== undefined ? t('кірістілік') + ' ' + String(a.y).replace('.', ',') + '%' : '') + (a.inc ? ' · ' + t('табыс') + ' ' + moneyShort(a.inc) : '') + '</span></span><span class="amt num">' + money(a.bal) + '</span></div>';
   }).join('') + '</div>';
   var info = '';
   if(p.thr) info += kv(t('Жеткіліктілік шегі'), money(p.thr));
   if(p.epv) info += kv(t('Шектен асқан сома (алуға болады)'), '<span class="pos">' + money(p.epv) + '</span>');
   var emps = p.emps ? Object.keys(p.emps).map(function(k){ return p.emps[k]; }).filter(Boolean) : [];
-  if(emps.length) info += kv(t('Жұмыс берушілер'), esc(emps.slice(0, 2).join(', ')));
+  if(emps.length) info += '<div class="kv" style="display:block"><span>' + t('Жұмыс берушілер') + '</span>' + emps.map(function(e){ return '<b style="display:block;text-align:left;margin-top:6px;font-weight:550;white-space:normal;overflow-wrap:anywhere">' + esc(e) + '</b>'; }).join('') + '</div>';
   if(info) h += card(t('Мәлімет'), info);
   h += '<button class="btn red" onclick="ask(\'Зейнетақы деректері өшіріледі. Жалғастырасыз ба?\',function(){DB.pension=null;save();render();},\'Өшіру\')">' + ic('trash') + t('Өшіру') + '</button>';
   return h;
