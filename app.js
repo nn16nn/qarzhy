@@ -1,7 +1,7 @@
 /* Qarzhy 2 — қосымша логикасы
    Дерек құрылымы ескі нұсқамен бірдей (qarzhy_v1 · IndexedDB «qarzhy»), сондықтан деректер өзгеріссіз көшеді. */
 'use strict';
-var VERSION = '2.2.0';
+var VERSION = '2.3.0';
 
 /* ================= ТІЛ ================= */
 var LANG = 'kk';
@@ -138,9 +138,10 @@ function toast(msg, undo){
 function ask(msg, fn, okLabel){
   var d = $('dlg');
   d.innerHTML = '<div class="dlg-box"><p>' + esc(t(msg)) + '</p><div class="btns"><button class="btn line" id="dlg-no">' + t('Болдырмау') + '</button><button class="btn" id="dlg-ok" style="background:var(--neg);color:#fff">' + t(okLabel || 'Иә') + '</button></div></div>';
-  d.classList.add('on');
-  $('dlg-no').onclick = function(){ d.classList.remove('on'); };
-  $('dlg-ok').onclick = function(){ d.classList.remove('on'); fn(); };
+  d.classList.remove('out'); d.style.display = 'grid'; d.offsetWidth; d.classList.add('on');
+  var close = function(cb){ d.classList.add('out'); setTimeout(function(){ d.classList.remove('on', 'out'); d.style.display = ''; if(cb) cb(); }, 190); };
+  $('dlg-no').onclick = function(){ close(); };
+  $('dlg-ok').onclick = function(){ close(fn); };
 }
 
 /* ================= ВАЛЮТА ================= */
@@ -365,11 +366,27 @@ window.addEventListener('popstate', function(){
 function drawDock(){
   var items = [['home', 'home', 'Басты'], ['accounts', 'wallet', 'Шоттар'], null, ['stats', 'pie', 'Нәтиже'], ['more', 'user', 'Профиль']];
   var tab = TABS.indexOf(page) >= 0 ? page : (page === 'ops' ? 'home' : '');
-  $('dock').innerHTML = items.map(function(x){
+  var changed = tab !== lastTab;
+  $('dock').innerHTML = '<i class="pill"></i>' + items.map(function(x){
     if(!x) return '<button class="add" onclick="openTx(\'out\')" aria-label="' + t('Қосу') + '">' + ic('plus') + '</button>';
-    return '<button class="' + (tab === x[0] ? 'on' : '') + '" onclick="go(\'' + x[0] + '\')">' + ic(x[1]) + '<span>' + t(x[2]) + '</span></button>';
+    return '<button data-tab="' + x[0] + '" class="' + (tab === x[0] ? 'on' + (changed ? ' pop' : '') : '') + '" onclick="go(\'' + x[0] + '\')">' + ic(x[1]) + '<span>' + t(x[2]) + '</span></button>';
   }).join('');
+  movePill(tab);
+  lastTab = tab;
 }
+var lastTab = null, pillX = null;
+function movePill(tab){
+  var dock = $('dock'), pill = dock.querySelector('.pill'), b = dock.querySelector('[data-tab="' + tab + '"]');
+  if(!b){ pill.style.opacity = 0; if(pillX !== null) pill.style.left = pillX + 'px'; return; }
+  var x = b.offsetLeft + b.offsetWidth / 2 - 26;
+  pill.style.transition = 'none';
+  pill.style.left = (pillX === null ? x : pillX) + 'px';
+  pill.offsetWidth;
+  pill.style.transition = '';
+  pill.style.left = x + 'px';
+  pillX = x;
+}
+window.addEventListener('resize', function(){ pillX = null; movePill(lastTab); });
 function topBar(title, subTitle, right){
   return '<div class="top"><button class="ibtn" onclick="back()" aria-label="' + t('Артқа') + '">' + ic('left') + '</button><h1>' + title +
     (subTitle ? '<span class="sub">' + subTitle + '</span>' : '') + '</h1>' + (right || '') + '</div>';
@@ -381,7 +398,9 @@ function tabBar(title, subTitle, right){
 /* ================= ПАРАҚ (SHEET) ================= */
 var sheetOn = false, sheetPushed = false;
 function openSheet(html){
+  $('sheet').classList.toggle('still', sheetOn);
   $('sheet-body').innerHTML = html;
+  requestAnimationFrame(function(){ enhanceSegs($('sheet-body'), 'sheet'); });
   $('sheet').scrollTop = 0;
   $('sheet').classList.add('on'); $('veil').classList.add('on');
   if(!sheetOn){ history.pushState({ sheet: 1 }, '', location.hash); sheetPushed = true; }
@@ -399,10 +418,32 @@ function done(msg){ save(); closeSheet(); render(); if(msg) toast(msg); buzz(); 
 
 /* ================= RENDER ================= */
 function render(){ renderPage(page); }
+var segPos = {};
+function enhanceSegs(root, scope){
+  (root || document).querySelectorAll('.seg, .week').forEach(function(sg, i){
+    var on = sg.querySelector('button.on'); if(!on) return;
+    var th = sg.querySelector('.thumb'); if(!th){ th = document.createElement('i'); th.className = 'thumb'; sg.insertBefore(th, sg.firstChild); }
+    sg.classList.add('has-thumb');
+    var key = (scope || page) + ':' + i + ':' + sg.children.length, to = { l: on.offsetLeft, w: on.offsetWidth }, from = segPos[key] || to;
+    th.style.transition = 'none'; th.style.left = from.l + 'px'; th.style.width = from.w + 'px';
+    th.offsetWidth; th.style.transition = '';
+    th.style.left = to.l + 'px'; th.style.width = to.w + 'px';
+    segPos[key] = to;
+    sg.querySelectorAll('button').forEach(function(b){
+      if(b._seg) return; b._seg = 1;
+      b.addEventListener('click', function(){
+        if(!sg.isConnected) return;
+        var o = { l: b.offsetLeft, w: b.offsetWidth };
+        th.style.left = o.l + 'px'; th.style.width = o.w + 'px'; segPos[key] = o;
+      });
+    });
+  });
+}
 function renderPage(p){
   var f = PAGES[p]; if(f) $('p-' + p).innerHTML = f();
   if(p === 'ops') bindSwipes();
   if(p === 'home') animateHero();
+  enhanceSegs($('p-' + p), p);
 }
 var PAGES = {};
 
@@ -497,7 +538,7 @@ function txRow(x){
     subt = (x.note ? esc(t(x.cat)) + ' · ' : '') + (a ? esc(a.name) : t('Шотсыз'));
     cls = x.type === 'in' ? 'pos' : ''; amt = signed(x.amt, x.type);
   }
-  return '<button class="row" data-id="' + x.id + '" onclick="viewTx(\'' + x.id + '\')">' + catIc(x.type === 'tr' ? 'Аударым' : x.cat) +
+  return '<button class="row' + (x.id === flashId ? ' flash' : '') + '" data-id="' + x.id + '" onclick="viewTx(\'' + x.id + '\')">' + catIc(x.type === 'tr' ? 'Аударым' : x.cat) +
     '<span class="mid"><b>' + title + '</b><span>' + subt + '</span></span><span class="amt num ' + cls + '">' + amt + '</span></button>';
 }
 
@@ -639,8 +680,8 @@ function drawTxSheet(){
     h += '<label class="f"><span>' + t('Қай несие өтеледі') + '</span><select class="in" onchange="F.loan=this.value||null"><option value="">' + t('Белгілемеу') + '</option>' +
       accsOf('debt').map(function(a){ return '<option value="' + a.id + '"' + (F.loan === a.id ? ' selected' : '') + '>' + esc(a.name) + '</option>'; }).join('') + '</select></label>';
   }
-  h += '<div class="two"><label class="f"><span>' + t('Күні') + '</span><input class="in" type="date" value="' + F.date + '" onchange="F.date=this.value"></label>' +
-    '<label class="f"><span>' + t('Түсініктеме') + '</span><input class="in" id="f-note" list="note-list" value="' + esc(F.note) + '" placeholder="' + t('Мысалы, Magnum') + '" oninput="F.note=this.value;noteHint()"></label></div>';
+  h += '<div class="f"><span>' + t('Күні') + '</span>' + weekStrip() + '</div>';
+  h += '<label class="f"><span>' + t('Түсініктеме') + '</span><input class="in" id="f-note" list="note-list" value="' + esc(F.note) + '" placeholder="' + t('Мысалы, Magnum') + '" oninput="F.note=this.value;noteHint()"></label>';
   h += '<datalist id="note-list">' + noteSuggestions() + '</datalist>';
   h += '<button class="btn" onclick="saveTx()">' + ic('check') + t('Сақтау') + '</button>';
   if(F.id) h += '<button class="btn red" onclick="delTx(\'' + F.id + '\')">' + ic('trash') + t('Өшіру') + '</button>';
@@ -648,6 +689,25 @@ function drawTxSheet(){
 }
 function amtW(v){ return Math.max(1, String(v || '').length || 1) * 0.62 + 0.3 + 'em'; }
 function fitAmt(e){ e.style.width = amtW(e.value); }
+function weekStrip(){
+  var days = [], d0 = new Date();
+  for(var i = 5; i >= 0; i--){ var d = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() - i); days.push(iso(d)); }
+  var custom = days.indexOf(F.date) < 0;
+  var WD = ['Жс','Дс','Сс','Ср','Бс','Жм','Сб'];
+  var h = '<div class="week">' + days.map(function(ds, i){
+    var d = parseISO(ds), lab = i === 5 ? t('Бүгін') : i === 4 ? t('Кеше') : t(WD[d.getDay()]);
+    return '<button class="' + (F.date === ds ? 'on' : '') + '" onclick="pickDay(this,\'' + ds + '\')">' + lab + '<b>' + d.getDate() + '</b></button>';
+  }).join('');
+  if(custom){ var c = parseISO(F.date); h += '<button class="on" onclick="openDatePick()">' + monShort(c.getMonth()) + '<b>' + c.getDate() + '</b></button>'; }
+  h += '<button class="cal" onclick="openDatePick()" aria-label="' + t('Күні') + '">' + ic('cal') + '</button>';
+  return h + '<input type="date" id="f-date" value="' + F.date + '" max="' + todayISO() + '" onchange="if(this.value){F.date=this.value;drawTxSheetKeep()}" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px"></div>';
+}
+function pickDay(el, ds){
+  F.date = ds;
+  el.parentNode.querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b === el); });
+  buzz();
+}
+function openDatePick(){ var e = $('f-date'); try{ e.showPicker(); }catch(_){ e.style.pointerEvents = 'auto'; e.focus(); e.click(); } }
 function accChips(field){
   return assets().map(function(a){
     var on = F[field] === a.id;
@@ -704,7 +764,17 @@ function saveTx(){
   applyTx(x, 1);
   DB.pref.acc = x.acc;
   if(x.type !== 'tr'){ DB.pref['cat_' + x.type] = x.cat; if(!F.id && x.note && typeof learnCat === 'function') learnCat(x.type, x.note, x.cat); }
-  done(F.id ? (more ? t('Өзгертілді') + ' · +' + more : 'Өзгертілді') : (x.type === 'in' ? 'Кіріс қосылды' : x.type === 'tr' ? 'Аударым жасалды' : 'Шығын қосылды'));
+  var msg = F.id ? (more ? t('Өзгертілді') + ' · +' + more : 'Өзгертілді') : (x.type === 'in' ? 'Кіріс қосылды' : x.type === 'tr' ? 'Аударым жасалды' : 'Шығын қосылды');
+  flashId = x.id; setTimeout(function(){ flashId = null; }, 1800);
+  okThen(document.querySelector('#sheet .btn:not(.red):not(.line)'), function(){ done(msg); });
+}
+var flashId = null;
+function okThen(btn, fn){
+  if(!btn || matchMedia('(prefers-reduced-motion:reduce)').matches) return fn();
+  btn.classList.add('ok');
+  btn.innerHTML = '<svg class="chk" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></svg>';
+  buzz();
+  setTimeout(fn, 420);
 }
 function delTx(id, quick){
   var x = txOf(id); if(!x) return;
@@ -1080,7 +1150,11 @@ PAGES.stats = function(){
     kv(t('Айлық шығын жоспары'), DB.pref.monthLimit ? money(DB.pref.monthLimit) + ' <button class="tag" onclick="openLimit()">' + t('өзгерту') + '</button>' : '<button class="tag" onclick="openLimit()">' + t('қою') + '</button>') + '</div>';
   return h;
 };
-function shiftStat(d){ statsMon = new Date(statsMon.getFullYear(), statsMon.getMonth() + d, 1); render(); }
+function shiftStat(d){
+  statsMon = new Date(statsMon.getFullYear(), statsMon.getMonth() + d, 1); render();
+  var c = d > 0 ? 'slide-l' : 'slide-r';
+  document.querySelectorAll('#p-stats .monnav b, #p-stats .grid2, #p-stats .card').forEach(function(e){ e.classList.add(c); });
+}
 function catTotals(key, type){
   var m = {}, out = [];
   DB.tx.forEach(function(x){ if(x.type === type && (x.date || '').slice(0, 7) === key){ var c = x.cat || 'Басқа'; m[c] = m[c] || { cat: c, v: 0, n: 0 }; m[c].v += x.amt; m[c].n++; } });

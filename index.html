@@ -239,7 +239,6 @@ table.t th:first-child,table.t td:first-child{text-align:left}
 
 /* ----- растау терезесі ----- */
 #dlg{position:fixed;inset:0;background:rgba(10,10,9,.5);display:none;place-items:center;z-index:70;padding:24px}
-#dlg.on{display:grid;animation:pgIn .2s}
 .dlg-box{background:var(--sf);border-radius:24px;padding:20px;max-width:360px;width:100%}
 .dlg-box p{margin:0 0 4px;font-size:15.5px;line-height:1.45;font-weight:500}
 /* ----- тост ----- */
@@ -254,6 +253,70 @@ html.dark #toast button{color:#2a4a00}
 #splash .m{font-family:Serif,serif;font-weight:700;font-size:56px;color:#F4F1E8;display:flex;align-items:center;animation:spl .7s cubic-bezier(.2,.8,.2,1)}
 #splash .m i{width:13px;height:13px;border-radius:50%;background:#D2F45C;margin-left:5px;transform:translateY(9px)}
 @keyframes spl{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+
+/* ===== 2.3 · микро-анимациялар ===== */
+:root{--spring:cubic-bezier(.34,1.56,.64,1);--ease:cubic-bezier(.2,.8,.2,1)}
+/* док: жылжитын лайм пилюля */
+.dock{overflow:visible}
+.dock .pill{position:absolute;top:9px;width:52px;height:30px;border-radius:12px;background:var(--lime);transition:left .42s var(--spring),opacity .2s;pointer-events:none;z-index:0}
+.dock button{position:relative;z-index:1}
+.dock button.on{opacity:1}
+.dock button.on svg.i{color:#141412!important}
+.dock button.on.pop svg.i{animation:icPop .45s var(--spring)}
+@keyframes icPop{0%{transform:scale(.7) translateY(2px)}60%{transform:scale(1.12) translateY(-1px)}100%{transform:none}}
+/* сегмент: жылжитын бегунок */
+.seg{position:relative}
+.seg .thumb{position:absolute;top:4px;bottom:4px;border-radius:11px;background:var(--sf);box-shadow:0 1px 3px rgba(0,0,0,.1);transition:left .38s var(--spring),width .38s var(--spring);z-index:0}
+.seg.has-thumb button{position:relative;z-index:1;background:transparent!important;box-shadow:none!important}
+html.dark .seg .thumb{background:#34342f}
+/* апта жолағы */
+.week{display:flex;gap:4px;background:var(--sf2);border-radius:16px;padding:4px;position:relative}
+.week button{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 0;border-radius:12px;font-size:11px;color:var(--mute);font-weight:550;position:relative;z-index:1;transition:color .25s}
+.week button b{font-size:16px;color:var(--ink);font-weight:650;letter-spacing:-.02em}
+.week button.on,.week button.on b{color:var(--lime-ink)}
+.week .thumb{position:absolute;top:4px;bottom:4px;border-radius:12px;background:var(--lime);transition:left .4s var(--spring),width .4s var(--spring);z-index:0}
+.week .cal{flex:0 0 40px}
+.week .cal svg.i{width:18px;height:18px;margin-top:6px;color:var(--ink)}
+/* диалог: кіру және шығу */
+#dlg{opacity:0;transition:opacity .2s}
+#dlg.on{opacity:1;animation:none}
+#dlg .dlg-box{transform:scale(.9) translateY(10px);opacity:0;transition:transform .38s var(--spring),opacity .2s}
+#dlg.on .dlg-box{transform:none;opacity:1}
+#dlg.out{opacity:0}
+#dlg.out .dlg-box{transform:scale(.96) translateY(6px);opacity:0;transition:transform .18s ease-in,opacity .18s}
+/* «сақталды» түймесі */
+.btn.ok{background:var(--lime)!important;color:#141412!important;pointer-events:none}
+.btn .chk{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.btn .chk path{stroke-dasharray:24;stroke-dashoffset:24;animation:draw .35s .05s var(--ease) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.btn.ok{animation:okPop .4s var(--spring)}
+@keyframes okPop{0%{transform:scale(.96)}60%{transform:scale(1.03)}100%{transform:none}}
+/* жаңа жолды белгілеу */
+.row.flash{animation:flash 1.6s var(--ease)}
+@keyframes flash{0%,25%{background:color-mix(in srgb,var(--lime) 55%,var(--sf))}100%{background:var(--sf)}}
+/* санат/чип таңдау */
+.cat.on .ci{animation:pop .4s var(--spring)}
+.chip.on{animation:pop .35s var(--spring)}
+@keyframes pop{0%{transform:scale(.85)}70%{transform:scale(1.06)}100%{transform:none}}
+/* ай ауыстыру — бет жылжуы */
+.slide-l{animation:slL .36s var(--ease)}.slide-r{animation:slR .36s var(--ease)}
+@keyframes slL{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes slR{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+.monnav b{display:inline-block}
+/* парақ: серпімді ашылу */
+.sheet{transition:transform .42s var(--spring),visibility .42s}
+.sheet:not(.on){transition:transform .26s ease-in,visibility .26s}
+#sheet-body>*{animation:none}
+.sheet.on:not(.still) #sheet-body>*{animation:stg .4s var(--ease) both}
+.sheet.on #sheet-body>*:nth-child(2){animation-delay:.03s}.sheet.on #sheet-body>*:nth-child(3){animation-delay:.06s}
+.sheet.on #sheet-body>*:nth-child(4){animation-delay:.09s}.sheet.on #sheet-body>*:nth-child(n+5){animation-delay:.12s}
+@keyframes stg{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* тост: серпімді */
+#toast{transition:transform .38s var(--spring),opacity .2s}
+/* басу сезімі */
+.row,.tile,.quick button,.chip,.cat,.btn,.ibtn{transition:transform .15s var(--ease),background .2s}
+.row:active{transform:scale(.985)}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
