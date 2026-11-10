@@ -1,7 +1,7 @@
 /* Qarzhy 2 — қосымша логикасы
    Дерек құрылымы ескі нұсқамен бірдей (qarzhy_v1 · IndexedDB «qarzhy»), сондықтан деректер өзгеріссіз көшеді. */
 'use strict';
-var VERSION = '2.4.3';
+var VERSION = '2.4.4';
 
 /* ================= ТІЛ ================= */
 var LANG = 'kk';
@@ -485,11 +485,6 @@ PAGES.home = function(){
       '<button class="cell" onclick="statsKind=\'out\';go(\'stats\')"><span><i class="dot" style="background:var(--neg)"></i>' + t('Шығын') + '</span><b class="num">' + moneyShort(M.out) + '</b></button>' +
     '</div></div>';
   if(isFresh()) return h + welcomeCard();
-  h += '<div class="quick">' +
-    '<button onclick="openTx(\'out\')"><span class="q">' + ic('out') + '</span>' + t('Шығын') + '</button>' +
-    '<button onclick="openTx(\'in\')"><span class="q">' + ic('in') + '</span>' + t('Кіріс') + '</button>' +
-    '<button onclick="openTx(\'tr\')"><span class="q">' + ic('swap') + '</span>' + t('Аударым') + '</button>' +
-    '<button onclick="go(\'import\')"><span class="q">' + ic('upload') + '</span>' + t('Жүктеу') + '</button></div>';
   /* ескерту */
   var warn = '';
   if(rc.due.length) warn += alertRow('bell', t('Төлем жақындады') + ': ' + rc.due.map(function(r){ return esc(r.name); }).join(', '), "go('recur')");
@@ -577,10 +572,6 @@ PAGES.accounts = function(){
   var ls = accsOf('debt');
   h += '<div class="sec">' + t('Несиелер') + '<button class="more" onclick="openAcc(\'debt\')">' + ic('plus') + t('Қосу') + '</button></div>';
   h += ls.length ? '<div class="list">' + ls.map(accRow).join('') + '</div>' : '<div class="card empty">' + t('Несие жоқ — тамаша.') + '</div>';
-  h += '<div class="sec">' + t('Басқа') + '</div><div class="list">' +
-    linkRow('target', t('Мақсаттар'), DB.goals.length + ' · ' + money(T.goals), "go('goals')") +
-    linkRow('people', t('Қарыздар'), activeDebts() + ' ' + t('ашық') + (debtTotals().late ? ' · <span class="neg">' + debtTotals().late + ' ' + t('мерзімі өткен') + '</span>' : ''), "go('debts')") +
-    linkRow('repeat', t('Тұрақты төлемдер'), DB.recur.length + ' ' + t('төлем'), "go('recur')") + '</div>';
   return h;
 };
 function activeDebts(){ return DB.debts.filter(function(d){ return debtLeft(d) > 0; }).length; }
@@ -1138,7 +1129,7 @@ var statsKind = 'out', statsMon = null;
 PAGES.stats = function(){
   if(!statsMon){ statsMon = new Date(); statsMon.setDate(1); }
   var key = ym(statsMon), M = monthSum(key);
-  var h = tabBar(t('Нәтиже'), '', '<button class="ibtn" onclick="exportOpsXlsx()" aria-label="Excel">' + ic('download') + '</button>');
+  var h = tabBar(t('Нәтиже'));
   h += '<div class="monnav"><button onclick="shiftStat(-1)">' + ic('left') + '</button><b>' + monName(statsMon.getMonth()) + ' ' + statsMon.getFullYear() + '</b><button onclick="shiftStat(1)">' + ic('right') + '</button></div>';
   h += '<div class="card"><div class="seg">' + [['out', 'Шығын'], ['in', 'Кіріс']].map(function(x){
     return '<button class="' + (statsKind === x[0] ? 'on' : '') + '" onclick="statsKind=\'' + x[0] + '\';render()">' + t(x[1]) + '</button>'; }).join('') + '</div>';
@@ -1211,8 +1202,7 @@ PAGES.more = function(){
   h += '<div class="sec">' + t('Деректер') + '</div><div class="list">' +
     linkRow('download', t('Деректі сақтау'), t('Файлды Drive-қа немесе поштаға сақтап қойыңыз'), 'exportData()') +
     linkRow('upload', t('Деректі ашу'), t('Бұрын сақталған файлдан қайтару'), "$('file-backup').click()") +
-    linkRow('history', t('Автокөшірмелер'), t('Соңғы 7 күн'), 'openSnaps()') +
-    linkRow('file', t('Банк үзіндісін жүктеу'), 'Kaspi · Freedom · Halyk · Forte', "go('import')") + '</div>';
+    linkRow('history', t('Автокөшірмелер'), t('Соңғы 7 күн'), 'openSnaps()') + '</div>';
   h += '<div class="sec">' + t('Көрініс') + '</div><div class="card" style="margin-top:0">' +
     '<div class="f" style="margin-top:0"><span>' + t('Тақырып') + '</span><div class="seg">' + [['auto', 'Авто'], ['light', 'Ашық'], ['dark', 'Қараңғы']].map(function(x){
       return '<button class="' + (DB.theme === x[0] ? 'on' : '') + '" onclick="setTheme(\'' + x[0] + '\')">' + t(x[1]) + '</button>'; }).join('') + '</div></div>' +
