@@ -1,7 +1,7 @@
 /* Qarzhy 2 — қосымша логикасы
    Дерек құрылымы ескі нұсқамен бірдей (qarzhy_v1 · IndexedDB «qarzhy»), сондықтан деректер өзгеріссіз көшеді. */
 'use strict';
-var VERSION = '2.5.5';
+var VERSION = '2.5.6';
 
 /* ================= ТІЛ ================= */
 var LANG = 'kk';
@@ -584,7 +584,7 @@ function miniStat(label, v){
 function accRow(a){
   var sym = curSym(a), extra = '';
   if(foreign(a) && fxRate(a.cur)) extra = '<small>≈ ' + moneyShort(toBase(a)) + '</small>';
-  if(a.kind === 'debt' && a.pay) extra = '<small>' + t('айына') + ' ' + moneyShort(a.pay) + '</small>';
+  if(a.kind === 'debt'){ var lm = loanLeft(a); extra = '<small>' + [a.pay ? t('айына') + ' ' + moneyShort(a.pay) : '', lm > 0 ? lm + ' ' + t('ай қалды') : ''].filter(Boolean).join(' · ') + '</small>'; }
   return '<button class="row" onclick="viewAcc(\'' + a.id + '\')">' + accBadge(a) +
     '<span class="mid"><b>' + esc(a.name) + '</b><span>' + (a.kind === 'debt' ? (a.rate ? a.rate + '% · ' : '') + t('Несие') : (a.cur || BASE())) + '</span></span>' +
     '<span class="amt num ' + (a.kind === 'debt' ? 'neg' : '') + '">' + money(a.kind === 'debt' ? -a.bal : a.bal, sym, foreign(a)) + extra + '</span></button>';
@@ -827,8 +827,8 @@ function kv(k, v){ return '<div class="kv"><span>' + k + '</span><b class="num">
 var AF = null;
 function openAcc(kind, id){
   var a = id ? acc(id) : null;
-  AF = a ? { id: a.id, kind: a.kind, name: a.name, bal: a.bal, cur: a.cur || BASE(), rate: a.rate || '', pay: a.pay || '', payDay: a.payDay || '', icon: a.icon }
-         : { id: null, kind: kind || 'asset', name: '', bal: '', cur: BASE(), rate: '', pay: '', payDay: '', icon: kind === 'debt' ? 'card' : 'wallet' };
+  AF = a ? { id: a.id, kind: a.kind, name: a.name, bal: a.bal, cur: a.cur || BASE(), rate: a.rate || '', pay: a.pay || '', payDay: a.payDay || '', left: a.kind === 'debt' && a.end ? (loanLeft(a) || '') : '', icon: a.icon }
+         : { id: null, kind: kind || 'asset', name: '', bal: '', cur: BASE(), rate: '', pay: '', payDay: '', left: '', icon: kind === 'debt' ? 'card' : 'wallet' };
   drawAccSheet();
 }
 function drawAccSheet(){
@@ -846,7 +846,8 @@ function drawAccSheet(){
   } else {
     h += '<div class="two"><label class="f"><span>' + t('Мөлшерлеме, %') + '</span><input class="in" inputmode="decimal" value="' + AF.rate + '" oninput="AF.rate=this.value"></label>' +
       '<label class="f"><span>' + t('Айлық төлем') + '</span><input class="in" inputmode="decimal" value="' + AF.pay + '" oninput="AF.pay=this.value"></label></div>' +
-      '<label class="f"><span>' + t('Төлем күні (1–31)') + '</span><input class="in" inputmode="numeric" value="' + AF.payDay + '" oninput="AF.payDay=this.value"></label>';
+      '<div class="two"><label class="f"><span>' + t('Төлем күні (1–31)') + '</span><input class="in" inputmode="numeric" value="' + AF.payDay + '" oninput="AF.payDay=this.value"></label>' +
+      '<label class="f"><span>' + t('Қанша ай қалды') + '</span><input class="in" inputmode="numeric" value="' + AF.left + '" oninput="AF.left=this.value" placeholder="' + t('мысалы, 12') + '"></label></div>';
   }
   h += '<button class="btn" onclick="saveAcc()">' + ic('check') + t('Сақтау') + '</button>';
   if(AF.id) h += '<button class="btn red" onclick="delAcc(\'' + AF.id + '\')">' + ic('trash') + t('Шотты өшіру') + '</button>';
@@ -862,7 +863,11 @@ function saveAcc(){
   var a = AF.id ? acc(AF.id) : { id: newId(), kind: AF.kind, icon: AF.icon };
   a.name = name; a.bal = num(AF.bal);
   if(AF.kind === 'asset') a.cur = AF.cur;
-  if(AF.kind === 'debt'){ a.rate = num(AF.rate); a.pay = num(AF.pay); var pd = Math.round(num(AF.payDay)); a.payDay = pd >= 1 && pd <= 31 ? pd : null; }
+  if(AF.kind === 'debt'){ a.rate = num(AF.rate); a.pay = num(AF.pay); var pd = Math.round(num(AF.payDay)); a.payDay = pd >= 1 && pd <= 31 ? pd : null;
+    var n = Math.round(num(AF.left));
+    if(n > 0){ var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + n - 1); a.end = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2);
+      if(!(a.pay > 0) && a.bal > 0){ var r = a.rate / 1200; a.pay = Math.round(r ? a.bal * r / (1 - Math.pow(1 + r, -n)) : a.bal / n); } }
+    else delete a.end; }
   if(!AF.id) DB.accounts.push(a);
   done(AF.id ? 'Сақталды' : (AF.kind === 'debt' ? 'Несие қосылды' : 'Шот қосылды'));
 }
@@ -879,6 +884,15 @@ function monthsLeft(bal, rate, pay){
   while(b > 0 && n < 600){ b = b * (1 + i) - pay; n++; }
   return n;
 }
+function loanLeft(a){
+  if(!(a.bal > 0)) return 0;
+  if(a.end){ var p = a.end.split('-'), d = new Date(); return Math.max(1, (+p[0] - d.getFullYear()) * 12 + (+p[1] - 1 - d.getMonth()) + 1); }
+  return a.pay > 0 ? monthsLeft(a.bal, a.rate || 0, a.pay) : -1;
+}
+function loanEnd(a, n){
+  if(a.end){ var p = a.end.split('-'); return monName(+p[1] - 1) + ' ' + p[0]; }
+  var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + n - 1); return monName(d.getMonth()) + ' ' + d.getFullYear();
+}
 function viewAcc(id){
   var a = acc(id); if(!a) return;
   var sym = curSym(a), h = sheetHead(esc(a.name));
@@ -888,13 +902,14 @@ function viewAcc(id){
   if(a.kind === 'debt'){
     h += kv(t('Мөлшерлеме'), (a.rate || 0) + '%') + kv(t('Айлық төлем'), money(a.pay || 0));
     if(a.payDay) h += kv(t('Төлем күні'), a.payDay);
+    var lm = loanLeft(a);
+    if(a.bal > 0 && lm !== -1 || a.pay > 0) h += kv(t('Қалған мерзім'), lm > 0 ? lm + ' ' + t('ай') + ' · ' + loanEnd(a, lm) : t('есептелмеді'));
     if(a.pay > 0 && a.bal > 0){
       var m = monthsLeft(a.bal, a.rate || 0, a.pay);
-      h += kv(t('Қалған мерзім'), m > 0 ? m + ' ' + t('ай') : t('есептелмеді'));
       if(m > 0){
         var m2 = monthsLeft(a.bal, a.rate || 0, a.pay * 1.25), paid = a.pay * m, paid2 = a.pay * 1.25 * m2;
         h += '<div class="card" style="background:var(--sf2);box-shadow:none"><b style="font-size:14px">' + t('Айына 25% артық төлесеңіз') + '</b>' +
-          '<div class="muted" style="font-size:13.5px;margin-top:4px">' + (m - m2) + ' ' + t('ай ерте жабылады') + ' · ' + t('үнем') + ' ≈ ' + money(Math.max(0, paid - paid2)) + '</div></div>';
+          '<div class="muted" style="font-size:13.5px;margin-top:4px">' + (m - m2) + ' ' + t('ай ерте жабылады') + (paid - paid2 >= 1 ? ' · ' + t('үнем') + ' ≈ ' + money(paid - paid2) : '') + '</div></div>';
       }
     }
   }
