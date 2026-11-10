@@ -122,21 +122,28 @@ var CALC_RUN = {
     var h = '<div class="card"><h2>' + t('Бөлімдер') + '<span class="more ' + (Math.round(tot) === 100 ? 'pos' : 'neg') + '">' + Math.round(tot) + '%</span></h2>';
     h += SPL.items.map(function(x, i){
       var col = SPLIT_COL[i % SPLIT_COL.length];
-      return '<div style="display:flex;gap:8px;align-items:center;margin-top:8px"><i class="dot" style="background:' + col + ';width:10px;height:10px"></i>' +
-        '<input class="in" style="flex:1;padding:10px 12px" value="' + esc(x.name) + '" oninput="SPL.items[' + i + '].name=this.value;splitSave()">' +
-        '<input class="in" style="width:70px;padding:10px;text-align:center" inputmode="decimal" value="' + x.pct + '" oninput="SPL.items[' + i + '].pct=num(this.value);splitSave();splitAmounts()">' +
-        '<b class="num" id="spl-' + i + '" style="width:92px;text-align:right;font-size:14px">' + moneyShort(SPL.sum * x.pct / 100) + '</b>' +
-        '<button class="ibtn" style="width:34px;height:34px;box-shadow:none;background:var(--sf2)" onclick="SPL.items.splice(' + i + ',1);splitSave();calcRun(\'split\')">' + ic('x') + '</button></div>';
+      return '<div class="spl" style="--c:' + col + '">' +
+        '<div class="spl-top"><i class="dot" style="background:' + col + '"></i>' +
+        '<input class="spl-name" value="' + esc(x.name) + '" oninput="SPL.items[' + i + '].name=this.value;splitSave()">' +
+        '<b class="num" id="spl-' + i + '">' + money(SPL.sum * x.pct / 100) + '</b>' +
+        '<button class="spl-x" aria-label="' + t('Өшіру') + '" onclick="SPL.items.splice(' + i + ',1);splitSave();calcRun(\'split\')">' + ic('x') + '</button></div>' +
+        '<div class="spl-bot"><input type="range" min="0" max="100" step="1" value="' + x.pct + '" oninput="splPct(' + i + ',this.value,1)">' +
+        '<label class="spl-pct"><input inputmode="decimal" id="splp-' + i + '" value="' + x.pct + '" oninput="splPct(' + i + ',this.value,0)"><span>%</span></label></div></div>';
     }).join('');
     h += '<div class="btns" style="margin-top:12px"><button class="btn line sm" style="flex:1" onclick="SPL.items.push({name:t(\'Жаңа бөлім\'),pct:0,to:\'\'});splitSave();calcRun(\'split\')">' + ic('plus') + t('Бөлім қосу') + '</button>' +
       '<button class="btn line sm" style="flex:1" onclick="SPL.items=SPLIT_DEF.map(function(x){return{name:t(x.name),pct:x.pct,to:\'\'}});splitSave();calcRun(\'split\')">' + t('Әдепкі 50/20/20/10') + '</button></div></div>';
+    h += '<div id="spl-sum">' + splSummary(tot) + '</div>';
+    return h;
+  }
+};
+function splSummary(tot){
+    var h = '';
     if(SPL.sum > 0){
       h += '<div class="card"><div style="display:flex;height:14px;border-radius:9px;overflow:hidden;gap:2px">' + SPL.items.map(function(x, i){ return x.pct > 0 ? '<i style="flex:' + x.pct + ';background:' + SPLIT_COL[i % SPLIT_COL.length] + '"></i>' : ''; }).join('') + '</div>' +
         '<p class="muted" style="font-size:13px;margin:10px 0 0">' + (Math.round(tot) === 100 ? t('Барлығы 100% — жоспар дайын.') : t('Пайыздардың жиыны 100% болуы керек.')) + '</p></div>';
     }
     return h;
-  }
-};
+}
 var SPLIT_DEF = [{ name: 'Қажеттілік', pct: 50 }, { name: 'Инвестиция', pct: 20 }, { name: 'Жинақ', pct: 20 }, { name: 'Өзіме', pct: 10 }];
 var SPLIT_COL = ['#141412', '#169A55', '#C08A06', '#8B5CF6', '#E2474C', '#0A8FB0', '#E07A2F', '#7C776E'];
 var SPL = null, splTm = null;
@@ -150,10 +157,16 @@ function splitSave(){
   clearTimeout(splTm);
   splTm = setTimeout(function(){ DB.split = { sum: SPL.sum, src: SPL.src, applied: SPL.applied, items: SPL.items.map(function(x){ return { name: x.name, pct: x.pct, to: x.to || '' }; }) }; save(); }, 400);
 }
+function splPct(i, v, fromRange){
+  SPL.items[i].pct = num(v); splitSave(); splitAmounts();
+  var box = document.querySelectorAll('#calc-out .spl')[i]; if(!box) return;
+  if(fromRange){ var p = $('splp-' + i); if(p) p.value = SPL.items[i].pct; } else { var r = box.querySelector('input[type=range]'); if(r) r.value = SPL.items[i].pct; }
+}
 function splitAmounts(){
   var tot = 0;
-  SPL.items.forEach(function(x, i){ tot += x.pct; var e = $('spl-' + i); if(e) e.textContent = moneyShort(SPL.sum * x.pct / 100); });
+  SPL.items.forEach(function(x, i){ tot += x.pct; var e = $('spl-' + i); if(e) e.textContent = money(SPL.sum * x.pct / 100); });
   var hd = document.querySelector('#calc-out h2 .more'); if(hd){ hd.textContent = Math.round(tot) + '%'; hd.className = 'more ' + (Math.round(tot) === 100 ? 'pos' : 'neg'); }
+  var sm = $('spl-sum'); if(sm) sm.innerHTML = splSummary(tot);
 }
 
 /* ================= ИМПОРТ ================= */
