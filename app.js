@@ -1,7 +1,7 @@
 /* Qarzhy 2 — қосымша логикасы
    Дерек құрылымы ескі нұсқамен бірдей (qarzhy_v1 · IndexedDB «qarzhy»), сондықтан деректер өзгеріссіз көшеді. */
 'use strict';
-var VERSION = '2.3.1';
+var VERSION = '2.4.0';
 
 /* ================= ТІЛ ================= */
 var LANG = 'kk';
@@ -360,6 +360,7 @@ function readHash(){
 }
 function back(){ if(history.length > 1 && TABS.indexOf(page) < 0) history.back(); else go('home'); }
 window.addEventListener('popstate', function(){
+  if(fanOn){ fanOn = false; $('fan').classList.remove('on'); var a = document.querySelector('.dock .add'); if(a) a.classList.remove('open'); return; }
   if(sheetOn){ closeSheet(true); return; }
   readHash(); show();
 });
@@ -368,13 +369,36 @@ function drawDock(){
   var tab = TABS.indexOf(page) >= 0 ? page : (page === 'ops' ? 'home' : '');
   var changed = tab !== lastTab;
   $('dock').innerHTML = '<i class="pill"></i>' + items.map(function(x){
-    if(!x) return '<button class="add" onclick="openTx(\'out\')" aria-label="' + t('Қосу') + '">' + ic('plus') + '</button>';
+    if(!x) return '<button class="add' + (fanOn ? ' open' : '') + '" onclick="toggleFan()" aria-label="' + t('Қосу') + '">' + ic('plus') + '</button>';
     return '<button data-tab="' + x[0] + '" class="' + (tab === x[0] ? 'on' + (changed ? ' pop' : '') : '') + '" onclick="go(\'' + x[0] + '\')" aria-label="' + t(x[2]) + '">' + ic(x[1]) + '</button>';
   }).join('');
   movePill(tab);
   lastTab = tab;
 }
-var lastTab = null, pillX = null;
+var lastTab = null, pillX = null, fanOn = false;
+var FAN = [['out', 'out', 'Шығын'], ['in', 'in', 'Кіріс'], ['tr', 'swap', 'Аударым'], ['import', 'upload', 'Жүктеу']];
+function toggleFan(force){
+  var on = force === undefined ? !fanOn : force;
+  if(on === fanOn) return;
+  fanOn = on;
+  var f = $('fan'), add = document.querySelector('.dock .add');
+  if(add) add.classList.toggle('open', on);
+  if(on){
+    f.innerHTML = '<div class="fan-veil" onclick="toggleFan(false)"></div>' + FAN.map(function(x, i){
+      var a = (-150 + i * 40) * Math.PI / 180;
+      return '<button class="fan-b" style="--i:' + i + ';--x:' + (Math.cos(a) * 118).toFixed(1) + 'px;--y:' + (Math.sin(a) * 118).toFixed(1) + 'px" onclick="fanGo(\'' + x[0] + '\')"><span class="fan-ic">' + ic(x[1]) + '</span><span class="fan-t">' + t(x[2]) + '</span></button>';
+    }).join('');
+    f.classList.add('on'); buzz();
+    history.pushState({ fan: 1 }, '', location.hash);
+  } else {
+    f.classList.remove('on');
+    if(history.state && history.state.fan) history.back();
+  }
+}
+function fanGo(k){
+  toggleFan(false);
+  setTimeout(function(){ if(k === 'import') go('import'); else openTx(k); }, 160);
+}
 function movePill(tab){
   var dock = $('dock'), pill = dock.querySelector('.pill'), b = dock.querySelector('[data-tab="' + tab + '"]');
   if(!b){ pill.style.opacity = 0; if(pillX !== null) pill.style.left = pillX + 'px'; return; }

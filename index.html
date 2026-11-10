@@ -318,6 +318,25 @@ html.dark .seg .thumb{background:#34342f}
 .row,.tile,.quick button,.chip,.cat,.btn,.ibtn{transition:transform .15s var(--ease),background .2s}
 .row:active{transform:scale(.985)}
 
+/* ===== + мәзірі: желпуіш ===== */
+#fan{position:fixed;inset:0;z-index:19;pointer-events:none}
+#fan.on{pointer-events:auto}
+.fan-veil{position:absolute;inset:0;background:rgba(10,10,9,.38);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;transition:opacity .25s}
+#fan.on .fan-veil{opacity:1}
+.fan-b{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 45px);width:64px;margin-left:-32px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  transform:translate(0,0) scale(.3);opacity:0;
+  transition:transform .32s cubic-bezier(.4,0,.2,1),opacity .18s;transition-delay:calc((3 - var(--i)) * 18ms)}
+#fan.on .fan-b{opacity:1;transform:translate(var(--x),var(--y)) scale(1);
+  transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .2s;transition-delay:calc(var(--i) * 40ms)}
+.fan-ic{width:54px;height:54px;border-radius:18px;display:grid;place-items:center;background:var(--sf);color:var(--ink);box-shadow:0 10px 26px -8px rgba(0,0,0,.45)}
+.fan-b:first-child+.fan-b .fan-ic,.fan-b:nth-of-type(1) .fan-ic{background:var(--lime);color:#141412}
+.fan-ic svg.i{width:24px;height:24px}
+.fan-t{font-size:12px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)}
+.fan-b:active .fan-ic{transform:scale(.92)}
+.dock .add svg.i{transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.dock .add.open svg.i{transform:rotate(135deg)}
+.dock .add.open{background:var(--sf);color:var(--ink)}
+.dock .add.open svg.i{color:var(--ink)!important}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -335,6 +354,7 @@ html.dark .seg .thumb{background:#34342f}
   <section class="page" id="p-calc"></section>
   <section class="page" id="p-import"></section>
 </main>
+<div id="fan"></div>
 <nav class="dock" id="dock"></nav>
 <div class="veil" id="veil"></div>
 <div class="sheet" id="sheet"><div class="grab"></div><div id="sheet-body"></div></div>
