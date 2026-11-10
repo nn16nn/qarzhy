@@ -1,7 +1,7 @@
 /* Qarzhy 2 — қосымша логикасы
    Дерек құрылымы ескі нұсқамен бірдей (qarzhy_v1 · IndexedDB «qarzhy»), сондықтан деректер өзгеріссіз көшеді. */
 'use strict';
-var VERSION = '2.4.4';
+var VERSION = '2.5.0';
 
 /* ================= ТІЛ ================= */
 var LANG = 'kk';
@@ -326,8 +326,8 @@ function applyTx(x, sign){
   var a = acc(x.acc);
   if(x.type === 'tr'){
     var to = acc(x.to);
-    if(a) a.bal -= sign * toAcc(a, x.amt);
-    if(to) to.bal += sign * toAcc(to, x.amt);
+    if(a) a.bal -= sign * (x.amtFrom > 0 ? x.amtFrom : toAcc(a, x.amt));
+    if(to) to.bal += sign * (x.amt2 > 0 ? x.amt2 : toAcc(to, x.amt));
     return;
   }
   if(a) a.bal += sign * toAcc(a, x.type === 'in' ? x.amt : -x.amt);
@@ -376,7 +376,7 @@ function drawDock(){
   lastTab = tab;
 }
 var lastTab = null, pillX = null, fanOn = false;
-var FAN = [['out', 'out', 'Шығын'], ['in', 'in', 'Кіріс'], ['tr', 'swap', 'Аударым'], ['import', 'upload', 'Жүктеу']];
+var FAN = [['out', 'out', 'Шығын'], ['in', 'in', 'Кіріс'], ['tr', 'swap', 'Аударым'], ['scan', 'receipt', 'Чек'], ['import', 'upload', 'Жүктеу']];
 function toggleFan(force){
   var on = force === undefined ? !fanOn : force;
   if(on === fanOn) return;
@@ -385,7 +385,7 @@ function toggleFan(force){
   if(add) add.classList.toggle('open', on);
   if(on){
     f.innerHTML = '<div class="fan-veil" onclick="toggleFan(false)"></div>' + FAN.map(function(x, i){
-      var a = (-150 + i * 40) * Math.PI / 180;
+      var a = (-160 + i * (140 / (FAN.length - 1))) * Math.PI / 180;
       return '<button class="fan-b" style="--i:' + i + ';--x:' + (Math.cos(a) * 118).toFixed(1) + 'px;--y:' + (Math.sin(a) * 118).toFixed(1) + 'px" onclick="fanGo(\'' + x[0] + '\')"><span class="fan-ic">' + ic(x[1]) + '</span><span class="fan-t">' + t(x[2]) + '</span></button>';
     }).join('');
     f.classList.add('on'); buzz();
@@ -397,7 +397,7 @@ function toggleFan(force){
 }
 function fanGo(k){
   toggleFan(false);
-  setTimeout(function(){ if(k === 'import') go('import'); else openTx(k); }, 160);
+  setTimeout(function(){ if(k === 'import') go('import'); else if(k === 'scan') startScan(); else openTx(k); }, 160);
 }
 function movePill(tab){
   var dock = $('dock'), pill = dock.querySelector('.pill'), b = dock.querySelector('[data-tab="' + tab + '"]');
@@ -497,6 +497,7 @@ PAGES.home = function(){
       '<div style="flex:1"><span class="muted" style="font-size:12.5px">' + t('Бүгін жұмсауға болады') + '</span><b class="num" style="display:block;font-size:18px;letter-spacing:-.02em">' + money(canDay) + '</b>' +
       '<div class="prog"><i style="width:' + Math.min(100, M.out / lim * 100).toFixed(1) + '%;' + (M.out > lim ? 'background:var(--neg)' : '') + '"></i></div></div></div>';
   }
+  if(typeof homeAlerts === 'function') warn += homeAlerts();
   h += warn;
   h += '<div class="grid2">' +
     tile('target', t('Мақсаттар'), DB.goals.length ? moneyShort(gSaved) + (gTarget ? ' · ' + Math.round(gSaved / gTarget * 100) + '%' : '') : t('Әлі жоқ'), "go('goals')") +
@@ -551,7 +552,8 @@ function txRow(x){
   if(x.type === 'tr'){
     var to = acc(x.to);
     title = t('Аударым'); subt = (a ? esc(a.name) : '—') + ' → ' + (to ? esc(to.name) : '—');
-    amt = nf(x.amt) + '\u00A0' + S();
+    amt = x.amt2 > 0 && to && a && (a.cur || BASE()) !== (to.cur || BASE()) ? nf(x.amtFrom || x.amt, true) + '\u00A0' + curSym(a) + ' → ' + nf(x.amt2, true) + '\u00A0' + curSym(to) : nf(x.amt) + '\u00A0' + S();
+    if(x.amt2 > 0) title = t('Айырбас');
   } else {
     title = x.note ? esc(x.note) : esc(t(x.cat));
     subt = (x.note ? esc(t(x.cat)) + ' · ' : '') + (a ? esc(a.name) : t('Шотсыз'));
@@ -572,6 +574,7 @@ PAGES.accounts = function(){
   var ls = accsOf('debt');
   h += '<div class="sec">' + t('Несиелер') + '<button class="more" onclick="openAcc(\'debt\')">' + ic('plus') + t('Қосу') + '</button></div>';
   h += ls.length ? '<div class="list">' + ls.map(accRow).join('') + '</div>' : '<div class="card empty">' + t('Несие жоқ — тамаша.') + '</div>';
+  if(typeof accountsExtra === 'function') h += accountsExtra();
   return h;
 };
 function activeDebts(){ return DB.debts.filter(function(d){ return debtLeft(d) > 0; }).length; }
@@ -591,7 +594,7 @@ function linkRow(icn, title, subt, act){
 }
 
 /* ---------- ОПЕРАЦИЯЛАР ---------- */
-var opsF = { type: 'all', acc: '', q: '', cat: '', mon: '' };
+var opsF = { type: 'all', acc: '', q: '', cat: '', mon: '', day: '' };
 PAGES.ops = function(){
   var h = topBar(t('Операциялар'), DB.tx.length + ' ' + t('жазба'),
     '<button class="ibtn" onclick="exportOpsXlsx()" aria-label="Excel">' + ic('download') + '</button>');
@@ -601,9 +604,9 @@ PAGES.ops = function(){
   }).join('') +
   '<select class="chip" style="border:0;padding-right:14px" onchange="opsF.acc=this.value;drawOpsList()"><option value="">' + t('Барлық шот') + '</option>' +
     DB.accounts.map(function(a){ return '<option value="' + a.id + '"' + (opsF.acc === a.id ? ' selected' : '') + '>' + esc(a.name) + '</option>'; }).join('') + '</select></div>';
-  if(opsF.cat || opsF.mon){
-    h += '<div class="chips" style="margin-top:8px"><button class="chip on" onclick="opsF.cat=\'\';opsF.mon=\'\';render()">' +
-      esc(t(opsF.cat || '')) + (opsF.mon ? ' · ' + monName(+opsF.mon.slice(5) - 1) : '') + ' ' + ic('x') + '</button></div>';
+  if(opsF.cat || opsF.mon || opsF.day){
+    h += '<div class="chips" style="margin-top:8px"><button class="chip on" onclick="opsF.cat=\'\';opsF.mon=\'\';opsF.day=\'\';render()">' +
+      esc(t(opsF.cat || '')) + (opsF.day ? fullDate(opsF.day) : opsF.mon ? ' · ' + monName(+opsF.mon.slice(5) - 1) : '') + ' ' + ic('x') + '</button></div>';
   }
   h += '<div id="ops-list"></div>';
   setTimeout(drawOpsList, 0);
@@ -616,6 +619,7 @@ function opsFiltered(){
     if(opsF.acc && x.acc !== opsF.acc && x.to !== opsF.acc && x.loan !== opsF.acc) return false;
     if(opsF.cat && x.cat !== opsF.cat) return false;
     if(opsF.mon && (x.date || '').slice(0, 7) !== opsF.mon) return false;
+    if(opsF.day && x.date !== opsF.day) return false;
     if(q){
       var a = acc(x.acc), s = [x.note, x.cat, t(x.cat), a && a.name, String(Math.round(x.amt)), x.date].join(' ').toLowerCase();
       if(s.indexOf(q) < 0) return false;
@@ -669,7 +673,7 @@ function openTx(type, editId){
   if(!assets().length){ toast('Алдымен шот қосыңыз'); openAcc('asset'); return; }
   var x = editId ? txOf(editId) : null;
   var lastAcc = acc(DB.pref.acc) ? DB.pref.acc : assets()[0].id;
-  F = x ? { id: x.id, type: x.type, cat: x.cat, acc: x.acc || lastAcc, to: x.to, loan: x.loan || null, amt: x.amt, date: x.date, note: x.note || '' }
+  F = x ? { id: x.id, type: x.type, cat: x.cat, acc: x.acc || lastAcc, to: x.to, loan: x.loan || null, amt: x.amtFrom || x.amt, amt2: x.amt2 || '', date: x.date, note: x.note || '' }
         : { id: null, type: type || 'out', cat: null, acc: lastAcc, to: null, loan: null, amt: '', date: todayISO(), note: '' };
   if(!F.cat && F.type !== 'tr') F.cat = DB.pref['cat_' + F.type] || CATS[F.type][0];
   if(F.type === 'tr' && !F.to){ var o = assets().filter(function(a){ return a.id !== F.acc; })[0]; F.to = o ? o.id : null; }
@@ -680,7 +684,7 @@ function drawTxSheet(){
   var types = [['out', 'Шығын'], ['in', 'Кіріс'], ['tr', 'Аударым']];
   var h = sheetHead(F.id ? t('Өзгерту') : t('Жаңа операция'));
   h += '<div class="seg">' + types.map(function(x){ return '<button class="' + (F.type === x[0] ? 'on' : '') + '" onclick="txType(\'' + x[0] + '\')">' + t(x[1]) + '</button>'; }).join('') + '</div>';
-  h += '<div class="amtbox"><input id="f-amt" inputmode="decimal" placeholder="0" value="' + (F.amt || '') + '" oninput="F.amt=this.value;fitAmt(this)" style="width:' + amtW(F.amt) + '"><span>' + S() + '</span></div>';
+  h += '<div class="amtbox"><input id="f-amt" inputmode="decimal" placeholder="0" value="' + (F.amt || '') + '" oninput="F.amt=this.value;fitAmt(this);if(window.fxHint){fxHint();splitHint()}" style="width:' + amtW(F.amt) + '"><span>' + txSym() + '</span></div>';
   if(F.type !== 'tr'){
     var list = CATS[F.type].slice();
     if(F.cat && list.indexOf(F.cat) < 0) list.push(F.cat);
@@ -697,9 +701,14 @@ function drawTxSheet(){
   h += '<div class="f"><span>' + t('Күні') + '</span>' + weekStrip() + '</div>';
   h += '<label class="f"><span>' + t('Түсініктеме') + '</span><input class="in" id="f-note" list="note-list" value="' + esc(F.note) + '" placeholder="' + t('Мысалы, Magnum') + '" oninput="F.note=this.value;noteHint()"></label>';
   h += '<datalist id="note-list">' + noteSuggestions() + '</datalist>';
+  if(typeof txSheetExtra === 'function') h += txSheetExtra();
   h += '<button class="btn" onclick="saveTx()">' + ic('check') + t('Сақтау') + '</button>';
   if(F.id) h += '<button class="btn red" onclick="delTx(\'' + F.id + '\')">' + ic('trash') + t('Өшіру') + '</button>';
   openSheet(h);
+}
+function txSym(){
+  if(F && F.type === 'tr'){ var a = acc(F.acc), b = acc(F.to); if(a && b && (a.cur || BASE()) !== (b.cur || BASE())) return curSym(a); }
+  return S();
 }
 function amtW(v){ return Math.max(1, String(v || '').length || 1) * 0.62 + 0.3 + 'em'; }
 function fitAmt(e){ e.style.width = amtW(e.value); }
@@ -762,6 +771,7 @@ function saveTx(){
   var x = { id: F.id || newId(), type: F.type, cat: F.type === 'tr' ? 'Аударым' : F.cat, amt: Math.abs(amt),
             date: F.date || todayISO(), note: (F.note || '').trim(), acc: F.acc,
             loan: (F.type === 'out' && F.cat === 'Несие төлемі') ? F.loan : null, to: F.type === 'tr' ? F.to : null };
+  if(typeof txBeforeSave === 'function' && txBeforeSave(x, amt) === false) return;
   var more = 0;
   if(F.id){
     var old = txOf(F.id);
@@ -776,6 +786,7 @@ function saveTx(){
     }
   } else DB.tx.push(x);
   applyTx(x, 1);
+  if(typeof txAfterSave === 'function') txAfterSave(x);
   DB.pref.acc = x.acc;
   if(x.type !== 'tr'){ DB.pref['cat_' + x.type] = x.cat; if(!F.id && x.note && typeof learnCat === 'function') learnCat(x.type, x.note, x.cat); }
   var msg = F.id ? (more ? t('Өзгертілді') + ' · +' + more : 'Өзгертілді') : (x.type === 'in' ? 'Кіріс қосылды' : x.type === 'tr' ? 'Аударым жасалды' : 'Шығын қосылды');
@@ -905,6 +916,7 @@ function goalPace(g){
 PAGES.goals = function(){
   var s = 0, tg = 0; DB.goals.forEach(function(g){ s += g.saved || 0; tg += g.target || 0; });
   var h = topBar(t('Мақсаттар'), DB.goals.length > 1 ? t('Барлығы') + ' ' + moneyShort(s) + ' / ' + moneyShort(tg) : '', '<button class="ibtn" onclick="openGoal()">' + ic('plus') + '</button>');
+  if(typeof goalsExtra === 'function') h += goalsExtra();
   if(!DB.goals.length) return h + '<div class="card empty">' + ic('target') + t('Мақсат әлі жоқ.') + '<br>' + t('Жинайтын сомаңызды белгілеп қойыңыз.') + '<button class="btn" onclick="openGoal()">' + t('Мақсат қосу') + '</button></div>';
   DB.goals.forEach(function(g){
     var pct = g.target ? Math.min(100, (g.saved || 0) / g.target * 100) : 0, p = goalPace(g);
@@ -1070,12 +1082,13 @@ PAGES.recur = function(){
   var R = recurState(), key = ym(new Date());
   var h = topBar(t('Тұрақты төлемдер'), monName(new Date().getMonth()), '<button class="ibtn" onclick="openRecur()">' + ic('plus') + '</button>');
   h += '<div class="grid2" style="margin-top:4px">' + miniStat(t('Айына'), R.total) + miniStat(t('Төленбеген'), R.unpaid) + '</div>';
+  if(typeof recurExtra === 'function') h += recurExtra();
   if(!DB.recur.length) return h + '<div class="card empty">' + ic('repeat') + t('Ай сайынғы төлемдерді (интернет, жалдау, жазылым) осында қосыңыз.') + '<button class="btn" onclick="openRecur()">' + t('Төлем қосу') + '</button></div>';
   var list = DB.recur.slice().sort(function(a, b){ return (a.paid === key) - (b.paid === key) || a.day - b.day; });
   h += '<div class="list" style="margin-top:12px">' + list.map(function(x){
     var paid = x.paid === key;
-    return '<div class="row"><button style="display:contents" onclick="openRecur(\'' + x.id + '\')">' + catIc(x.cat) +
-      '<span class="mid"><b>' + esc(x.name) + '</b><span>' + t('Айдың') + ' ' + x.day + ' ' + t('күні') + ' · ' + money(x.amt) + '</span></span></button>' +
+    return '<div class="row"><span style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer" onclick="openRecur(\'' + x.id + '\')">' + catIc(x.cat) +
+      '<span class="mid"><b>' + esc(x.name) + '</b><span>' + t('Айдың') + ' ' + x.day + ' ' + t('күні') + ' · ' + money(x.amt) + '</span></span></span>' +
       (paid ? '<span class="tag" style="background:var(--pos);color:#fff">' + t('Төленді') + '</span>'
             : '<button class="btn sm lime" onclick="payRecur(\'' + x.id + '\')">' + t('Төледім') + '</button>') + '</div>';
   }).join('') + '</div>';
@@ -1138,12 +1151,14 @@ PAGES.stats = function(){
   else {
     h += donutSvg(items, total, statsKind === 'out' ? t('Барлық шығын') : t('Барлық кіріс'));
     h += items.map(function(x){
-      var pct = x.v / total * 100;
-      return '<button class="row" style="padding:10px 0;background:none" onclick="opsF={type:\'' + statsKind + '\',acc:\'\',q:\'\',cat:\'' + esc(x.cat) + '\',mon:\'' + key + '\'};go(\'ops\')">' + catIc(x.cat) +
-        '<span class="mid"><b>' + esc(t(x.cat)) + '</b><div class="prog" style="height:4px;margin-top:6px"><i style="width:' + pct.toFixed(1) + '%;background:' + catMeta(x.cat)[1] + '"></i></div></span>' +
-        '<span class="amt num">' + money(x.v) + '<small>' + pct.toFixed(pct < 10 ? 1 : 0).replace('.', ',') + '% · ' + x.n + '</small></span></button>';
+      var pct = x.v / total * 100, lim = statsKind === 'out' && DB.limits[x.cat] > 0 ? DB.limits[x.cat] : 0;
+      var bw = lim ? Math.min(100, x.v / lim * 100) : pct, bc = lim ? (x.v > lim ? 'var(--neg)' : x.v >= lim * .8 ? 'var(--warn)' : catMeta(x.cat)[1]) : catMeta(x.cat)[1];
+      return '<button class="row" style="padding:10px 0;background:none" onclick="opsF={type:\'' + statsKind + '\',acc:\'\',q:\'\',cat:\'' + esc(x.cat) + '\',mon:\'' + key + '\',day:\'\'};go(\'ops\')">' + catIc(x.cat) +
+        '<span class="mid"><b>' + esc(t(x.cat)) + '</b><div class="prog" style="height:4px;margin-top:6px"><i style="width:' + bw.toFixed(1) + '%;background:' + bc + '"></i></div></span>' +
+        '<span class="amt num">' + money(x.v) + '<small>' + (lim ? '<span style="color:' + (x.v > lim ? 'var(--neg)' : 'inherit') + '">/ ' + moneyShort(lim) + '</span>' : pct.toFixed(pct < 10 ? 1 : 0).replace('.', ',') + '% · ' + x.n) + '</small></span></button>';
     }).join('');
   }
+  if(statsKind === 'out') h += '<button class="btn line sm" style="width:100%;margin-top:10px" onclick="openCatLimits()">' + ic('target') + t('Санат лимиттері') + '</button>';
   h += '</div>';
   /* 6 ай */
   var months = [], max = 1;
@@ -1162,6 +1177,7 @@ PAGES.stats = function(){
     '<div><span>' + t('Қаражат жетеді') + '</span><b class="num">' + (runway ? runway.toFixed(1).replace('.', ',') + ' ' + t('ай') : '—') + '</b></div></div>' +
     kv(t('Ай қалдығы') + ' (' + t('кіріс') + ' − ' + t('шығын') + ')', '<span class="' + (M.in - M.out < 0 ? 'neg' : 'pos') + '">' + (M.in - M.out > 0 ? '+' : '') + money(M.in - M.out) + '</span>') +
     kv(t('Айлық шығын жоспары'), DB.pref.monthLimit ? money(DB.pref.monthLimit) + ' <button class="tag" onclick="openLimit()">' + t('өзгерту') + '</button>' : '<button class="tag" onclick="openLimit()">' + t('қою') + '</button>') + '</div>';
+  if(typeof statsExtra === 'function') h += statsExtra(key, M);
   return h;
 };
 function shiftStat(d){

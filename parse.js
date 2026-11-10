@@ -491,3 +491,144 @@ function parseReceipt(text){
   res.note = (shop || '').replace(/\s{2,}/g, ' ').slice(0, 50);
   return res;
 }
+
+/* ---- ЕНПФ үзіндісі (ескі нұсқадан) ---- */
+var PN_KIND = { nb: 'ОПВ · Ұлттық банк', uip: 'ОПВ · ИПБ', opvr: 'ОПВР · жұмыс беруші' };
+var PN_NUM = '\\d{1,3}(?: \\d{3})*\\.\\d{2}';
+function pnNum(s){ return parseFloat(String(s).replace(/\s/g, '')); }
+function isENPF(lines){
+  var h = lines.slice(0, 80).join(' ');
+  return /(ОПВ|МЗЖ)/.test(h) && /(ЕНПФ|БЖЗҚ|ИПС|ЖЗШ|УПС|пенсионн)/i.test(h) && /(достаточност|жеткіліктілік|Выписка с|үзінді)/i.test(lines.join(' '));
+}
+function parseENPF(lines){
+  lines = lines.map(function(l){ return String(l).replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim(); });
+  var amtOnly = new RegExp('^(' + PN_NUM + ')(?:\\s*теңге\\*?)?$');
+  function near(i, order){
+    for(var k = 0; k < order.length; k++){
+      var j = i + order[k]; if(j < 0 || j >= lines.length) continue;
+      var m = lines[j].match(amtOnly); if(m) return pnNum(m[1]);
+    }
+    return null;
+  }
+  function isoD(s){ var m = s.match(/(\d{2})\.(\d{2})\.(\d{4})/); return m ? m[3] + '-' + m[2] + '-' + m[1] : null; }
+  var R = { asOf: null, by: null, bm: null, bd: null, thr: null, epv: null, accs: [], rows: [], emps: {} };
+  var iin = null, empQ = {};
+  for(var i = 0; i < Math.min(lines.length, 40); i++){
+    var l = lines[i];
+    if(!R.asOf){ var a = l.match(/по состоянию на (\d{2}\.\d{2}\.\d{4})/); if(a) R.asOf = isoD(a[1]); }
+    var ii = l.match(/^(\d{12})\b/); if(ii && !iin) iin = ii[1];
+    if(/Туған күні|Дата рождения/.test(l) && !R.by){
+      for(var j = i; j <= i + 2 && j < lines.length; j++){
+        var b = lines[j].match(/(?:^|\s)(\d{2})\.(\d{2})\.(\d{4})$/);
+        if(b){ R.bd = +b[1]; R.bm = +b[2]; R.by = +b[3]; break; }
+      }
+    }
+  }
+  /* бөлімдер */
+  var secs = [];
+  lines.forEach(function(l, i){ if(/^Выписка с /.test(l)) secs.push(i); });
+  var head = secs.length ? secs[0] : lines.length;
+  /* жалпы ақпарат (бірінші бет) */
+  var summ = {};
+  for(i = 0; i < head; i++){
+    var l2 = lines[i];
+    var am = l2.match(new RegExp('^(\\d{18,24}) (\\d{2}\\.\\d{2}\\.\\d{4}) (' + PN_NUM + ')$'));
+    if(am){
+      var ctx = (lines[i + 1] || ''), ctx2 = (lines[i - 1] || '');
+      var k = /ОПВР|Условный/.test(ctx) ? 'opvr' : /УИП/.test(ctx) ? 'uip' : /НБ РК/.test(ctx) ? 'nb'
+            : /ЖМЗЖ|ОПВР/.test(ctx2) ? 'opvr' : /ИПБ/.test(ctx2) ? 'uip' : 'nb';
+      summ[k] = { open: isoD(am[2]), bal: pnNum(am[3]) };
+    }
+    if(/Порог минимальной достаточности/.test(l2) && R.thr === null) R.thr = near(i, [-1, 1, -2, 2]);
+    if(/доступные для\s*$|ЕПВ в целях/.test(l2) && R.epv === null) R.epv = near(i, [-1, -2, 1, 2]);
+    if(/доступные для передачи/.test(l2) && R.toUip === undefined) R.toUip = near(i, [1, 2, -1, -2]);
+  }
+  var ROW = new RegExp('^(\\d{2})\\.(\\d{2})\\.(\\d{4}) (.*?) ?(' + PN_NUM + ') (?:(' + PN_NUM + ') )?(\\d{2}\\.\\d{2}\\.\\d{4}) (\\S+) (\\d{12}) ?(.*)$');
+  secs.forEach(function(s, si){
+    var end = si + 1 < secs.length ? secs[si + 1] : lines.length;
+    var hd = lines.slice(s, s + 4).join(' ');
+    var kind = /условного пенсионного|\(УПС\)/.test(hd) ? 'opvr' : /субсчета|УИП/.test(hd) ? 'uip' : 'nb';
+    var acc = { k: kind, name: PN_KIND[kind], open: summ[kind] ? summ[kind].open : null, bal: summ[kind] ? summ[kind].bal : 0,
+                inc: 0, inSum: 0, outSum: 0, y: null, ya: null, ia: null, hist: [] };
+    if(kind === 'uip'){
+      var mn = hd.match(/УИП\s+(?:АО\s+)?(.+?),?\s+за период/);
+      if(mn) acc.name = 'ОПВ · ' + mn[1].replace(/["“”«»]/g, '').replace(/\s+/g, ' ').trim();
+    }
+    for(var r = s; r < end; r++){
+      var L = lines[r];
+      var m = L.match(ROW);
+      if(m){
+        var ctx = [lines[r - 1] || '', m[4], lines[r + 1] || ''].join(' ');
+        var amt = pnNum(m[5]);
+        var t = /Перевод|аударым/i.test(ctx) ? (kind === 'uip' ? 'tin' : 'tout')
+              : /ЕПВ|БЗТ|выплат|Изъят|Возврат/i.test(ctx) ? 'out'
+              : /Пеня|Өсімпұл/i.test(ctx) ? 'p' : 'c';
+        var per = null;
+        for(var q = r - 1; q <= r + 2; q++){
+          var pm = (q === r ? '' : (lines[q] || '')).match(/\((\d{2})\.(\d{4})\)/);
+          if(pm){ per = pm[2] + '-' + pm[1]; break; }
+        }
+        var bin = m[9], en = (m[10] || '').trim(), qy = en ? 3 : 0;
+        var pv = lines[r - 1] || '', nx = lines[r + 1] || '';
+        if(!en && /^OV-/.test(pv)){
+          en = pv; qy = 2;
+          if(nx && !/^(Жарналардың|түсуі|УИП|ФОНД)/.test(nx) && !/\(\d{2}\.\d{4}\)/.test(nx)) en += (/-$/.test(en) ? '' : ' ') + nx;
+        }
+        if(!en){
+          [pv, nx].some(function(x){
+            var em = x.match(/((?:ТОО|ТОВАРИЩЕСТВО|АО|ИП|Филиал|ГУ|КГУ|РГП|ЖШС)\b.*)$/);
+            if(em){ en = em[1]; qy = 1; return true; } return false;
+          });
+        }
+        en = en.replace(/^OV-[^\/]*\/\d+\//, '').replace(/\(\d{2}\.\d{4}\)/, '').replace(/\s+/g, ' ').trim();
+        if(iin && bin === iin){ en = 'Өзіңіз'; qy = 9; }
+        if((t === 'c' || t === 'p') && en){
+          var oq = empQ[bin] || 0;
+          if(!R.emps[bin] || qy > oq || (qy === oq && R.emps[bin].length < en.length)){ R.emps[bin] = en; empQ[bin] = qy; }
+        }
+        R.rows.push({ d: m[3] + '-' + m[2] + '-' + m[1], a: amt, k: kind, per: per, t: t, b: (t === 'c' || t === 'p') ? bin : null });
+        continue;
+      }
+      if(/^Инвестиционный доход за период/.test(L)){ var v = near(r, [-1, -2, 1]); if(v !== null) acc.inc = v; }
+      else if(/^Итого .*по состоянию/.test(L)){ var v2 = near(r, [-1, -2, 1]); if(v2 !== null) acc.bal = v2; }
+      else if(/^ВСЕГО$/.test(L)){
+        var tm = (lines[r - 1] || '').match(new RegExp('^(' + PN_NUM + ') (' + PN_NUM + ')$'));
+        if(tm){ acc.inSum = pnNum(tm[1]); acc.outSum = pnNum(tm[2]); }
+      }
+      else if(/^Инфляция \(%\)/.test(L) && !acc.hist.length){
+        var inf = (L.match(/-?\d+\.\d+/g) || []).map(Number), yl = null, yrs = null;
+        for(var z = r - 1; z > r - 14 && z > s; z--){
+          if(!yl && /^-?\d+\.\d+( -?\d+\.\d+)+$/.test(lines[z])) yl = lines[z].split(' ').map(Number);
+          else if(yl && !yrs && /^(?:\S+ )?(\d{4})( \d{4})*$/.test(lines[z])) yrs = lines[z].match(/\d{4}/g);
+        }
+        if(yl){
+          yrs = yrs || [];
+          var extra = yl.length - yrs.length;
+          yl.forEach(function(y, ix){
+            acc.hist.push({ l: ix < yrs.length ? yrs[ix] : (ix === yrs.length ? '12 ай' : t('биыл')), y: y, i: inf[ix] !== undefined ? inf[ix] : null, full: ix < yrs.length });
+          });
+          acc.y = yl[yrs.length] !== undefined ? yl[yrs.length] : yl[yl.length - 1];
+          var fy = acc.hist.filter(function(h){ return h.full; });
+          if(fy.length){
+            acc.ya = fy.reduce(function(x, h){ return x + h.y; }, 0) / fy.length;
+            var fi = fy.filter(function(h){ return h.i !== null; });
+            if(fi.length) acc.ia = fi.reduce(function(x, h){ return x + h.i; }, 0) / fi.length;
+          }
+          if(extra < 1) acc.y = yl[yl.length - 1];
+        }
+      }
+    }
+    R.accs.push(acc);
+  });
+  /* бөлімде жоқ, бірақ жалпы бетте бар шоттар */
+  Object.keys(summ).forEach(function(k){
+    if(!R.accs.some(function(a){ return a.k === k; }))
+      R.accs.push({ k: k, name: PN_KIND[k], open: summ[k].open, bal: summ[k].bal, inc: 0, inSum: 0, outSum: 0, y: null, ya: null, ia: null, hist: [] });
+  });
+  R.accs.sort(function(a, b){ return b.bal - a.bal; });
+  R.rows.sort(function(a, b){ return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
+  R.bal = R.accs.reduce(function(x, a){ return x + a.bal; }, 0);
+  R.opv = R.accs.filter(function(a){ return a.k !== 'opvr'; }).reduce(function(x, a){ return x + a.bal; }, 0);
+  delete R.toUip;
+  return R;
+}

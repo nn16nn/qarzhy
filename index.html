@@ -221,7 +221,7 @@ table.t th:first-child,table.t td:first-child{text-align:left}
 .result b{font-size:28px;font-weight:650;letter-spacing:-.03em;display:block;margin:2px 0 10px}
 .result .stat3>div{background:transparent;border:1px solid var(--hero-line)}
 .result .stat3 span{color:var(--hero-mute)}
-.result .stat3 b{font-size:15px;margin:2px 0 0;letter-spacing:-.02em}
+.result .stat3 b{font-size:15px;margin:2px 0 0;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .result .stat3>div{min-width:0}
 
 /* ----- импорт ----- */
@@ -353,6 +353,30 @@ html.dark .seg .thumb{background:#34342f}
 .spl-pct{display:flex;align-items:center;background:var(--sf);border-radius:10px;padding:0 10px;height:36px;flex:none}
 .spl-pct input{width:34px;border:0;background:none;outline:none;text-align:right;font-size:15px;font-weight:650;font-variant-numeric:tabular-nums;padding:0}
 .spl-pct span{color:var(--mute);font-size:14px;margin-left:2px}
+/* ===== 2.5 ===== */
+.ins{display:flex;gap:10px;align-items:flex-start;padding:9px 0;font-size:14px;line-height:1.4;border-bottom:1px solid var(--line)}
+.ins:last-child{border-bottom:0}
+.ins-ic{width:30px;height:30px;border-radius:10px;background:var(--sf2);display:grid;place-items:center;flex:none}
+.ins-ic svg.i{width:16px;height:16px}
+.heat{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.heat>i{font-style:normal;font-size:11px;color:var(--mute);text-align:center;padding-bottom:2px}
+.hc{aspect-ratio:1;border-radius:9px;font-size:12px;font-weight:600;display:grid;place-items:center;background:var(--sf2);color:var(--mute);padding:0}
+.hc.l1{background:color-mix(in srgb,var(--lime) 30%,var(--sf2));color:var(--ink)}
+.hc.l2{background:color-mix(in srgb,var(--lime) 65%,var(--sf2));color:#141412}
+.hc.l3{background:var(--lime);color:#141412}
+.hc.l4{background:var(--ink);color:var(--lime)}
+.hc.td{box-shadow:inset 0 0 0 2px var(--ink)}
+.hc:disabled{cursor:default}
+.legend .hc{display:inline-block}
+svg.nw{width:100%;height:auto;display:block;overflow:visible}
+svg.nw text{font-size:10px;fill:var(--mute);font-family:Onest}
+.nw-line{stroke-dasharray:1200;stroke-dashoffset:1200;animation:nwDraw 1.1s var(--ease) forwards}
+@keyframes nwDraw{to{stroke-dashoffset:0}}
+.yr-n{width:22px;font-size:13px;color:var(--mute);flex:none}
+.yr-v{font-size:17px;letter-spacing:-.02em;display:block;margin-top:2px}
+.yr-v small{display:block;font-size:12px;color:var(--mute);font-weight:500}
+.hero.yr .big{font-size:44px}
+html.dark .hc.l4{background:#F1EEE6;color:#141412}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -369,6 +393,8 @@ html.dark .seg .thumb{background:#34342f}
   <section class="page" id="p-recur"></section>
   <section class="page" id="p-calc"></section>
   <section class="page" id="p-import"></section>
+  <section class="page" id="p-year"></section>
+  <section class="page" id="p-pension"></section>
 </main>
 <div id="fan"></div>
 <nav class="dock" id="dock"></nav>
@@ -378,9 +404,10 @@ html.dark .seg .thumb{background:#34342f}
 <div id="dlg"></div>
 <input type="file" id="file-backup" accept=".json,application/json" class="hide">
 <input type="file" id="file-import" accept=".pdf,.xlsx,.xls,.csv" class="hide">
-<script src="i18n.js?v=2.4.4"></script>
-<script src="parse.js?v=2.4.4"></script>
-<script src="app.js?v=2.4.4"></script>
-<script src="tools.js?v=2.4.4"></script>
+<script src="i18n.js?v=2.5.0"></script>
+<script src="parse.js?v=2.5.0"></script>
+<script src="app.js?v=2.5.0"></script>
+<script src="tools.js?v=2.5.0"></script>
+<script src="features.js?v=2.5.0"></script>
 </body>
 </html>

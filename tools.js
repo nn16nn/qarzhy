@@ -13,6 +13,7 @@ var CALCS = [
   ['dep', 'bank', 'Депозит', 'Капитализация · толықтыру'],
   ['inv', 'invest', 'Инвестиция', 'Күрделі пайыз · мақсатқа жету'],
   ['split', 'split', 'Жалақы бөлу', 'Айлықты пайызбен бөлу'],
+  ['payoff', 'card', 'Несиелерді жабу', 'Қайсысын бірінші жабу тиімді'],
   ['tax', 'percent', 'ЖК салығы', 'Оңайлатылған декларация · 910', 'KZT']
 ];
 PAGES.calc = function(){
@@ -217,7 +218,7 @@ function onImportFile(f){
   task.then(function(lines){
     var head = lines.slice(0, 40).join(' ') + ' ' + f.name;
     if(/(ЕНПФ|БЖЗҚ|enpf|Бірыңғай жинақтаушы зейнетақы|Единый накопительный пенсионный)/i.test(head)){
-      IMPV.status = t('Бұл — ЕНПФ үзіндісі. Зейнетақы бөлімі жаңа нұсқаға кейін қосылады.'); render(); return;
+      IMPV.status = ''; if(typeof isENPF === 'function' && isENPF(lines) && importENPF(lines)){ toast('ЕНПФ үзіндісі жүктелді'); go('pension', '', true); } else { IMPV.status = t('ЕНПФ үзіндісі танылмады'); render(); } return;
     }
     var b = bankOf(head); IMP.bank = b ? [b[0]] : null;
     var rows;
@@ -268,6 +269,6 @@ function importConfirm(){
   save();
   IMP.rows = []; IMP.fc = null; IMPV.status = '';
   toast(sel.length + ' ' + t('операция қосылды') + (removed ? ' · ' + removed + ' ' + t('ескі жазба ауыстырылды') : ''));
-  opsF = { type: 'all', acc: '', q: '', cat: '', mon: '' };
+  opsF = { type: 'all', acc: '', q: '', cat: '', mon: '', day: '' };
   go('ops', '', true);
 }
