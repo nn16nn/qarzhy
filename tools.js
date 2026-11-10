@@ -218,7 +218,7 @@ function onImportFile(f){
   task.then(function(lines){
     var head = lines.slice(0, 40).join(' ') + ' ' + f.name;
     if(/(ЕНПФ|БЖЗҚ|enpf|Бірыңғай жинақтаушы зейнетақы|Единый накопительный пенсионный)/i.test(head)){
-      IMPV.status = ''; if(typeof isENPF === 'function' && isENPF(lines) && importENPF(lines)){ toast('ЕНПФ үзіндісі жүктелді'); go('pension', '', true); } else { IMPV.status = t('ЕНПФ үзіндісі танылмады'); render(); } return;
+      IMPV.status = ''; var er = typeof isENPF === 'function' && isENPF(lines) && importENPF(lines); if(er === 'locked'){ render(); return; } if(er){ toast('ЕНПФ үзіндісі жүктелді'); go('pension', '', true); } else { IMPV.status = t('ЕНПФ үзіндісі танылмады'); render(); } return;
     }
     if(typeof isKaspiDebt === 'function' && isKaspiDebt(lines)){ IMPV.status = ''; render(); showKaspiDebt(lines); return; }
     var b = bankOf(head); IMP.bank = b ? [b[0]] : null;
