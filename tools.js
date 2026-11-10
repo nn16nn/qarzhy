@@ -179,7 +179,7 @@ PAGES.import = function(){
     h += '<label class="card drop" onclick="$(\'file-import\').click()">' + ic('upload') + '<b>' + t('Банк үзіндісін таңдаңыз') + '</b><span class="muted" style="font-size:13.5px">' +
       t('Kaspi, Freedom, Halyk, Forte — банк қосымшасынан айлық үзіндіні PDF немесе Excel түрінде жүктеп алыңыз. Операциялар өзі кіріс пен шығынға бөлініп, санаттары анықталады.') + '</span></label>';
     if(IMPV.status) h += '<div class="card empty">' + IMPV.status + '</div>';
-    h += '<p class="muted" style="font-size:12.5px;margin:12px 6px">' + t('Файл тек телефонда оқылады, ешқайда жіберілмейді. Бірінші рет оқығанда интернет керек.') + '</p>';
+    h += '<p class="muted" style="font-size:12.5px;margin:12px 6px">' + t('Файл тек телефонда оқылады, ешқайда жіберілмейді. Бірінші рет оқығанда интернет керек.') + ' · v' + VERSION + '</p>';
     return h;
   }
   var on = IMP.rows.filter(function(r){ return r.on && !r.fx; }), sIn = 0, sOut = 0, dups = 0;
@@ -245,8 +245,10 @@ function onImportFile(f){
     IMPV.status = rows.length ? '' : t('Бұл файлдан операция табылмады. Excel (.xlsx) нұсқасын жүктеп көріңіз — ол әрқашан дәлірек оқылады.');
     IMP.rows = rows;
     render();
-  }).catch(function(){
-    IMPV.status = t('Файлды оқу мүмкін болмады. Бірінші рет оқығанда интернет қажет — интернетті қосып қайта көріңіз.');
+  }).catch(function(e){
+    IMPV.status = (e && e.message === 'load')
+      ? t('Файлды оқу мүмкін болмады. Бірінші рет оқығанда интернет қажет — интернетті қосып қайта көріңіз.')
+      : t('Файл ашылды, бірақ ішіндегісі танылмады. Қосымшаны жауып, қайта ашып көріңіз; болмаса файлды маған жіберіңіз.') + '<br><span style="font-size:11px;opacity:.6">v' + VERSION + ' · ' + esc(String(e && e.message || e).slice(0, 80)) + '</span>';
     render();
   });
 }
