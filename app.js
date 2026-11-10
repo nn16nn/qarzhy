@@ -1,7 +1,7 @@
 /* Qarzhy 2 — қосымша логикасы
    Дерек құрылымы ескі нұсқамен бірдей (qarzhy_v1 · IndexedDB «qarzhy»), сондықтан деректер өзгеріссіз көшеді. */
 'use strict';
-var VERSION = '2.5.3';
+var VERSION = '2.5.4';
 
 /* ================= ТІЛ ================= */
 var LANG = 'kk';
@@ -313,7 +313,7 @@ function totals(){
   DB.accounts.forEach(function(x){ if(x.kind === 'debt') d += toKZT(x); else if(x.kind !== 'broker') b += toKZT(x); });
   DB.goals.forEach(function(x){ g += x.saved || 0; });
   var dt = debtTotals();
-  return { banks: b, loans: d, goals: g, lent: dt.lent, owed: dt.owed, net: b - d + dt.lent - dt.owed };
+  return { banks: b, loans: d, goals: g, lent: dt.lent, owed: dt.owed, net: b + dt.lent - dt.owed };
 }
 function monthSum(key){
   var r = { in: 0, out: 0, n: 0 };
